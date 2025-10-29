@@ -1,0 +1,38 @@
+# Binaries
+ts2go
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output files
+*.out
+
+# Go workspace
+go.work.sum
+
+# Node modules
+node_modules/
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+
+# Generated files
+tests/fixtures/*.go
+!tests/fixtures/*.go.expected
