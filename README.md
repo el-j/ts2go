@@ -43,10 +43,21 @@ func Greet(person Person) string {
 
 ## Documentation
 
-- [Getting Started](docs/GETTING_STARTED.md) - Installation and basic usage
-- [Architecture](docs/ARCHITECTURE.md) - Project structure and design
-- [Specification](SPEC.md) - Supported TypeScript features
-- [Implementation Plan](implementationPlan.md) - Roadmap and development phases
+### Getting Started
+- 🚀 [Getting Started](docs/GETTING_STARTED.md) - Installation and basic usage
+- 📚 [Migration Guide](docs/MIGRATION_GUIDE.md) - Complete guide to migrating projects
+- 💡 [Examples](docs/EXAMPLES.md) - Before/after transpilation examples
+
+### Reference
+- 📋 [Specification](SPEC.md) - Currently supported TypeScript features
+- 📦 [Package Mappings](docs/PACKAGE_MAPPINGS.md) - npm to Go quick reference (100+ packages)
+- 📊 [Status](docs/STATUS.md) - Current implementation status
+
+### Advanced
+- 🗺️ **[Roadmap](docs/ROADMAP.md)** - **Complete plan for all TypeScript features + dependencies**
+- 🔧 **[Dependency Guide](docs/DEPENDENCY_GUIDE.md)** - **Implementation guide for dependency resolution**
+- 🏗️ [Architecture](docs/ARCHITECTURE.md) - Project structure and design
+- 📝 [Implementation Plan](implementationPlan.md) - Original development phases
 
 ## Features
 
