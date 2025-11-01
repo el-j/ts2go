@@ -107,21 +107,27 @@ func main() {
 }
 ```
 
-## Running Examples
+## Example 6: Optional Operators (Partial)
 
-```bash
-# Transpile
-./ts2go --in example.ts --out example.go
-
-# Run the generated Go code
-go run example.go
+**Input (optional.ts):**
+```typescript
+// Nullish coalescing
+function getValue(value: string | null): string {
+  return value ?? "default";
+}
 ```
 
-## Key Transformations
+**Output (optional.go):**
+```go
+// nullishCoalesce provides nullish coalescing (??) behavior
+func nullishCoalesce(left, right interface{}) interface{} {
+    if left != nil {
+        return left
+    }
+    return right
+}
 
-1. **Interfaces → Structs** with JSON tags
-2. **camelCase → PascalCase** for exported functions
-3. **Property access** (e.g., `user.name` → `user.Name`)
-4. **console.log → fmt.Println**
-5. **Object literals** with type inference
-6. **Top-level statements** wrapped in `main()`
+func GetValue(value interface{}) interface{} {
+    return nullishCoalesce(value, "default")
+}
+```

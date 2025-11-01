@@ -49,9 +49,20 @@ function convertNode(node) {
     result.name = node.name.text;
   }
 
-  // Add type information
-  if (node.type) {
-    result.type = convertNode(node.type);
+  // Add operator for binary expressions
+  if (node.operatorToken) {
+    result.operator = ts.SyntaxKind[node.operatorToken.kind];
+    result.operatorNumber = node.operatorToken.kind;
+  }
+
+  // Add questionDot for optional chaining
+  if (node.questionDotToken) {
+    result.questionDot = true;
+  }
+
+  // Add types for union types
+  if (node.types) {
+    result.types = node.types.map(convertNode);
   }
 
   // Add parameters for functions
@@ -62,6 +73,11 @@ function convertNode(node) {
   // Add members for interfaces and classes
   if (node.members) {
     result.members = Array.from(node.members).map(convertNode);
+  }
+
+  // Add heritage clauses for class inheritance
+  if (node.heritageClauses) {
+    result.heritageClauses = Array.from(node.heritageClauses).map(convertNode);
   }
 
   // Add properties for object literals
@@ -92,6 +108,11 @@ function convertNode(node) {
   // Add declarations for variable statements
   if (node.declarationList) {
     result.declarations = node.declarationList.declarations.map(convertNode);
+  }
+
+  // Add type for type annotations
+  if (node.type) {
+    result.type = convertNode(node.type);
   }
 
   // Recursively convert children
