@@ -233,6 +233,8 @@ func (g *CodeGenerator) generateStatement(node *ASTNode) error {
 		return g.generateExpressionStatement(node)
 	case ReturnStatement:
 		return g.generateReturnStatement(node)
+	case IfStatement:
+		return g.generateIfStatement(node)
 	default:
 		// Skip unknown statements for now
 		return nil
@@ -1287,6 +1289,136 @@ func (g *CodeGenerator) generateReturnStatement(node *ASTNode) error {
 	}
 
 	g.writeLine(fmt.Sprintf("return %s", expr))
+	return nil
+}
+
+// generateIfStatement generates code for if/else statements
+func (g *CodeGenerator) generateIfStatement(node *ASTNode) error {
+	// Get the condition expression (first child)
+	if len(node.Children) == 0 {
+		return fmt.Errorf("if statement missing condition")
+	}
+
+	condition, err := g.generateExpression(&node.Children[0])
+	if err != nil {
+		return fmt.Errorf("generating if condition: %w", err)
+	}
+
+	// Generate: if condition {
+	g.writeLine(fmt.Sprintf("if %s {", condition))
+	g.indent++
+
+	// Generate the then block (second child)
+	if len(node.Children) > 1 {
+		thenBlock := &node.Children[1]
+		if err := g.generateStatementBlock(thenBlock); err != nil {
+			return fmt.Errorf("generating if then block: %w", err)
+		}
+	}
+
+	g.indent--
+
+	// Check for else clause (third child)
+	if len(node.Children) > 2 {
+		elseBlock := &node.Children[2]
+
+		// Check if it's an else-if (IfStatement) or else block
+		if elseBlock.Kind == IfStatement {
+			// Generate: } else if ... {
+			// We need to handle else-if inline, so write the closing brace and else on same line
+			for i := 0; i < g.indent; i++ {
+				g.output.WriteString("\t")
+			}
+			g.output.WriteString("} else ")
+
+			// For else-if, we need to recursively generate the if condition inline
+			// Get the condition from the else-if
+			if len(elseBlock.Children) > 0 {
+				elseCond, err := g.generateExpression(&elseBlock.Children[0])
+				if err != nil {
+					return fmt.Errorf("generating else-if condition: %w", err)
+				}
+				g.output.WriteString(fmt.Sprintf("if %s {\n", elseCond))
+
+				// Generate the else-if then block
+				g.indent++
+				if len(elseBlock.Children) > 1 {
+					if err := g.generateStatementBlock(&elseBlock.Children[1]); err != nil {
+						return fmt.Errorf("generating else-if block: %w", err)
+					}
+				}
+				g.indent--
+
+				// Check for further else/else-if
+				if len(elseBlock.Children) > 2 {
+					// Recursively handle more else-if or final else
+					furtherElse := &elseBlock.Children[2]
+					if furtherElse.Kind == IfStatement {
+						// Continue the chain
+						for i := 0; i < g.indent; i++ {
+							g.output.WriteString("\t")
+						}
+						g.output.WriteString("} else ")
+						// This gets complex, let's simplify for now
+						g.output.WriteString("{\n")
+						g.indent++
+						if err := g.generateStatement(furtherElse); err != nil {
+							return err
+						}
+						g.indent--
+						g.writeLine("}")
+					} else {
+						// Final else
+						g.writeLine("} else {")
+						g.indent++
+						if err := g.generateStatementBlock(furtherElse); err != nil {
+							return fmt.Errorf("generating final else: %w", err)
+						}
+						g.indent--
+						g.writeLine("}")
+					}
+				} else {
+					g.writeLine("}")
+				}
+			}
+			return nil
+		} else {
+			// Regular else block
+			g.writeLine("} else {")
+			g.indent++
+
+			if err := g.generateStatementBlock(elseBlock); err != nil {
+				return fmt.Errorf("generating else block: %w", err)
+			}
+
+			g.indent--
+			g.writeLine("}")
+		}
+	} else {
+		// No else clause, just close the if
+		g.writeLine("}")
+	}
+
+	return nil
+}
+
+// generateStatementBlock generates code for a block of statements
+func (g *CodeGenerator) generateStatementBlock(node *ASTNode) error {
+	// If it's a Block node, process its statements
+	if node.Kind == Block {
+		if node.Statements != nil {
+			for _, stmt := range node.Statements {
+				if err := g.generateStatement(&stmt); err != nil {
+					return err
+				}
+			}
+		}
+	} else {
+		// Single statement (no braces in TypeScript)
+		if err := g.generateStatement(node); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
