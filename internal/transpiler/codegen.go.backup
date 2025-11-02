@@ -134,8 +134,6 @@ func (g *CodeGenerator) Generate(node *ASTNode) (string, error) {
 
 	if node.Statements != nil {
 		for _, stmt := range node.Statements {
-			// DEBUG
-			fmt.Printf("DEBUG: Processing statement kind=%s\n", stmt.Kind)
 			if stmt.Kind == InterfaceDeclaration || stmt.Kind == TypeAliasDeclaration || stmt.Kind == EnumDeclaration || stmt.Kind == ClassDeclaration || stmt.Kind == FunctionDeclaration {
 				typeDecls = append(typeDecls, stmt)
 			} else {
@@ -143,7 +141,6 @@ func (g *CodeGenerator) Generate(node *ASTNode) (string, error) {
 			}
 		}
 	}
-	fmt.Printf("DEBUG: typeDecls=%d, execStmts=%d\n", len(typeDecls), len(execStmts))
 
 	// Generate type declarations first
 	for _, stmt := range typeDecls {
@@ -238,20 +235,6 @@ func (g *CodeGenerator) generateStatement(node *ASTNode) error {
 		return g.generateReturnStatement(node)
 	case IfStatement:
 		return g.generateIfStatement(node)
-	case ForStatement:
-		return g.generateForStatement(node)
-	case ForOfStatement:
-		return g.generateForOfStatement(node)
-	case ForInStatement:
-		return g.generateForInStatement(node)
-	case WhileStatement:
-		return g.generateWhileStatement(node)
-	case SwitchStatement:
-		return g.generateSwitchStatement(node)
-	case BreakStatement:
-		return g.generateBreakStatement(node)
-	case ContinueStatement:
-		return g.generateContinueStatement(node)
 	default:
 		// Skip unknown statements for now
 		return nil
@@ -687,45 +670,32 @@ func (g *CodeGenerator) generateConstructorStatement(node *ASTNode, instanceVar 
 
 	if node.Kind == ExpressionStatement {
 		// Check if this is a "this.field = value" assignment
-		// ExpressionStatement has the expression in the Expression property
-		var binary *ASTNode
-		if node.Expression != nil && node.Expression.Kind == BinaryExpression {
-			binary = node.Expression
-		} else if len(node.Children) > 0 && node.Children[0].Kind == BinaryExpression {
-			binary = &node.Children[0]
-		}
+		if len(node.Children) > 0 && node.Children[0].Kind == BinaryExpression {
+			binary := &node.Children[0]
+			if len(binary.Children) >= 2 {
+				left := &binary.Children[0]
+				right := &binary.Children[len(binary.Children)-1]
 
-		if binary != nil && len(binary.Children) >= 2 {
-			left := &binary.Children[0]
-			right := &binary.Children[len(binary.Children)-1]
-
-			// Check if left side is "this.something"
-			// PropertyAccessExpression has ThisKeyword in expression property
-			var isThisAccess bool
-			if left.Kind == PropertyAccessExpression {
-				if left.Expression != nil && left.Expression.Kind == ThisKeyword {
-					isThisAccess = true
-				} else if len(left.Children) > 0 && left.Children[0].Kind == ThisKeyword {
-					isThisAccess = true
+				// Check if left side is "this.something"
+				if left.Kind == PropertyAccessExpression && len(left.Children) > 0 {
+					if left.Children[0].Kind == ThisKeyword {
+						// Use the member visibility map to determine casing
+						fieldName := left.Name
+						if g.currentClassMembers != nil && g.currentClassMembers[fieldName] {
+							// Private member - use camelCase
+							fieldName = toCamelCase(fieldName)
+						} else {
+							// Public member - use PascalCase
+							fieldName = toPascalCase(fieldName)
+						}
+						rightExpr, err := g.generateExpression(right)
+						if err != nil {
+							return err
+						}
+						g.writeLine(fmt.Sprintf("%s.%s = %s", instanceVar, fieldName, rightExpr))
+						return nil
+					}
 				}
-			}
-
-			if isThisAccess {
-				// Use the member visibility map to determine casing
-				fieldName := left.Name
-				if g.currentClassMembers != nil && g.currentClassMembers[fieldName] {
-					// Private member - use camelCase
-					fieldName = toCamelCase(fieldName)
-				} else {
-					// Public member - use PascalCase
-					fieldName = toPascalCase(fieldName)
-				}
-				rightExpr, err := g.generateExpression(right)
-				if err != nil {
-					return err
-				}
-				g.writeLine(fmt.Sprintf("%s.%s = %s", instanceVar, fieldName, rightExpr))
-				return nil
 			}
 		}
 	}
@@ -1289,16 +1259,8 @@ func (g *CodeGenerator) generateVariableStatement(node *ASTNode) error {
 
 // generateExpressionStatement generates code for expression statements
 func (g *CodeGenerator) generateExpressionStatement(node *ASTNode) error {
-	// ExpressionStatement has the expression in the Expression property
-	var exprNode *ASTNode
-	if node.Expression != nil {
-		exprNode = node.Expression
-	} else if len(node.Children) > 0 {
-		exprNode = &node.Children[0]
-	}
-
-	if exprNode != nil {
-		expr, err := g.generateExpression(exprNode)
+	if len(node.Children) > 0 {
+		expr, err := g.generateExpression(&node.Children[0])
 		if err != nil {
 			return err
 		}
@@ -1460,345 +1422,6 @@ func (g *CodeGenerator) generateStatementBlock(node *ASTNode) error {
 	return nil
 }
 
-// generateForStatement generates code for traditional for loops
-// TypeScript: for (let i = 0; i < 10; i++) { }
-// Go: for i := 0; i < 10; i++ { }
-func (g *CodeGenerator) generateForStatement(node *ASTNode) error {
-	// Traditional for loop has:
-	// Initializer property (VariableDeclarationList)
-	// Children[0] = condition (BinaryExpression)
-	// Children[1] = incrementor (PostfixUnaryExpression)
-	// Children[2] = body (Block)
-
-	if len(node.Children) < 3 {
-		return fmt.Errorf("for statement requires 3 children (condition, increment, body)")
-	}
-
-	// Generate initializer
-	var initPart string
-	if node.Initializer != nil {
-		// Initializer is a VariableDeclarationList with Children
-		if len(node.Initializer.Children) > 0 {
-			decl := &node.Initializer.Children[0] // VariableDeclaration
-			if decl.Name != "" && decl.Initializer != nil {
-				init, err := g.generateExpression(decl.Initializer)
-				if err != nil {
-					return fmt.Errorf("generating for init: %w", err)
-				}
-				initPart = fmt.Sprintf("%s := %s", decl.Name, init)
-			}
-		}
-	}
-
-	// Generate condition
-	condPart, err := g.generateExpression(&node.Children[0])
-	if err != nil {
-		return fmt.Errorf("generating for condition: %w", err)
-	}
-
-	// Generate incrementor
-	incPart, err := g.generateExpression(&node.Children[1])
-	if err != nil {
-		return fmt.Errorf("generating for increment: %w", err)
-	}
-
-	// Generate: for init; condition; increment {
-	g.writeLine(fmt.Sprintf("for %s; %s; %s {", initPart, condPart, incPart))
-	g.indent++
-
-	// Generate body
-	bodyNode := &node.Children[2]
-	if err := g.generateStatementBlock(bodyNode); err != nil {
-		return fmt.Errorf("generating for body: %w", err)
-	}
-
-	g.indent--
-	g.writeLine("}")
-
-	return nil
-}
-
-// generateForOfStatement generates code for for...of loops
-// TypeScript: for (const item of array) { }
-// Go: for _, item := range array { }
-func (g *CodeGenerator) generateForOfStatement(node *ASTNode) error {
-	// for...of structure:
-	// Initializer = VariableDeclarationList with variable name
-	// Expression = iterable expression (array/string/etc)
-	// Body or Children[last] = body Block
-
-	// Get variable name from initializer
-	varName := ""
-	if node.Initializer != nil && len(node.Initializer.Children) > 0 {
-		varDecl := &node.Initializer.Children[0] // VariableDeclaration
-		varName = varDecl.Name
-	}
-
-	if varName == "" {
-		return fmt.Errorf("for-of: could not determine variable name")
-	}
-
-	// Get iterable - check both Expression property and Children[0]
-	var iterable string
-	var err error
-	if node.Expression != nil {
-		iterable, err = g.generateExpression(node.Expression)
-	} else if len(node.Children) > 0 {
-		iterable, err = g.generateExpression(&node.Children[0])
-	} else {
-		return fmt.Errorf("for-of: no iterable expression found")
-	}
-	if err != nil {
-		return fmt.Errorf("generating for-of iterable: %w", err)
-	}
-
-	// Generate: for _, item := range array {
-	g.writeLine(fmt.Sprintf("for _, %s := range %s {", varName, iterable))
-	g.indent++
-
-	// Generate body - check both Body property and Children (last child is usually the body)
-	var bodyNode *ASTNode
-	if node.Body != nil {
-		bodyNode = node.Body
-	} else if len(node.Children) > 0 {
-		bodyNode = &node.Children[len(node.Children)-1]
-	} else {
-		return fmt.Errorf("for-of: no body found")
-	}
-
-	if err := g.generateStatementBlock(bodyNode); err != nil {
-		return fmt.Errorf("generating for-of body: %w", err)
-	}
-
-	g.indent--
-	g.writeLine("}")
-
-	return nil
-}
-
-// generateForInStatement generates code for for...in loops
-// TypeScript: for (const key in object) { }
-// Go: for key := range object { }
-func (g *CodeGenerator) generateForInStatement(node *ASTNode) error {
-	// for...in structure same as for...of
-	// Initializer = VariableDeclarationList with variable name
-	// Expression = object expression
-	// Body or Children[last] = body Block
-
-	// Get variable name from initializer
-	varName := ""
-	if node.Initializer != nil && len(node.Initializer.Children) > 0 {
-		varDecl := &node.Initializer.Children[0]
-		varName = varDecl.Name
-	}
-
-	if varName == "" {
-		return fmt.Errorf("for-in: could not determine variable name")
-	}
-
-	// Get object - check both Expression property and Children
-	var object string
-	var err error
-	if node.Expression != nil {
-		object, err = g.generateExpression(node.Expression)
-	} else if len(node.Children) > 0 {
-		object, err = g.generateExpression(&node.Children[0])
-	} else {
-		return fmt.Errorf("for-in: no object expression found")
-	}
-	if err != nil {
-		return fmt.Errorf("generating for-in object: %w", err)
-	}
-
-	// Generate: for key := range object {
-	g.writeLine(fmt.Sprintf("for %s := range %s {", varName, object))
-	g.indent++
-
-	// Generate body - check both Body property and Children
-	var bodyNode *ASTNode
-	if node.Body != nil {
-		bodyNode = node.Body
-	} else if len(node.Children) > 0 {
-		bodyNode = &node.Children[len(node.Children)-1]
-	} else {
-		return fmt.Errorf("for-in: no body found")
-	}
-
-	if err := g.generateStatementBlock(bodyNode); err != nil {
-		return fmt.Errorf("generating for-in body: %w", err)
-	}
-
-	g.indent--
-	g.writeLine("}")
-
-	return nil
-}
-
-// generateWhileStatement generates code for while loops
-// TypeScript: while (condition) { }
-// Go: for condition { }
-func (g *CodeGenerator) generateWhileStatement(node *ASTNode) error {
-	// while loop has:
-	// Expression = condition
-	// Body or Children[last] = body
-
-	// Generate condition - check Expression property or Children[0]
-	var condition string
-	var err error
-	if node.Expression != nil {
-		condition, err = g.generateExpression(node.Expression)
-	} else if len(node.Children) > 0 {
-		condition, err = g.generateExpression(&node.Children[0])
-	} else {
-		return fmt.Errorf("while statement: no condition found")
-	}
-	if err != nil {
-		return fmt.Errorf("generating while condition: %w", err)
-	}
-
-	// Go uses 'for' for while loops
-	g.writeLine(fmt.Sprintf("for %s {", condition))
-	g.indent++
-
-	// Generate body - check Body property or Children[0] (only 1 child - the body block)
-	var bodyNode *ASTNode
-	if node.Body != nil {
-		bodyNode = node.Body
-	} else if len(node.Children) > 0 {
-		bodyNode = &node.Children[0]
-	} else {
-		return fmt.Errorf("while statement: no body found")
-	}
-
-	if err := g.generateStatementBlock(bodyNode); err != nil {
-		return fmt.Errorf("generating while body: %w", err)
-	}
-
-	g.indent--
-	g.writeLine("}")
-
-	return nil
-}
-
-// generateBreakStatement generates code for break statements
-func (g *CodeGenerator) generateBreakStatement(node *ASTNode) error {
-	// Check if there's a label (Children[0] would be the label identifier)
-	if len(node.Children) > 0 {
-		label := node.Children[0].Text
-		g.writeLine(fmt.Sprintf("break %s", label))
-	} else {
-		g.writeLine("break")
-	}
-	return nil
-}
-
-// generateContinueStatement generates code for continue statements
-func (g *CodeGenerator) generateContinueStatement(node *ASTNode) error {
-	// Check if there's a label
-	if len(node.Children) > 0 {
-		label := node.Children[0].Text
-		g.writeLine(fmt.Sprintf("continue %s", label))
-	} else {
-		g.writeLine("continue")
-	}
-	return nil
-}
-
-// generateSwitchStatement generates code for switch statements
-// TypeScript: switch (expr) { case value: statements; break; default: statements; }
-// Go: switch expr { case value: statements; default: statements; }
-func (g *CodeGenerator) generateSwitchStatement(node *ASTNode) error {
-	// Switch statement structure:
-	// Children[0] = expression being switched on
-	// Children[1] = CaseBlock containing CaseClause and DefaultClause nodes
-
-	if len(node.Children) < 2 {
-		return fmt.Errorf("switch statement requires 2 children (expression, case block)")
-	}
-
-	// Generate the switch expression
-	switchExpr, err := g.generateExpression(&node.Children[0])
-	if err != nil {
-		return fmt.Errorf("generating switch expression: %w", err)
-	}
-
-	g.writeLine(fmt.Sprintf("switch %s {", switchExpr))
-
-	// Process the case block
-	caseBlock := &node.Children[1]
-	if caseBlock.Kind != CaseBlock {
-		return fmt.Errorf("expected CaseBlock, got %s", caseBlock.Kind)
-	}
-
-	// Generate each case/default clause
-	for _, clause := range caseBlock.Children {
-		if clause.Kind == CaseClause {
-			if err := g.generateCaseClause(&clause); err != nil {
-				return fmt.Errorf("generating case clause: %w", err)
-			}
-		} else if clause.Kind == DefaultClause {
-			if err := g.generateDefaultClause(&clause); err != nil {
-				return fmt.Errorf("generating default clause: %w", err)
-			}
-		}
-	}
-
-	g.writeLine("}")
-	return nil
-}
-
-// generateCaseClause generates code for a case clause in a switch statement
-func (g *CodeGenerator) generateCaseClause(node *ASTNode) error {
-	// CaseClause structure:
-	// Children[0] = case expression (the value to match)
-	// Statements property contains the statements to execute
-
-	if len(node.Children) < 1 {
-		return fmt.Errorf("case clause requires at least 1 child (case expression)")
-	}
-
-	// Generate the case value
-	caseValue, err := g.generateExpression(&node.Children[0])
-	if err != nil {
-		return fmt.Errorf("generating case value: %w", err)
-	}
-
-	g.writeLine(fmt.Sprintf("case %s:", caseValue))
-	g.indent++
-
-	// Generate the statements in this case
-	if node.Statements != nil {
-		for _, stmt := range node.Statements {
-			if err := g.generateStatement(&stmt); err != nil {
-				return fmt.Errorf("generating case statement: %w", err)
-			}
-		}
-	}
-
-	g.indent--
-	return nil
-}
-
-// generateDefaultClause generates code for the default clause in a switch statement
-func (g *CodeGenerator) generateDefaultClause(node *ASTNode) error {
-	// DefaultClause has only a Statements property
-
-	g.writeLine("default:")
-	g.indent++
-
-	// Generate the statements in the default case
-	if node.Statements != nil {
-		for _, stmt := range node.Statements {
-			if err := g.generateStatement(&stmt); err != nil {
-				return fmt.Errorf("generating default statement: %w", err)
-			}
-		}
-	}
-
-	g.indent--
-	return nil
-}
-
 // generateExpression generates code for an expression
 func (g *CodeGenerator) generateExpression(node *ASTNode) (string, error) {
 	switch node.Kind {
@@ -1829,16 +1452,6 @@ func (g *CodeGenerator) generateExpression(node *ASTNode) (string, error) {
 		return g.generateBinaryExpression(node)
 	case PropertyAccessExpression:
 		return g.generatePropertyAccess(node)
-	case ConditionalExpression:
-		return g.generateConditionalExpression(node)
-	case ArrowFunction:
-		return g.generateArrowFunction(node)
-	case TemplateExpression:
-		return g.generateTemplateExpression(node)
-	case "PostfixUnaryExpression":
-		return g.generatePostfixUnaryExpression(node)
-	case "PrefixUnaryExpression":
-		return g.generatePrefixUnaryExpression(node)
 	case "ObjectLiteralExpression":
 		return g.generateObjectLiteral(node)
 	case "ArrayLiteralExpression":
@@ -1846,162 +1459,6 @@ func (g *CodeGenerator) generateExpression(node *ASTNode) (string, error) {
 	default:
 		return "/* unsupported expression */", nil
 	}
-}
-
-// generateConditionalExpression generates code for ternary operator (condition ? true : false)
-// TypeScript: condition ? trueExpr : falseExpr
-// Go: uses if-else since Go doesn't have ternary
-func (g *CodeGenerator) generateConditionalExpression(node *ASTNode) (string, error) {
-	// TypeScript ConditionalExpression structure may vary
-	// Try to get condition, whenTrue, whenFalse from Children array
-	if len(node.Children) < 3 {
-		// Fallback: maybe it's structured differently
-		return "", fmt.Errorf("conditional expression has insufficient children: %d", len(node.Children))
-	}
-
-	// Parse children - TypeScript typically stores as:
-	// Children[0] = condition
-	// Children[1] = whenTrue (after '?')
-	// Children[2] = whenFalse (after ':')
-	condition, err := g.generateExpression(&node.Children[0])
-	if err != nil {
-		return "", fmt.Errorf("generating ternary condition: %w", err)
-	}
-
-	whenTrue, err := g.generateExpression(&node.Children[1])
-	if err != nil {
-		return "", fmt.Errorf("generating ternary whenTrue: %w", err)
-	}
-
-	whenFalse, err := g.generateExpression(&node.Children[2])
-	if err != nil {
-		return "", fmt.Errorf("generating ternary whenFalse: %w", err)
-	}
-
-	// Generate Go code using an immediately-invoked function
-	// This allows ternary to be used as an expression
-	result := fmt.Sprintf("func() interface{} { if %s { return %s } else { return %s } }()",
-		condition, whenTrue, whenFalse)
-
-	return result, nil
-}
-
-// generateArrowFunction generates code for arrow functions
-// TypeScript: (a, b) => a + b or (x) => { return x * 2; }
-// Go: func(a, b) return_type { return a + b }
-func (g *CodeGenerator) generateArrowFunction(node *ASTNode) (string, error) {
-	// Build parameter list
-	params := []string{}
-	if node.Parameters != nil {
-		for _, param := range node.Parameters {
-			paramName := param.Name
-			paramType := "interface{}"
-			if param.Type != nil {
-				var err error
-				paramType, err = g.generateType(param.Type)
-				if err != nil {
-					return "", fmt.Errorf("generating arrow function param type: %w", err)
-				}
-			}
-			params = append(params, fmt.Sprintf("%s %s", paramName, paramType))
-		}
-	}
-
-	// Determine return type
-	returnType := "interface{}"
-	if node.Type != nil {
-		var err error
-		returnType, err = g.generateType(node.Type)
-		if err != nil {
-			return "", fmt.Errorf("generating arrow function return type: %w", err)
-		}
-	}
-	// For void return type, use empty string
-	if returnType == "" {
-		returnType = "interface{}"
-	}
-
-	// Generate function body
-	var bodyCode string
-	if node.Body != nil {
-		if node.Body.Kind == Block {
-			// Block body with statements - for now, indicate it needs to be a full function
-			// Arrow functions with blocks are best transpiled as named functions
-			return "", fmt.Errorf("arrow functions with block bodies not yet fully supported - use function declarations instead")
-		} else {
-			// Expression body: expr (implicit return)
-			expr, err := g.generateExpression(node.Body)
-			if err != nil {
-				return "", fmt.Errorf("generating arrow function expression: %w", err)
-			}
-			bodyCode = "return " + expr
-		}
-	}
-
-	// Generate: func(params) returnType { body }
-	return fmt.Sprintf("func(%s) %s { %s }", strings.Join(params, ", "), returnType, bodyCode), nil
-}
-
-// generateTemplateExpression generates code for template literals
-// TypeScript: `Hello ${name}!`
-// Go: "Hello " + name + "!"
-func (g *CodeGenerator) generateTemplateExpression(node *ASTNode) (string, error) {
-	// Template expressions have:
-	// - Head (TemplateHead) - the initial string part
-	// - TemplateSpans in Children - alternating expressions and string parts
-
-	parts := []string{}
-
-	// Add the head if it exists
-	if node.Head != nil && node.Head.Text != "" {
-		// Escape special characters in template strings
-		text := strings.ReplaceAll(node.Head.Text, "\n", "\\n")
-		text = strings.ReplaceAll(text, "\t", "\\t")
-		text = strings.ReplaceAll(text, "\"", "\\\"")
-		parts = append(parts, fmt.Sprintf(`"%s"`, text))
-	}
-
-	// Process template spans (expression + text pairs)
-	if node.Children != nil {
-		for _, child := range node.Children {
-			if child.Kind == "TemplateSpan" {
-				// TemplateSpan has:
-				// - Expression (the ${...} part)
-				// - Literal (the text after the expression)
-
-				// Generate the expression
-				if child.Expression != nil {
-					expr, err := g.generateExpression(child.Expression)
-					if err != nil {
-						return "", fmt.Errorf("generating template expression: %w", err)
-					}
-					// Convert expression to string using fmt.Sprint
-					parts = append(parts, fmt.Sprintf("fmt.Sprint(%s)", expr))
-				}
-
-				// Add the literal text part if it exists
-				if child.Literal != nil && child.Literal.Text != "" {
-					// Escape special characters
-					text := strings.ReplaceAll(child.Literal.Text, "\n", "\\n")
-					text = strings.ReplaceAll(text, "\t", "\\t")
-					text = strings.ReplaceAll(text, "\"", "\\\"")
-					parts = append(parts, fmt.Sprintf(`"%s"`, text))
-				}
-			}
-		}
-	}
-
-	// If only one part, return it directly
-	if len(parts) == 1 {
-		return parts[0], nil
-	}
-
-	// Join parts with + operator
-	if len(parts) == 0 {
-		return `""`, nil
-	}
-
-	return strings.Join(parts, " + "), nil
 }
 
 // generateObjectLiteral generates code for object literals
@@ -2064,17 +1521,11 @@ func (g *CodeGenerator) generateArrayLiteral(node *ASTNode) (string, error) {
 
 // generatePropertyAccess generates code for property access (e.g., person.name or Color.Red)
 func (g *CodeGenerator) generatePropertyAccess(node *ASTNode) (string, error) {
-	// PropertyAccessExpression has the object in the Expression property
-	var objectNode *ASTNode
-	if node.Expression != nil {
-		objectNode = node.Expression
-	} else if len(node.Children) > 0 {
-		objectNode = &node.Children[0]
-	} else {
-		return "", fmt.Errorf("invalid property access: no object found")
+	if len(node.Children) < 1 {
+		return "", fmt.Errorf("invalid property access")
 	}
 
-	object, err := g.generateExpression(objectNode)
+	object, err := g.generateExpression(&node.Children[0])
 	if err != nil {
 		return "", err
 	}
@@ -2085,7 +1536,7 @@ func (g *CodeGenerator) generatePropertyAccess(node *ASTNode) (string, error) {
 	}
 
 	// For this.field, check if field is private using currentClassMembers
-	if objectNode.Kind == ThisKeyword && g.currentClassMembers != nil {
+	if node.Children[0].Kind == ThisKeyword && g.currentClassMembers != nil {
 		if g.currentClassMembers[property] {
 			// Private member - use camelCase
 			property = toCamelCase(property)
@@ -2107,8 +1558,8 @@ func (g *CodeGenerator) generatePropertyAccess(node *ASTNode) (string, error) {
 	// or enum member access (e.g., Color.Red -> ColorRed)
 	// This is a heuristic: if the object is a simple identifier starting with uppercase,
 	// it might be a class/enum type with static members
-	if objectNode.Kind == Identifier {
-		objectName := objectNode.Text
+	if node.Children[0].Kind == Identifier {
+		objectName := node.Children[0].Text
 		if len(objectName) > 0 && unicode.IsUpper(rune(objectName[0])) {
 			// Static member access - convert ClassName.member to ClassNameMember
 			return fmt.Sprintf("%s%s", toPascalCase(objectName), property), nil
@@ -2120,40 +1571,28 @@ func (g *CodeGenerator) generatePropertyAccess(node *ASTNode) (string, error) {
 
 // generateCallExpression generates code for function calls
 func (g *CodeGenerator) generateCallExpression(node *ASTNode) (string, error) {
-	// CallExpression has the function in Expression property, arguments in Children
-	var funcNode *ASTNode
-	if node.Expression != nil {
-		funcNode = node.Expression
-	} else if len(node.Children) > 0 {
-		funcNode = &node.Children[0]
-	} else {
+	if len(node.Children) == 0 {
 		return "()", nil
 	}
 
-	// Check if function is PropertyAccessExpression (e.g., console.log)
-	if funcNode.Kind == "PropertyAccessExpression" {
-		// PropertyAccessExpression has object in Expression property
-		var objNode *ASTNode
-		if funcNode.Expression != nil {
-			objNode = funcNode.Expression
-		} else if len(funcNode.Children) > 0 {
-			objNode = &funcNode.Children[0]
-		}
-
-		if objNode != nil {
-			obj := objNode.Text
-			prop := funcNode.Name
+	// Check if first child is PropertyAccessExpression (e.g., console.log)
+	if node.Children[0].Kind == "PropertyAccessExpression" {
+		propAccess := &node.Children[0]
+		if len(propAccess.Children) > 0 {
+			obj := propAccess.Children[0].Text
+			prop := propAccess.Name
 
 			// Special case for console.log
 			if obj == "console" && prop == "log" {
 				args := []string{}
-				// Arguments are in node.Children
-				for _, arg := range node.Children {
-					argStr, err := g.generateExpression(&arg)
-					if err != nil {
-						return "", err
+				if len(node.Children) > 1 {
+					for _, arg := range node.Children[1:] {
+						argStr, err := g.generateExpression(&arg)
+						if err != nil {
+							return "", err
+						}
+						args = append(args, argStr)
 					}
-					args = append(args, argStr)
 				}
 				return fmt.Sprintf("fmt.Println(%s)", strings.Join(args, ", ")), nil
 			}
@@ -2161,30 +1600,25 @@ func (g *CodeGenerator) generateCallExpression(node *ASTNode) (string, error) {
 	}
 
 	// Generic function call
-	funcExpr, err := g.generateExpression(funcNode)
+	funcExpr, err := g.generateExpression(&node.Children[0])
 	if err != nil {
 		return "", err
 	}
 
-	// Convert function names to PascalCase only if they start with uppercase
-	// (i.e., they're exported functions, not local variables)
-	if funcNode.Kind == Identifier && len(funcExpr) > 0 {
-		// Only PascalCase if the original starts with uppercase (exported function)
-		firstChar := funcExpr[0]
-		if firstChar >= 'A' && firstChar <= 'Z' {
-			funcExpr = toPascalCase(funcExpr)
-		}
-		// Otherwise keep it as-is (local variable or parameter)
+	// Convert function names to PascalCase if they're identifiers
+	if node.Children[0].Kind == Identifier {
+		funcExpr = toPascalCase(funcExpr)
 	}
 
 	args := []string{}
-	// Arguments are in node.Children
-	for _, arg := range node.Children {
-		argStr, err := g.generateExpression(&arg)
-		if err != nil {
-			return "", err
+	if len(node.Children) > 1 {
+		for _, arg := range node.Children[1:] {
+			argStr, err := g.generateExpression(&arg)
+			if err != nil {
+				return "", err
+			}
+			args = append(args, argStr)
 		}
-		args = append(args, argStr)
 	}
 
 	return fmt.Sprintf("%s(%s)", funcExpr, strings.Join(args, ", ")), nil
@@ -2192,41 +1626,36 @@ func (g *CodeGenerator) generateCallExpression(node *ASTNode) (string, error) {
 
 // generateNewExpression generates code for "new ClassName()" expressions
 func (g *CodeGenerator) generateNewExpression(node *ASTNode) (string, error) {
-	// Get the class name from Expression property
-	className := ""
-	if node.Expression != nil {
-		if node.Expression.Kind == Identifier {
-			className = toPascalCase(node.Expression.Text)
-		} else {
-			classExpr, err := g.generateExpression(node.Expression)
-			if err != nil {
-				return "", err
-			}
-			className = classExpr
-		}
-	} else if len(node.Children) > 0 {
-		// Fallback to children if Expression not available
-		if node.Children[0].Kind == Identifier {
-			className = toPascalCase(node.Children[0].Text)
-		} else {
-			classExpr, err := g.generateExpression(&node.Children[0])
-			if err != nil {
-				return "", err
-			}
-			className = classExpr
-		}
-	} else {
-		return "", fmt.Errorf("invalid new expression: no class name found")
+	if len(node.Children) == 0 {
+		return "", fmt.Errorf("invalid new expression")
 	}
 
-	// Get arguments from children (all children are arguments)
-	args := []string{}
-	for _, arg := range node.Children {
-		argStr, err := g.generateExpression(&arg)
+	// Get the class name
+	className := ""
+	if node.Children[0].Kind == Identifier {
+		className = toPascalCase(node.Children[0].Text)
+	} else {
+		classExpr, err := g.generateExpression(&node.Children[0])
 		if err != nil {
 			return "", err
 		}
-		args = append(args, argStr)
+		className = classExpr
+	}
+
+	// Get arguments
+	args := []string{}
+	if len(node.Children) > 1 {
+		for _, arg := range node.Children[1:] {
+			// Skip the class identifier itself
+			if arg.Kind == Identifier && toPascalCase(arg.Text) == className {
+				continue
+			}
+			argStr, err := g.generateExpression(&arg)
+			if err != nil {
+				return "", err
+			}
+			args = append(args, argStr)
+		}
 	}
 
 	// Generate New* constructor call
@@ -2259,21 +1688,10 @@ func (g *CodeGenerator) generateBinaryExpression(node *ASTNode) (string, error) 
 	// Map operator from AST constant to Go operator
 	operator := g.mapOperator(node.Operator)
 
-	// If operator is generic like "FirstBinaryOperator", try to determine from middle child token
-	if (operator == "" || node.Operator == "FirstBinaryOperator") && len(node.Children) >= 3 {
-		middleChild := &node.Children[1]
-		if middleChild.Text != "" {
-			operator = middleChild.Text
-		}
-		// Also check for common operator kinds
-		if middleChild.Kind == "LessThanToken" || middleChild.Kind == "FirstBinaryOperator" {
-			operator = "<"
-		} else if middleChild.Kind == "GreaterThanToken" {
-			operator = ">"
-		} else if middleChild.Kind == "LessThanEqualsToken" {
-			operator = "<="
-		} else if middleChild.Kind == "GreaterThanEqualsToken" {
-			operator = ">="
+	// Fallback: try to get operator text from middle child token
+	if operator == "" && len(node.Children) >= 3 {
+		if node.Children[1].Text != "" {
+			operator = node.Children[1].Text
 		}
 	}
 
@@ -2283,58 +1701,6 @@ func (g *CodeGenerator) generateBinaryExpression(node *ASTNode) (string, error) 
 	}
 
 	return fmt.Sprintf("%s %s %s", left, operator, right), nil
-}
-
-// generatePostfixUnaryExpression generates code for postfix unary expressions (i++, i--)
-func (g *CodeGenerator) generatePostfixUnaryExpression(node *ASTNode) (string, error) {
-	if len(node.Children) < 1 {
-		return "", fmt.Errorf("invalid postfix unary expression")
-	}
-
-	operand, err := g.generateExpression(&node.Children[0])
-	if err != nil {
-		return "", err
-	}
-
-	// TypeScript has i++ and i--
-	// The operator is usually in the node kind or we can detect from the syntax
-	// Most common: i++ (increment) and i-- (decrement)
-	// Assume ++ for now (we can enhance this later if needed)
-	return operand + "++", nil
-}
-
-// generatePrefixUnaryExpression generates code for prefix unary expressions (++i, --i, !x, -x)
-func (g *CodeGenerator) generatePrefixUnaryExpression(node *ASTNode) (string, error) {
-	if len(node.Children) < 1 {
-		return "", fmt.Errorf("invalid prefix unary expression")
-	}
-
-	operand, err := g.generateExpression(&node.Children[0])
-	if err != nil {
-		return "", err
-	}
-
-	// Determine the operator based on context
-	// If operand is a number literal or the operator spans 1 char before operand, it's likely - or !
-	// Otherwise it's likely ++ or --
-	operatorLen := node.Children[0].Pos - node.Pos
-
-	switch operatorLen {
-	case 1:
-		// Single character operator: -, +, !, ~
-		// Check operand type to guess which one
-		if node.Children[0].Kind == "TrueKeyword" || node.Children[0].Kind == "FalseKeyword" {
-			return "!" + operand, nil
-		}
-		// Assume negation for numbers
-		return "-" + operand, nil
-	case 2:
-		// Two character operator: ++, --
-		return "++" + operand, nil
-	default:
-		// Default to negation
-		return "-" + operand, nil
-	}
 }
 
 // mapOperator maps AST operator constants to Go operators
@@ -2392,8 +1758,6 @@ func (g *CodeGenerator) generateType(node *ASTNode) (string, error) {
 		return "float64", nil
 	case BooleanKeyword:
 		return "bool", nil
-	case VoidKeyword:
-		return "", nil // void functions have no return type in Go
 	case ArrayType:
 		if len(node.Children) > 0 {
 			elemType, err := g.generateType(&node.Children[0])

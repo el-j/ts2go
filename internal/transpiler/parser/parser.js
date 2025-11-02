@@ -44,6 +44,13 @@ function convertNode(node) {
     result.text = node.text;
   }
 
+  // Add text for template parts
+  if (node.kind === ts.SyntaxKind.TemplateHead || 
+      node.kind === ts.SyntaxKind.TemplateMiddle || 
+      node.kind === ts.SyntaxKind.TemplateTail) {
+    result.text = node.text;
+  }
+
   // Add name for declarations
   if (node.name && ts.isIdentifier(node.name)) {
     result.name = node.name.text;
@@ -115,12 +122,24 @@ function convertNode(node) {
     result.type = convertNode(node.type);
   }
 
+  // Add template expression properties
+  if (node.head) {
+    result.head = convertNode(node.head);
+  }
+  if (node.expression) {
+    result.expression = convertNode(node.expression);
+  }
+  if (node.literal) {
+    result.literal = convertNode(node.literal);
+  }
+
   // Recursively convert children
   const children = [];
   ts.forEachChild(node, (child) => {
     // Skip already processed properties
     if (child !== node.name && child !== node.type && child !== node.body && 
-        child !== node.initializer && child !== node.declarationList) {
+        child !== node.initializer && child !== node.declarationList &&
+        child !== node.head && child !== node.expression && child !== node.literal) {
       children.push(convertNode(child));
     }
   });

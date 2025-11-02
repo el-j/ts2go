@@ -23,6 +23,9 @@ type ASTNode struct {
 	Operator        string    `json:"operator,omitempty"`
 	OperatorNumber  int       `json:"operatorNumber,omitempty"`
 	QuestionDot     bool      `json:"questionDot,omitempty"`
+	Expression      *ASTNode  `json:"expression,omitempty"` // For template spans
+	Literal         *ASTNode  `json:"literal,omitempty"`    // For template spans
+	Head            *ASTNode  `json:"head,omitempty"`       // For template expressions
 }
 
 // TypeScriptKind maps to TypeScript SyntaxKind enum
@@ -32,8 +35,10 @@ const (
 	TypeAliasDeclaration = "TypeAliasDeclaration"
 	EnumDeclaration      = "EnumDeclaration"
 	FunctionDeclaration  = "FunctionDeclaration"
+	ArrowFunction        = "ArrowFunction" // Arrow function expressions
 	ClassDeclaration     = "ClassDeclaration"
 	VariableStatement    = "VariableStatement"
+	FirstStatement       = "FirstStatement" // Alias for VariableStatement
 	VariableDeclaration  = "VariableDeclaration"
 
 	// Types
@@ -62,6 +67,11 @@ const (
 	Identifier                  = "Identifier"
 	StringLiteral               = "StringLiteral"
 	NumericLiteral              = "NumericLiteral"
+	TemplateExpression          = "TemplateExpression"      // Template literal: `hello ${name}`
+	TemplateLiteralTypeSpan     = "TemplateLiteralTypeSpan" // Part of template
+	TemplateHead                = "TemplateHead"            // Start of template: `hello ${
+	TemplateMiddle              = "TemplateMiddle"          // Middle of template: } world ${
+	TemplateTail                = "TemplateTail"            // End of template: } !`
 	BinaryExpression            = "BinaryExpression"
 	CallExpression              = "CallExpression"
 	PropertyAccessExpression    = "PropertyAccessExpression"
@@ -86,13 +96,16 @@ const (
 	ReturnStatement     = "ReturnStatement"
 	IfStatement         = "IfStatement"
 	ForStatement        = "ForStatement"
-	ForOfStatement      = "ForOfStatement"      // for (const item of array)
-	ForInStatement      = "ForInStatement"      // for (const key in object)
-	WhileStatement      = "WhileStatement"      // while (condition)
-	DoStatement         = "DoStatement"         // do { } while (condition)
-	SwitchStatement     = "SwitchStatement"     // switch (expr) { case: ... }
-	BreakStatement      = "BreakStatement"      // break;
-	ContinueStatement   = "ContinueStatement"   // continue;
+	ForOfStatement      = "ForOfStatement"    // for (const item of array)
+	ForInStatement      = "ForInStatement"    // for (const key in object)
+	WhileStatement      = "WhileStatement"    // while (condition)
+	DoStatement         = "DoStatement"       // do { } while (condition)
+	SwitchStatement     = "SwitchStatement"   // switch (expr) { case: ... }
+	CaseBlock           = "CaseBlock"         // { case 1: ... case 2: ... default: ... }
+	CaseClause          = "CaseClause"        // case value: statements
+	DefaultClause       = "DefaultClause"     // default: statements
+	BreakStatement      = "BreakStatement"    // break;
+	ContinueStatement   = "ContinueStatement" // continue;
 	ExpressionStatement = "ExpressionStatement"
 
 	// File structure
