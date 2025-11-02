@@ -1,0 +1,6 @@
+{
+  "name": "simple-multi-file",
+  "version": "1.0.0",
+  "description": "Test project for multi-file transpilation",
+  "main": "index.ts"
+}

@@ -13,6 +13,12 @@ type CodeGenerator struct {
 	currentFunctionReturnType string          // Track the current function's return type for type assertions
 	currentReceiverVar        string          // Track the current method's receiver variable for "this" replacement
 	currentClassMembers       map[string]bool // Track private members of current class (name -> isPrivate)
+
+	// Module system support
+	module     interface{} // *module.Module - using interface{} to avoid circular dependency
+	resolver   interface{} // *module.ImportResolver
+	visibility interface{} // *module.SymbolVisibility
+	isEntry    bool        // Is this the entry point (main package)?
 }
 
 // NewCodeGenerator creates a new code generator
@@ -34,24 +40,42 @@ func (g *CodeGenerator) Generate(node *ASTNode) (string, error) {
 	needsNullishCoalesce := g.needsNullishCoalesce(node)
 
 	// Add package declaration
-	g.writeLine("package main")
+	if g.module != nil {
+		// Use module package name
+		g.writeLine(g.getPackageDeclaration())
+	} else {
+		g.writeLine("package main")
+	}
 	g.writeLine("")
 
 	// Add imports
-	imports := g.collectImports(node)
-	if len(imports) > 0 {
-		g.writeLine("import (")
-		g.indent++
-		for _, imp := range imports {
-			g.writeLine(fmt.Sprintf(`"%s"`, imp))
+	var importBlock string
+	if g.resolver != nil {
+		// Use module resolver to generate imports
+		importBlock = g.getModuleImports()
+	} else {
+		// Fallback to simple import collection
+		imports := g.collectImports(node)
+		if len(imports) > 0 {
+			var builder strings.Builder
+			builder.WriteString("import (\n")
+			for _, imp := range imports {
+				builder.WriteString(fmt.Sprintf("\t\"%s\"\n", imp))
+			}
+			builder.WriteString(")")
+			importBlock = builder.String()
 		}
-		g.indent--
-		g.writeLine(")")
+	}
+
+	if importBlock != "" {
+		g.writeLine(importBlock)
 		g.writeLine("")
 	}
 
 	// Add helper functions if needed
 	if needsOptionalAccess {
+		g.writeLine("import \"reflect\"")
+		g.writeLine("")
 		g.writeLine("// optionalAccess provides safe property access for optional chaining")
 		g.writeLine("func optionalAccess(obj interface{}, field string) interface{} {")
 		g.indent++
@@ -61,7 +85,29 @@ func (g *CodeGenerator) Generate(node *ASTNode) (string, error) {
 		g.indent--
 		g.writeLine("}")
 		g.writeLine("// Use reflection to access the field safely")
-		g.writeLine("return nil // TODO: implement reflection-based field access")
+		g.writeLine("v := reflect.ValueOf(obj)")
+		g.writeLine("if v.Kind() == reflect.Ptr {")
+		g.indent++
+		g.writeLine("if v.IsNil() {")
+		g.indent++
+		g.writeLine("return nil")
+		g.indent--
+		g.writeLine("}")
+		g.writeLine("v = v.Elem()")
+		g.indent--
+		g.writeLine("}")
+		g.writeLine("if v.Kind() != reflect.Struct {")
+		g.indent++
+		g.writeLine("return nil")
+		g.indent--
+		g.writeLine("}")
+		g.writeLine("fieldVal := v.FieldByName(field)")
+		g.writeLine("if !fieldVal.IsValid() {")
+		g.indent++
+		g.writeLine("return nil")
+		g.indent--
+		g.writeLine("}")
+		g.writeLine("return fieldVal.Interface()")
 		g.indent--
 		g.writeLine("}")
 		g.writeLine("")
@@ -1689,4 +1735,76 @@ func isPrivate(node *ASTNode) bool {
 // isStatic checks if a node has a static modifier
 func isStatic(node *ASTNode) bool {
 	return hasModifier(node, StaticKeyword)
+}
+
+// getPackageDeclaration returns the package declaration using module context
+func (g *CodeGenerator) getPackageDeclaration() string {
+	if g.isEntry {
+		return "package main"
+	}
+
+	// Use reflection to avoid import cycle
+	// This is safe because we set these fields from multipackage.go
+	if g.module != nil {
+		// Access PackageName field via type assertion
+		type moduleInterface interface {
+			GetPackageName() string
+		}
+		if m, ok := g.module.(moduleInterface); ok {
+			return fmt.Sprintf("package %s", m.GetPackageName())
+		}
+		// Fallback: use reflection-style access
+		return "package main"
+	}
+
+	return "package main"
+}
+
+// getModuleImports generates import block using module resolver
+func (g *CodeGenerator) getModuleImports() string {
+	if g.resolver == nil {
+		return ""
+	}
+
+	// Use reflection to avoid import cycle
+	type resolverInterface interface {
+		GenerateImportBlock() (string, error)
+	}
+
+	if r, ok := g.resolver.(resolverInterface); ok {
+		if block, err := r.GenerateImportBlock(); err == nil {
+			return block
+		}
+	}
+
+	return ""
+}
+
+// getGoSymbolName returns the Go symbol name using visibility rules
+func (g *CodeGenerator) getGoSymbolName(tsName string) string {
+	if g.visibility == nil {
+		return tsName
+	}
+
+	// Use reflection to avoid import cycle
+	type visibilityInterface interface {
+		GetGoSymbolName(string) string
+	}
+
+	if v, ok := g.visibility.(visibilityInterface); ok {
+		return v.GetGoSymbolName(tsName)
+	}
+
+	return tsName
+}
+
+// NewCodeGeneratorWithModule creates a code generator with module context
+// This allows the code generator to use module information for imports, exports, and visibility
+func NewCodeGeneratorWithModule(mod, resolver, visibility interface{}, isEntry bool) *CodeGenerator {
+	gen := NewCodeGenerator()
+	gen.module = mod
+	gen.resolver = resolver
+	gen.visibility = visibility
+	gen.isEntry = isEntry
+	return gen
 }

@@ -1,853 +1,1704 @@
-# TS2Go Advanced Features Roadmap
+# TS2Go Roadmap - Path to Production# TS2Go Advanced Features Roadmap
 
-## Executive Summary
 
-This document outlines a comprehensive plan to evolve TS2Go from an MVP to a production-ready transpiler capable of handling complex TypeScript/Node.js projects with full dependency support.
 
-## 🎯 Vision
+**Last Updated:** November 2, 2025  ## Executive Summary
 
-**Goal:** Transpile any TypeScript/Node.js project to idiomatic, performant Go code with automatic dependency resolution and translation.
+**Vision:** Backend TypeScript → Idiomatic Go transpilation  
 
-**Key Principles:**
-1. **Semantic Equivalence:** Generated Go code should behave identically to TypeScript
+**Timeline:** 12 weeks to production-readyThis document outlines a comprehensive plan to evolve TS2Go from an MVP to a production-ready transpiler capable of handling complex TypeScript/Node.js projects with full dependency support.
+
+
+
+---## 🎯 Vision
+
+
+
+## 🎯 Revised Vision & Scope**Goal:** Transpile any TypeScript/Node.js project to idiomatic, performant Go code with automatic dependency resolution and translation.
+
+
+
+### What We're Building**Key Principles:**
+
+**A production-ready transpiler for backend TypeScript/Node.js code to Go**1. **Semantic Equivalence:** Generated Go code should behave identically to TypeScript
+
 2. **Performance:** Leverage Go's strengths (concurrency, compiled binaries)
-3. **Maintainability:** Generated code should be readable and idiomatic
-4. **Dependency Intelligence:** Smart mapping of npm packages to Go equivalents
 
----
+**In Scope:**3. **Maintainability:** Generated code should be readable and idiomatic
 
-## Phase 7: Advanced Type System Support
+- ✅ Backend TypeScript applications (APIs, CLIs, services)4. **Dependency Intelligence:** Smart mapping of npm packages to Go equivalents
 
-### 7.1 Union Types
+- ✅ Node.js packages (Express, Commander, etc.)
 
-**Challenge:** Go doesn't have union types natively.
+- ✅ Data processing and business logic---
 
-**Solutions:**
+- ✅ Type-safe code generation
+
+- ✅ Automatic dependency mapping## Phase 7: Advanced Type System Support
+
+
+
+**Out of Scope:**### 7.1 Union Types
+
+- ❌ Frontend frameworks (React, Vue, Angular, Svelte)
+
+- ❌ Browser APIs (DOM, window, document)**Challenge:** Go doesn't have union types natively.
+
+- ❌ JSX/TSX syntax
+
+- ❌ CSS-in-JS**Solutions:**
+
+- ❌ Build tooling (Webpack, Vite, etc.)
 
 #### Option A: Interface + Type Assertions
-```typescript
+
+**Rationale:** Go is a backend/systems language. Focus on what Go does best.```typescript
+
 type StringOrNumber = string | number;
-```
+
+---```
+
 ↓
-```go
+
+## 📊 Current State Analysis```go
+
 type StringOrNumber interface {
-    isStringOrNumber()
+
+### ✅ What's Complete (Phases 1-12)    isStringOrNumber()
+
 }
 
-type StringValue struct { Value string }
-func (s StringValue) isStringOrNumber() {}
+**Foundation & Type System:**
 
-type NumberValue struct { Value float64 }
-func (n NumberValue) isStringOrNumber() {}
+- Mono-repo structure, CLI, TypeScript parsertype StringValue struct { Value string }
+
+- Interface → Struct conversionfunc (s StringValue) isStringOrNumber() {}
+
+- Type aliases, primitives, arrays, maps
+
+- Union types, enums, tuplestype NumberValue struct { Value float64 }
+
+- Optional chaining, nullish coalescingfunc (n NumberValue) isStringOrNumber() {}
+
 ```
 
-#### Option B: Struct with Discriminator (Preferred)
-```typescript
-type Result = Success | Error;
-```
+**Classes & OOP:**
+
+- Full class support with methods#### Option B: Struct with Discriminator (Preferred)
+
+- Inheritance via struct embedding```typescript
+
+- Static methods, getters/setterstype Result = Success | Error;
+
+- Access modifiers```
+
 ↓
-```go
-type Result struct {
-    Type  string      // "Success" | "Error"
-    Value interface{} // actual value
-}
+
+**Dependency Management:**```go
+
+- package.json parsingtype Result struct {
+
+- Import analysis and rewriting    Type  string      // "Success" | "Error"
+
+- 49 npm packages mapped to Go    Value interface{} // actual value
+
+- Multi-file project support}
+
+- go.mod generation
 
 func NewSuccess(val string) Result {
-    return Result{Type: "Success", Value: val}
-}
-```
+
+**Runtime Libraries:**    return Result{Type: "Success", Value: val}
+
+- fs, path, console, process, os}
+
+- http/https, url, buffer```
+
+- 66 runtime tests, >90% coverage
 
 **Implementation Steps:**
-1. Parse union type declarations
-2. Generate discriminated union struct
-3. Create constructor functions for each variant
-4. Generate type guard functions (e.g., `IsSuccess()`)
-5. Update call sites to use constructors
 
-**Estimated Effort:** 2-3 weeks
+**Tooling:**1. Parse union type declarations
 
----
+- Code optimizer (dead code elimination)2. Generate discriminated union struct
 
-### 7.2 Generics
+- Error handling with context3. Create constructor functions for each variant
 
-**Challenge:** TypeScript and Go both have generics, but syntax differs.
+- CLI with progress bars, watch mode4. Generate type guard functions (e.g., `IsSuccess()`)
 
-**Mapping:**
-```typescript
-function identity<T>(arg: T): T {
+- 28 tooling tests5. Update call sites to use constructors
+
+
+
+**Total:** 102 tests, strong foundation**Estimated Effort:** 2-3 weeks
+
+
+
+### ❌ Critical Gaps (Blocks Real-World Use)---
+
+
+
+**Control Flow (CRITICAL):**### 7.2 Generics
+
+- ❌ If/else statements
+
+- ❌ For loops (all variants)**Challenge:** TypeScript and Go both have generics, but syntax differs.
+
+- ❌ While loops
+
+- ❌ Switch statements**Mapping:**
+
+- ❌ Ternary operator```typescript
+
+- ❌ Break/continuefunction identity<T>(arg: T): T {
+
     return arg;
-}
 
-interface Container<T> {
-    value: T;
-}
-```
+**Modern Syntax (CRITICAL):**}
+
+- ❌ Arrow functions (used everywhere!)
+
+- ❌ Template literalsinterface Container<T> {
+
+- ❌ Destructuring    value: T;
+
+- ❌ Spread operator}
+
+- ❌ Default/rest parameters```
+
 ↓
-```go
-func Identity[T any](arg T) T {
-    return arg
-}
 
-type Container[T any] struct {
-    Value T
-}
+**Async Patterns (HIGH):**```go
+
+- ❌ Async/awaitfunc Identity[T any](arg T) T {
+
+- ❌ Promises    return arg
+
+- ❌ Error propagation}
+
+
+
+**Error Handling (HIGH):**type Container[T any] struct {
+
+- ❌ Try/catch/finally    Value T
+
+- ❌ Throw statements}
+
 ```
+
+**Current Real-World Transpilation Rate:** ~15-20%
 
 **Implementation Steps:**
-1. Parse TypeScript generic parameters
+
+---1. Parse TypeScript generic parameters
+
 2. Map to Go generic syntax `[T any]` or `[T Constraint]`
-3. Handle generic constraints (extends)
+
+## 🗺️ Phase-by-Phase Roadmap3. Handle generic constraints (extends)
+
 4. Support generic interfaces and functions
-5. Type inference at call sites
 
-**Estimated Effort:** 3-4 weeks
+### ✅ COMPLETE: Phases 1-12 (Foundation Built)5. Type inference at call sites
+
+
+
+All foundation work is complete. See [STATUS.md](STATUS.md) for details.**Estimated Effort:** 3-4 weeks
+
+
+
+------
+
+
+
+### 🚨 Phase 15: Control Flow Statements (CRITICAL)### 7.3 Enums
+
+
+
+**Priority:** P0 - PROJECT-BLOCKING  **Challenge:** Go doesn't have enums, uses `const` with `iota`.
+
+**Duration:** 2-3 weeks  
+
+**Goal:** Enable transpilation of code with conditionals and loops**Mapping:**
+
+```typescript
+
+#### Week 1: Conditionalsenum Color {
+
+**Tasks:**    Red,
+
+1. **If/else statements**    Green,
+
+   ```typescript    Blue
+
+   if (condition) { /* ... */ } }
+
+   else if (other) { /* ... */ } ```
+
+   else { /* ... */ }↓
+
+   ``````go
+
+   → type Color int
+
+   ```go
+
+   if condition { /* ... */ } const (
+
+   else if other { /* ... */ }     ColorRed Color = iota
+
+   else { /* ... */ }    ColorGreen
+
+   ```    ColorBlue
+
+)
+
+2. **Ternary operator**
+
+   ```typescriptfunc (c Color) String() string {
+
+   const result = condition ? "yes" : "no";    return [...]string{"Red", "Green", "Blue"}[c]
+
+   ```}
+
+   →```
+
+   ```go
+
+   var result string**For String Enums:**
+
+   if condition {```typescript
+
+       result = "yes"enum Status {
+
+   } else {    Active = "active",
+
+       result = "no"    Inactive = "inactive"
+
+   }}
+
+   ``````
+
+↓
+
+**Implementation:**```go
+
+- Add `IfStatement` handler in `codegen.go`type Status string
+
+- Support nested if/else chains
+
+- Handle single-statement vs block bodiesconst (
+
+- Add `ConditionalExpression` for ternary    StatusActive   Status = "active"
+
+- Tests: 15+ covering all combinations    StatusInactive Status = "inactive"
+
+)
+
+#### Week 2: Loops```
+
+**Tasks:**
+
+3. **For loops (traditional)****Implementation Steps:**
+
+   ```typescript1. Detect enum declarations
+
+   for (let i = 0; i < 10; i++) { /* ... */ }2. Generate appropriate Go const block
+
+   ```3. Add String() method for debugging
+
+   →4. Handle both numeric and string enums
+
+   ```go
+
+   for i := 0; i < 10; i++ { /* ... */ }**Estimated Effort:** 1-2 weeks
+
+   ```
 
 ---
 
-### 7.3 Enums
+4. **For-of loops**
 
-**Challenge:** Go doesn't have enums, uses `const` with `iota`.
+   ```typescript### 7.4 Tuples and Destructuring
 
-**Mapping:**
-```typescript
-enum Color {
-    Red,
-    Green,
-    Blue
-}
-```
-↓
+   for (const item of items) { /* ... */ }
+
+   ```**Tuples:**
+
+   →```typescript
+
+   ```gotype Pair = [string, number];
+
+   for _, item := range items { /* ... */ }```
+
+   ```↓
+
 ```go
-type Color int
 
-const (
-    ColorRed Color = iota
-    ColorGreen
-    ColorBlue
-)
+5. **For-in loops**type Pair struct {
 
-func (c Color) String() string {
-    return [...]string{"Red", "Green", "Blue"}[c]
-}
-```
+   ```typescript    First  string
 
-**For String Enums:**
-```typescript
-enum Status {
-    Active = "active",
-    Inactive = "inactive"
-}
-```
-↓
-```go
-type Status string
+   for (const key in obj) { /* ... */ }    Second float64
 
-const (
-    StatusActive   Status = "active"
-    StatusInactive Status = "inactive"
-)
-```
+   ```}
 
-**Implementation Steps:**
-1. Detect enum declarations
-2. Generate appropriate Go const block
-3. Add String() method for debugging
-4. Handle both numeric and string enums
+   →```
 
-**Estimated Effort:** 1-2 weeks
+   ```go
 
----
+   for key := range obj { /* ... */ }**Destructuring:**
 
-### 7.4 Tuples and Destructuring
+   ``````typescript
 
-**Tuples:**
-```typescript
-type Pair = [string, number];
-```
-↓
-```go
-type Pair struct {
-    First  string
-    Second float64
-}
-```
-
-**Destructuring:**
-```typescript
 const [a, b] = getPair();
-const {name, age} = person;
-```
-↓
-```go
-pair := GetPair()
-a, b := pair.First, pair.Second
 
-name, age := person.Name, person.Age
-```
+6. **While loops**const {name, age} = person;
 
-**Implementation Steps:**
-1. Parse tuple type syntax
-2. Generate struct with numbered fields
-3. Handle destructuring assignments
-4. Support rest parameters (`...rest`)
+   ```typescript```
 
-**Estimated Effort:** 2 weeks
+   while (condition) { /* ... */ }↓
 
----
+   ``````go
 
-### 7.5 Optional Chaining and Nullish Coalescing
+   →pair := GetPair()
 
-**Optional Chaining:**
-```typescript
-const value = obj?.prop?.nested;
-```
-↓
-```go
-var value interface{}
-if obj != nil && obj.Prop != nil {
-    value = obj.Prop.Nested
-}
-```
+   ```goa, b := pair.First, pair.Second
 
-**Nullish Coalescing:**
-```typescript
-const result = value ?? defaultValue;
-```
-↓
-```go
-result := value
-if result == nil {
-    result = defaultValue
-}
-```
+   for condition { /* ... */ }
 
-**Implementation Steps:**
-1. Parse `?.` operator
-2. Generate nested nil checks
-3. Handle `??` operator
-4. Optimize generated code
+   ```name, age := person.Name, person.Age
 
-**Estimated Effort:** 1-2 weeks
-
----
-
-## Phase 8: Advanced Logic Support
-
-### 8.1 Classes
-
-**Full Class Support:**
-```typescript
-class Animal {
-    private name: string;
-    
-    constructor(name: string) {
-        this.name = name;
-    }
-    
-    speak(): string {
-        return `${this.name} makes a sound`;
-    }
-}
-
-class Dog extends Animal {
-    bark(): string {
-        return `${this.speak()} - Woof!`;
-    }
-}
-```
-↓
-```go
-type Animal struct {
-    name string
-}
-
-func NewAnimal(name string) *Animal {
-    return &Animal{name: name}
-}
-
-func (a *Animal) Speak() string {
-    return fmt.Sprintf("%s makes a sound", a.name)
-}
-
-type Dog struct {
-    *Animal // Embedding for inheritance
-}
-
-func NewDog(name string) *Dog {
-    return &Dog{Animal: NewAnimal(name)}
-}
-
-func (d *Dog) Bark() string {
-    return fmt.Sprintf("%s - Woof!", d.Speak())
-}
-```
-
-**Features to Support:**
-- Constructors → `NewXxx()` functions
-- Private/public fields → lowercase/uppercase
-- Methods → Receiver functions
-- Inheritance → Struct embedding
-- Static methods → Package-level functions
-- Abstract classes → Interfaces
-- Getters/setters → Methods
-
-**Implementation Steps:**
-1. Parse class declarations
-2. Generate struct definition
-3. Create constructor function
-4. Convert methods to receiver functions
-5. Handle inheritance via embedding
-6. Implement access modifiers
-
-**Estimated Effort:** 4-5 weeks
-
----
-
-### 8.2 Async/Await and Promises
-
-**The Big Challenge:** Fundamentally different concurrency models.
-
-**Strategy: Channel-Based Futures**
-
-```typescript
-async function fetchData(url: string): Promise<string> {
-    const response = await fetch(url);
-    return response.text();
-}
-
-const data = await fetchData("https://api.com");
-```
-↓
-```go
-func FetchData(url string) <-chan Result[string] {
-    ch := make(chan Result[string], 1)
-    go func() {
-        defer close(ch)
-        
-        response, err := http.Get(url)
-        if err != nil {
-            ch <- Result[string]{Err: err}
-            return
-        }
-        defer response.Body.Close()
-        
-        body, err := io.ReadAll(response.Body)
-        ch <- Result[string]{Value: string(body), Err: err}
-    }()
-    return ch
-}
-
-result := <-FetchData("https://api.com")
-if result.Err != nil {
-    // handle error
-}
-data := result.Value
-```
-
-**Alternative: Context-Based**
-```go
-func FetchData(ctx context.Context, url string) (string, error) {
-    // Use context for cancellation
-}
-```
-
-**Implementation Steps:**
-1. Create `Result[T]` generic type for errors
-2. Convert `async` functions to goroutine creators
-3. Return channels from async functions
-4. Convert `await` to channel reads
-5. Handle Promise chains
-6. Implement Promise.all, Promise.race equivalents
-7. Add context support for cancellation
-
-**Estimated Effort:** 6-8 weeks (most complex feature)
-
----
-
-### 8.3 Error Handling (try/catch)
-
-**Challenge:** Go uses explicit error returns.
-
-```typescript
-try {
-    const data = riskyOperation();
-    process(data);
-} catch (error) {
-    console.error(error);
-} finally {
-    cleanup();
-}
-```
-↓
-```go
-data, err := RiskyOperation()
-defer Cleanup()
-
-if err != nil {
-    log.Println(err)
-    return
-}
-Process(data)
-```
-
-**For Multiple Operations:**
-```typescript
-try {
-    op1();
-    op2();
-    op3();
-} catch (e) {
-    handleError(e);
-}
-```
-↓
-```go
-if err := Op1(); err != nil {
-    HandleError(err)
-    return
-}
-if err := Op2(); err != nil {
-    HandleError(err)
-    return
-}
-if err := Op3(); err != nil {
-    HandleError(err)
-    return
-}
-```
-
-**Implementation Steps:**
-1. Parse try/catch/finally blocks
-2. Generate defer for finally blocks
-3. Convert catch to `if err != nil` checks
-4. Propagate errors up the call stack
-5. Support custom error types
-
-**Estimated Effort:** 2-3 weeks
-
----
-
-### 8.4 Control Flow Extensions
-
-**Switch Statements:**
-```typescript
-switch (value) {
-    case 1:
-        return "one";
-    case 2:
-        return "two";
-    default:
-        return "other";
-}
-```
-↓
-```go
-switch value {
-case 1:
-    return "one"
-case 2:
-    return "two"
-default:
-    return "other"
-}
-```
-
-**For...of Loops:**
-```typescript
-for (const item of items) {
-    process(item);
-}
-```
-↓
-```go
-for _, item := range items {
-    Process(item)
-}
-```
-
-**While Loops:**
-```typescript
-while (condition) {
-    doWork();
-}
-```
-↓
-```go
-for condition {
-    DoWork()
-}
-```
-
-**Implementation Steps:**
-1. Parse switch/case statements
-2. Handle for...of loops
-3. Convert while to Go's for
-4. Support break/continue
-
-**Estimated Effort:** 1-2 weeks
-
----
-
-### 8.5 Modern JavaScript Features
-
-**Template Literals:**
-```typescript
-const msg = `Hello ${name}, you are ${age} years old`;
-```
-↓
-```go
-msg := fmt.Sprintf("Hello %s, you are %.0f years old", name, age)
-```
-
-**Arrow Functions:**
-```typescript
-const add = (a, b) => a + b;
-const process = items.map(x => x * 2);
-```
-↓
-```go
-add := func(a, b float64) float64 { return a + b }
-
-process := make([]float64, len(items))
-for i, x := range items {
-    process[i] = x * 2
-}
-```
-
-**Spread Operator:**
-```typescript
-const merged = [...arr1, ...arr2];
-const obj = {...base, override: true};
-```
-↓
-```go
-merged := append(append([]Type{}, arr1...), arr2...)
-
-obj := base // Copy
-obj.Override = true
-```
-
-**Implementation Steps:**
-1. Parse template literals
-2. Convert to fmt.Sprintf
-3. Handle arrow functions as closures
-4. Implement spread for arrays and objects
-
-**Estimated Effort:** 2-3 weeks
-
----
-
-## Phase 9: Dependency Resolution System
-
-### 9.1 Dependency Mapping Database
-
-**Create a comprehensive mapping file:**
-
-```yaml
-# dependency-mappings.yaml
-mappings:
-  # Standard Library
-  - npm: "fs"
-    go: "github.com/ts2go/runtime/fs"
-    type: "runtime"
-    
-  - npm: "path"
-    go: "github.com/ts2go/runtime/path"
-    type: "runtime"
-    
-  - npm: "http"
-    go: "net/http"
-    type: "stdlib"
-    rewrite:
-      "createServer": "http.ListenAndServe"
-      
-  # Popular Libraries with Go Equivalents
-  - npm: "axios"
-    go: "github.com/go-resty/resty/v2"
-    type: "equivalent"
-    mappings:
-      "axios.get": "resty.R().Get"
-      "axios.post": "resty.R().Post"
-      
-  - npm: "express"
-    go: "github.com/gin-gonic/gin"
-    type: "equivalent"
-    mappings:
-      "express()": "gin.Default()"
-      "app.get": "router.GET"
-      "app.post": "router.POST"
-      
-  - npm: "lodash"
-    go: "github.com/samber/lo"
-    type: "equivalent"
-    mappings:
-      "_.map": "lo.Map"
-      "_.filter": "lo.Filter"
-      "_.reduce": "lo.Reduce"
-      
-  - npm: "moment"
-    go: "time"
-    type: "stdlib"
-    
-  - npm: "uuid"
-    go: "github.com/google/uuid"
-    type: "equivalent"
-    
-  - npm: "bcrypt"
-    go: "golang.org/x/crypto/bcrypt"
-    type: "stdlib"
-    
-  # Transpilable Libraries
-  - npm: "validator"
-    type: "transpile"
-    reason: "Pure TypeScript, can be transpiled"
-    
-  # Unsupported (require manual intervention)
-  - npm: "react"
-    type: "unsupported"
-    reason: "Frontend framework, not applicable to Go"
-    suggestion: "Use templ or Go templates instead"
-```
-
-**Implementation Steps:**
-1. Create YAML/JSON mapping database
-2. Build parser for package.json
-3. Resolve dependencies recursively
-4. Apply mappings during transpilation
-5. Generate go.mod with correct dependencies
-6. Rewrite import statements
-7. Transform API calls to match Go library
-
-**Estimated Effort:** 4-5 weeks
-
----
-
-### 9.2 Smart Import Resolver
-
-**Multi-Strategy Import Resolution:**
-
-#### Strategy 1: Direct Mapping
-```typescript
-import axios from 'axios';
-```
-↓
-```go
-import "github.com/go-resty/resty/v2"
-```
-
-#### Strategy 2: Local File Transpilation
-```typescript
-import { User } from './models/user';
-```
-↓
-1. Transpile `./models/user.ts` to `models/user.go`
-2. Import as `import "myproject/models"`
-
-#### Strategy 3: Recursive Package Transpilation
-```typescript
-// package.json
-{
-  "dependencies": {
-    "@mycompany/shared-types": "^1.0.0"
-  }
-}
-```
-↓
-1. Check if package is pure TypeScript (no native dependencies)
-2. Recursively transpile the entire package
-3. Create Go module from transpiled code
-4. Import as Go module
-
-#### Strategy 4: Runtime Wrapper
-For packages that can't be transpiled but have simple APIs:
-```typescript
-import crypto from 'crypto';
-```
-↓
-Create runtime wrapper:
-```go
-// runtime/crypto/crypto.go
-package crypto
-
-import gocrypto "crypto"
-
-func CreateHash(algorithm string) Hash {
-    // Wrap Go crypto to match Node.js API
-}
-```
-
-**Implementation Steps:**
-1. Build dependency graph from package.json
-2. Classify each dependency (stdlib, equivalent, transpilable, unsupported)
-3. For transpilable: recursively transpile
-4. For equivalents: rewrite imports and calls
-5. For unsupported: generate warning and stub
-6. Track all mappings in import table
-7. Update all call sites
-
-**Estimated Effort:** 5-6 weeks
-
----
-
-### 9.3 API Rewriting Engine
-
-**Transform API calls to match target library:**
-
-```typescript
-// TypeScript with axios
-const response = await axios.get('https://api.com', {
-    headers: { 'Authorization': 'Bearer token' }
-});
-const data = response.data;
-```
-↓
-```go
-// Go with resty
-client := resty.New()
-resp, err := client.R().
-    SetHeader("Authorization", "Bearer token").
-    Get("https://api.com")
-if err != nil {
-    return err
-}
-data := resp.Body()
 ```
 
 **Implementation:**
-1. Define transformation rules in mapping file
-2. Pattern match on AST structure
-3. Rewrite AST nodes
-4. Generate transformed Go code
+
+- Add `ForStatement`, `ForOfStatement`, `ForInStatement` handlers**Implementation Steps:**
+
+- Add `WhileStatement` handler (map to Go `for`)1. Parse tuple type syntax
+
+- Handle loop variables and scope2. Generate struct with numbered fields
+
+- Tests: 20+ covering all loop types3. Handle destructuring assignments
+
+4. Support rest parameters (`...rest`)
+
+#### Week 3: Control Flow Keywords
+
+**Tasks:****Estimated Effort:** 2 weeks
+
+7. **Break statements**
+
+   ```typescript---
+
+   break;
+
+   break label;### 7.5 Optional Chaining and Nullish Coalescing
+
+   ```
+
+   →**Optional Chaining:**
+
+   ```go```typescript
+
+   breakconst value = obj?.prop?.nested;
+
+   break label```
+
+   ```↓
+
+```go
+
+8. **Continue statements**var value interface{}
+
+   ```typescriptif obj != nil && obj.Prop != nil {
+
+   continue;    value = obj.Prop.Nested
+
+   continue label;}
+
+   ``````
+
+   →
+
+   ```go**Nullish Coalescing:**
+
+   continue```typescript
+
+   continue labelconst result = value ?? defaultValue;
+
+   ``````
+
+↓
+
+9. **Switch statements**```go
+
+   ```typescriptresult := value
+
+   switch (value) {if result == nil {
+
+     case "a": return 1;    result = defaultValue
+
+     case "b": return 2;}
+
+     default: return 0;```
+
+   }
+
+   ```**Implementation Steps:**
+
+   →1. Parse `?.` operator
+
+   ```go2. Generate nested nil checks
+
+   switch value {3. Handle `??` operator
+
+   case "a":4. Optimize generated code
+
+       return 1
+
+   case "b":**Estimated Effort:** 1-2 weeks
+
+       return 2
+
+   default:---
+
+       return 0
+
+   }## Phase 8: Advanced Logic Support
+
+   ```
+
+### 8.1 Classes
+
+**Implementation:**
+
+- Add `BreakStatement`, `ContinueStatement` handlers**Full Class Support:**
+
+- Add `SwitchStatement` handler```typescript
+
+- Handle fall-through vs explicit breakclass Animal {
+
+- Support labeled statements    private name: string;
+
+- Tests: 15+ covering switch/break/continue    
+
+    constructor(name: string) {
+
+**Deliverables:**        this.name = name;
+
+- ✅ If/else, ternary operator    }
+
+- ✅ All loop types (for, for-of, for-in, while)    
+
+- ✅ Break, continue, switch    speak(): string {
+
+- ✅ 50+ control flow tests        return `${this.name} makes a sound`;
+
+- ✅ Test coverage >60%    }
+
+}
+
+**Success Metrics:**
+
+- Can transpile code with conditionalsclass Dog extends Animal {
+
+- Can transpile code with loops    bark(): string {
+
+- Simple algorithms work (sorting, filtering, etc.)        return `${this.speak()} - Woof!`;
+
+    }
+
+**Impact:** Unlocks 60% more real-world code transpilation}
+
+```
+
+---↓
+
+```go
+
+### 🚨 Phase 16: Modern JavaScript/TypeScript Syntax (CRITICAL)type Animal struct {
+
+    name string
+
+**Priority:** P0 - CRITICAL  }
+
+**Duration:** 2-3 weeks  
+
+**Goal:** Support modern TypeScript syntax used in 80%+ of codebasesfunc NewAnimal(name string) *Animal {
+
+    return &Animal{name: name}
+
+#### Week 4: Functions & Templates}
+
+**Tasks:**
+
+1. **Arrow functions**func (a *Animal) Speak() string {
+
+   ```typescript    return fmt.Sprintf("%s makes a sound", a.name)
+
+   const add = (a: number, b: number) => a + b;}
+
+   const log = (msg: string) => { console.log(msg); };
+
+   ```type Dog struct {
+
+   →    *Animal // Embedding for inheritance
+
+   ```go}
+
+   add := func(a float64, b float64) float64 { return a + b }
+
+   log := func(msg string) { console.Log(msg) }func NewDog(name string) *Dog {
+
+   ```    return &Dog{Animal: NewAnimal(name)}
+
+}
+
+2. **Template literals**
+
+   ```typescriptfunc (d *Dog) Bark() string {
+
+   const msg = `Hello ${name}, you are ${age} years old`;    return fmt.Sprintf("%s - Woof!", d.Speak())
+
+   ```}
+
+   →```
+
+   ```go
+
+   msg := fmt.Sprintf("Hello %s, you are %v years old", name, age)**Features to Support:**
+
+   ```- Constructors → `NewXxx()` functions
+
+- Private/public fields → lowercase/uppercase
+
+**Implementation:**- Methods → Receiver functions
+
+- Add `ArrowFunction` handler- Inheritance → Struct embedding
+
+- Support expression bodies vs block bodies- Static methods → Package-level functions
+
+- Handle `this` binding (arrow functions don't bind `this`)- Abstract classes → Interfaces
+
+- Add `TemplateLiteral` handler with interpolation- Getters/setters → Methods
+
+- Support multi-line templates
+
+- Tests: 20+ covering arrow functions and templates**Implementation Steps:**
+
+1. Parse class declarations
+
+#### Week 5: Destructuring & Spread2. Generate struct definition
+
+**Tasks:**3. Create constructor function
+
+3. **Object destructuring**4. Convert methods to receiver functions
+
+   ```typescript5. Handle inheritance via embedding
+
+   const { name, age } = user;6. Implement access modifiers
+
+   const { x, y, ...rest } = point;
+
+   ```**Estimated Effort:** 4-5 weeks
+
+   →
+
+   ```go---
+
+   name := user["name"].(string)
+
+   age := user["age"].(float64)### 8.2 Async/Await and Promises
+
+   // rest requires map copying
+
+   ```**The Big Challenge:** Fundamentally different concurrency models.
+
+
+
+4. **Array destructuring****Strategy: Channel-Based Futures**
+
+   ```typescript
+
+   const [first, second, ...rest] = items;```typescript
+
+   ```async function fetchData(url: string): Promise<string> {
+
+   →    const response = await fetch(url);
+
+   ```go    return response.text();
+
+   first := items[0]}
+
+   second := items[1]
+
+   rest := items[2:]const data = await fetchData("https://api.com");
+
+   ``````
+
+↓
+
+5. **Spread operator**```go
+
+   ```typescriptfunc FetchData(url string) <-chan Result[string] {
+
+   const combined = [...arr1, ...arr2];    ch := make(chan Result[string], 1)
+
+   const merged = { ...obj1, ...obj2 };    go func() {
+
+   ```        defer close(ch)
+
+   →        
+
+   ```go        response, err := http.Get(url)
+
+   combined := append(append([]T{}, arr1...), arr2...)        if err != nil {
+
+   // Object spread requires map merging            ch <- Result[string]{Err: err}
+
+   ```            return
+
+        }
+
+**Implementation:**        defer response.Body.Close()
+
+- Add `ObjectBindingPattern`, `ArrayBindingPattern` handlers        
+
+- Add `SpreadElement` handler        body, err := io.ReadAll(response.Body)
+
+- Handle nested destructuring        ch <- Result[string]{Value: string(body), Err: err}
+
+- Support default values in destructuring    }()
+
+- Tests: 20+ covering destructuring and spread    return ch
+
+}
+
+#### Week 6: Parameters & Operators
+
+**Tasks:**result := <-FetchData("https://api.com")
+
+6. **Default parameters**if result.Err != nil {
+
+   ```typescript    // handle error
+
+   function greet(name: string = "World") { /* ... */ }}
+
+   ```data := result.Value
+
+   →```
+
+   ```go
+
+   func greet(name string) {**Alternative: Context-Based**
+
+       if name == "" { name = "World" }```go
+
+       // ...func FetchData(ctx context.Context, url string) (string, error) {
+
+   }    // Use context for cancellation
+
+   ```}
+
+```
+
+7. **Rest parameters**
+
+   ```typescript**Implementation Steps:**
+
+   function sum(...numbers: number[]) { /* ... */ }1. Create `Result[T]` generic type for errors
+
+   ```2. Convert `async` functions to goroutine creators
+
+   →3. Return channels from async functions
+
+   ```go4. Convert `await` to channel reads
+
+   func sum(numbers ...float64) { /* ... */ }5. Handle Promise chains
+
+   ```6. Implement Promise.all, Promise.race equivalents
+
+7. Add context support for cancellation
+
+8. **Increment/decrement operators**
+
+   ```typescript**Estimated Effort:** 6-8 weeks (most complex feature)
+
+   i++; ++i; i--; --i;
+
+   ```---
+
+   →
+
+   ```go### 8.3 Error Handling (try/catch)
+
+   i++  // Go only has postfix
+
+   i++**Challenge:** Go uses explicit error returns.
+
+   i--
+
+   i--```typescript
+
+   ```try {
+
+    const data = riskyOperation();
+
+**Implementation:**    process(data);
+
+- Add default parameter support} catch (error) {
+
+- Add rest parameter support (`...args`)    console.error(error);
+
+- Add `PostfixUnaryExpression`, `PrefixUnaryExpression`} finally {
+
+- Handle operator precedence    cleanup();
+
+- Tests: 15+ covering parameters and operators}
+
+```
+
+**Deliverables:**↓
+
+- ✅ Arrow functions (expression & block bodies)```go
+
+- ✅ Template literals with interpolationdata, err := RiskyOperation()
+
+- ✅ Destructuring (objects & arrays)defer Cleanup()
+
+- ✅ Spread operator (arrays & objects)
+
+- ✅ Default & rest parametersif err != nil {
+
+- ✅ Increment/decrement operators    log.Println(err)
+
+- ✅ 55+ modern syntax tests    return
+
+- ✅ Test coverage >70%}
+
+Process(data)
+
+**Success Metrics:**```
+
+- Can transpile modern TypeScript codebases
+
+- Popular npm packages transpile successfully**For Multiple Operations:**
+
+- Real-world code patterns work```typescript
+
+try {
+
+**Impact:** Unlocks 20% more real-world code transpilation    op1();
+
+    op2();
+
+---    op3();
+
+} catch (e) {
+
+### 🔴 Phase 17: Error Handling (HIGH PRIORITY)    handleError(e);
+
+}
+
+**Priority:** P1 - HIGH  ```
+
+**Duration:** 1-2 weeks  ↓
+
+**Goal:** Support try/catch/finally for production-ready code```go
+
+if err := Op1(); err != nil {
+
+#### Week 7: Try/Catch/Finally    HandleError(err)
+
+**Tasks:**    return
+
+1. **Try/catch blocks**}
+
+   ```typescriptif err := Op2(); err != nil {
+
+   try {    HandleError(err)
+
+     riskyOperation();    return
+
+   } catch (error) {}
+
+     console.error(error);if err := Op3(); err != nil {
+
+   }    HandleError(err)
+
+   ```    return
+
+   →}
+
+   ```go```
+
+   err := func() error {
+
+       return riskyOperation()**Implementation Steps:**
+
+   }()1. Parse try/catch/finally blocks
+
+   if err != nil {2. Generate defer for finally blocks
+
+       console.Error(err)3. Convert catch to `if err != nil` checks
+
+   }4. Propagate errors up the call stack
+
+   ```5. Support custom error types
+
+
+
+2. **Finally blocks****Estimated Effort:** 2-3 weeks
+
+   ```typescript
+
+   try {---
+
+     /* ... */
+
+   } catch (e) {### 8.4 Control Flow Extensions
+
+     /* ... */
+
+   } finally {**Switch Statements:**
+
+     cleanup();```typescript
+
+   }switch (value) {
+
+   ```    case 1:
+
+   →        return "one";
+
+   ```go    case 2:
+
+   defer cleanup()        return "two";
+
+   err := func() error { /* ... */ }()    default:
+
+   if err != nil { /* ... */ }        return "other";
+
+   ```}
+
+```
+
+3. **Throw statements**↓
+
+   ```typescript```go
+
+   throw new Error("Something went wrong");switch value {
+
+   ```case 1:
+
+   →    return "one"
+
+   ```gocase 2:
+
+   return fmt.Errorf("something went wrong")    return "two"
+
+   ```default:
+
+    return "other"
+
+**Implementation:**}
+
+- Add `TryStatement`, `CatchClause`, `FinallyClause` handlers```
+
+- Map catch blocks to `if err != nil` checks
+
+- Map finally blocks to `defer` statements**For...of Loops:**
+
+- Add `ThrowStatement` handler → `return error````typescript
+
+- Handle nested try/catchfor (const item of items) {
+
+- Tests: 20+ covering error handling patterns    process(item);
+
+}
+
+**Deliverables:**```
+
+- ✅ Try/catch/finally blocks↓
+
+- ✅ Throw statements```go
+
+- ✅ Error type mappingfor _, item := range items {
+
+- ✅ 20+ error handling tests    Process(item)
+
+- ✅ Test coverage >75%}
+
+```
+
+**Success Metrics:**
+
+- Production code patterns work**While Loops:**
+
+- Error handling is idiomatic Go```typescript
+
+- No silent error swallowingwhile (condition) {
+
+    doWork();
+
+**Impact:** Production-ready code transpilation}
+
+```
+
+---↓
+
+```go
+
+### 🔴 Phase 18: Real-World Validation (HIGH PRIORITY)for condition {
+
+    DoWork()
+
+**Priority:** P1 - HIGH  }
+
+**Duration:** 1 week  ```
+
+**Goal:** Validate transpiler with real TypeScript projects
+
+**Implementation Steps:**
+
+#### Week 8: Real Project Tests1. Parse switch/case statements
+
+**Tests:**2. Handle for...of loops
+
+1. **Express.js hello-world app**3. Convert while to Go's for
+
+   - Simple REST API with routes4. Support break/continue
+
+   - Middleware support
+
+   - Request/response handling**Estimated Effort:** 1-2 weeks
+
+   - **Success:** Transpiles and serves HTTP requests
+
+---
+
+2. **Commander.js CLI tool**
+
+   - Command-line argument parsing### 8.5 Modern JavaScript Features
+
+   - Subcommands
+
+   - Help text generation**Template Literals:**
+
+   - **Success:** Transpiles and runs CLI commands```typescript
+
+const msg = `Hello ${name}, you are ${age} years old`;
+
+3. **Data processing script**```
+
+   - File I/O↓
+
+   - Array/object manipulation```go
+
+   - Business logicmsg := fmt.Sprintf("Hello %s, you are %.0f years old", name, age)
+
+   - **Success:** Transpiles and processes data correctly```
+
+
+
+**Tasks:****Arrow Functions:**
+
+- Create `tests/real-world/` directory```typescript
+
+- Add 3 real TypeScript projects as test fixturesconst add = (a, b) => a + b;
+
+- Transpile each projectconst process = items.map(x => x * 2);
+
+- Run generated Go code```
+
+- Document gaps and manual fixes needed↓
+
+- Measure transpilation success rate```go
+
+add := func(a, b float64) float64 { return a + b }
+
+**Deliverables:**
+
+- ✅ 3 real-world project testsprocess := make([]float64, len(items))
+
+- ✅ Documentation of gaps foundfor i, x := range items {
+
+- ✅ Bug fixes for issues discovered    process[i] = x * 2
+
+- ✅ Test coverage >80%}
+
+```
+
+**Success Metrics:**
+
+- Real projects transpile with <10% manual fixes**Spread Operator:**
+
+- Generated Go code compiles without errors```typescript
+
+- Generated Go code runs and produces correct outputconst merged = [...arr1, ...arr2];
+
+const obj = {...base, override: true};
+
+**Impact:** Validation of real-world readiness```
+
+↓
+
+---```go
+
+merged := append(append([]Type{}, arr1...), arr2...)
+
+### 🟡 Phase 19: Async/Await Support (COMPLEX)
+
+obj := base // Copy
+
+**Priority:** P1 - HIGH (but complex)  obj.Override = true
+
+**Duration:** 3-4 weeks  ```
+
+**Goal:** Support async/await for backend Node.js applications
+
+**Implementation Steps:**
+
+#### Weeks 9-10: Async Functions1. Parse template literals
+
+**Tasks:**2. Convert to fmt.Sprintf
+
+1. **Async function declarations**3. Handle arrow functions as closures
+
+   ```typescript4. Implement spread for arrays and objects
+
+   async function fetchData(): Promise<Data> {
+
+     const response = await fetch(url);**Estimated Effort:** 2-3 weeks
+
+     return response.json();
+
+   }---
+
+   ```
+
+   →## Phase 9: Dependency Resolution System
+
+   ```go
+
+   func fetchData() (Data, error) {### 9.1 Dependency Mapping Database
+
+       responseCh := make(chan FetchResult)
+
+       go func() {**Create a comprehensive mapping file:**
+
+           // Async operation
+
+       }()```yaml
+
+       result := <-responseCh# dependency-mappings.yaml
+
+       if result.Error != nil {mappings:
+
+           return Data{}, result.Error  # Standard Library
+
+       }  - npm: "fs"
+
+       return result.Data, nil    go: "github.com/ts2go/runtime/fs"
+
+   }    type: "runtime"
+
+   ```    
+
+  - npm: "path"
+
+2. **Await expressions**    go: "github.com/ts2go/runtime/path"
+
+   ```typescript    type: "runtime"
+
+   const result = await asyncOperation();    
+
+   ```  - npm: "http"
+
+   →    go: "net/http"
+
+   ```go    type: "stdlib"
+
+   result := <-asyncOperationCh()    rewrite:
+
+   ```      "createServer": "http.ListenAndServe"
+
+      
+
+**Implementation:**  # Popular Libraries with Go Equivalents
+
+- Add `AsyncFunction` handler  - npm: "axios"
+
+- Add `AwaitExpression` handler    go: "github.com/go-resty/resty/v2"
+
+- Convert async functions to return channels    type: "equivalent"
+
+- Map await to channel receives    mappings:
+
+- Handle error propagation      "axios.get": "resty.R().Get"
+
+- Tests: 15+ async function tests      "axios.post": "resty.R().Post"
+
+      
+
+#### Weeks 11-12: Promise Support  - npm: "express"
+
+**Tasks:**    go: "github.com/gin-gonic/gin"
+
+3. **Promise creation**    type: "equivalent"
+
+   ```typescript    mappings:
+
+   return new Promise((resolve, reject) => {      "express()": "gin.Default()"
+
+     // Async work      "app.get": "router.GET"
+
+   });      "app.post": "router.POST"
+
+   ```      
+
+   →  - npm: "lodash"
+
+   ```go    go: "github.com/samber/lo"
+
+   ch := make(chan Result)    type: "equivalent"
+
+   go func() {    mappings:
+
+       // Async work      "_.map": "lo.Map"
+
+       ch <- result      "_.filter": "lo.Filter"
+
+   }()      "_.reduce": "lo.Reduce"
+
+   return ch      
+
+   ```  - npm: "moment"
+
+    go: "time"
+
+4. **Promise.all**    type: "stdlib"
+
+   ```typescript    
+
+   const results = await Promise.all([p1, p2, p3]);  - npm: "uuid"
+
+   ```    go: "github.com/google/uuid"
+
+   →    type: "equivalent"
+
+   ```go    
+
+   var wg sync.WaitGroup  - npm: "bcrypt"
+
+   results := make([]Result, 3)    go: "golang.org/x/crypto/bcrypt"
+
+   // Concurrent execution with WaitGroup    type: "stdlib"
+
+   ```    
+
+  # Transpilable Libraries
+
+5. **Promise.race**  - npm: "validator"
+
+   ```typescript    type: "transpile"
+
+   const winner = await Promise.race([p1, p2]);    reason: "Pure TypeScript, can be transpiled"
+
+   ```    
+
+   →  # Unsupported (require manual intervention)
+
+   ```go  - npm: "react"
+
+   select {    type: "unsupported"
+
+   case r1 := <-p1:    reason: "Frontend framework, not applicable to Go"
+
+       return r1    suggestion: "Use templ or Go templates instead"
+
+   case r2 := <-p2:```
+
+       return r2
+
+   }**Implementation Steps:**
+
+   ```1. Create YAML/JSON mapping database
+
+2. Build parser for package.json
+
+**Implementation:**3. Resolve dependencies recursively
+
+- Add `NewExpression` for Promise4. Apply mappings during transpilation
+
+- Add `Promise.all` → WaitGroup pattern5. Generate go.mod with correct dependencies
+
+- Add `Promise.race` → select statement6. Rewrite import statements
+
+- Handle Promise chaining (`.then()`, `.catch()`)7. Transform API calls to match Go library
+
+- Tests: 20+ Promise tests
+
+**Estimated Effort:** 4-5 weeks
+
+**Deliverables:**
+
+- ✅ Async function support---
+
+- ✅ Await expression handling
+
+- ✅ Promise creation and methods### 9.2 Smart Import Resolver
+
+- ✅ 35+ async/await tests
+
+- ✅ Test coverage >85%**Multi-Strategy Import Resolution:**
+
+
+
+**Success Metrics:**#### Strategy 1: Direct Mapping
+
+- Backend async applications transpile```typescript
+
+- Generated Go code is concurrent and safeimport axios from 'axios';
+
+- Performance is comparable or better```
+
+↓
+
+**Impact:** Backend Node.js application support```go
+
+import "github.com/go-resty/resty/v2"
+
+**Note:** This is the most complex phase. Async/await → Go is non-trivial and may require iterative refinement.```
+
+
+
+---#### Strategy 2: Local File Transpilation
+
+```typescript
+
+### 🟢 Phase 20: Production Hardening (POLISH)import { User } from './models/user';
+
+```
+
+**Priority:** P2 - MEDIUM  ↓
+
+**Duration:** 2 weeks  1. Transpile `./models/user.ts` to `models/user.go`
+
+**Goal:** Production-ready quality and polish2. Import as `import "myproject/models"`
+
+
+
+#### Week 13: Quality & Testing#### Strategy 3: Recursive Package Transpilation
+
+**Tasks:**```typescript
+
+1. **Increase test coverage to 85%+**// package.json
+
+   - Transpiler core: 4% → 85%{
+
+   - CLI commands: 12.7% → 70%  "dependencies": {
+
+   - Integration tests for all features    "@mycompany/shared-types": "^1.0.0"
+
+  }
+
+2. **CI/CD Pipeline**}
+
+   - GitHub Actions for automated testing```
+
+   - Code coverage reporting↓
+
+   - Automated releases1. Check if package is pure TypeScript (no native dependencies)
+
+2. Recursively transpile the entire package
+
+3. **Performance optimization**3. Create Go module from transpiled code
+
+   - Profile transpiler performance4. Import as Go module
+
+   - Optimize hot paths
+
+   - Reduce memory allocations#### Strategy 4: Runtime Wrapper
+
+For packages that can't be transpiled but have simple APIs:
+
+4. **Error message improvements**```typescript
+
+   - Better error messages with suggestionsimport crypto from 'crypto';
+
+   - Error recovery strategies```
+
+   - Helpful debugging output↓
+
+Create runtime wrapper:
+
+**Deliverables:**```go
+
+- ✅ Test coverage >85%// runtime/crypto/crypto.go
+
+- ✅ CI/CD pipeline functionalpackage crypto
+
+- ✅ Performance benchmarks
+
+- ✅ Improved error messagesimport gocrypto "crypto"
+
+
+
+#### Week 14: Documentation & Communityfunc CreateHash(algorithm string) Hash {
+
+**Tasks:**    // Wrap Go crypto to match Node.js API
+
+1. **Complete documentation**}
+
+   - Core Concepts guide```
+
+   - Advanced Topics guide
+
+   - Example showcase projects**Implementation Steps:**
+
+   - Contributing guide1. Build dependency graph from package.json
+
+   - Troubleshooting guide2. Classify each dependency (stdlib, equivalent, transpilable, unsupported)
+
+3. For transpilable: recursively transpile
+
+2. **Example projects**4. For equivalents: rewrite imports and calls
+
+   - Express REST API example5. For unsupported: generate warning and stub
+
+   - CLI tool example6. Track all mappings in import table
+
+   - Data processing example7. Update all call sites
+
+   - Each with before/after code
+
+**Estimated Effort:** 5-6 weeks
+
+3. **Community preparation**
+
+   - CHANGELOG.md---
+
+   - CODE_OF_CONDUCT.md
+
+   - Issue templates### 9.3 API Rewriting Engine
+
+   - PR templates
+
+   - Contributor guidelines**Transform API calls to match target library:**
+
+
+
+**Deliverables:**```typescript
+
+- ✅ Complete documentation suite// TypeScript with axios
+
+- ✅ 3+ example projectsconst response = await axios.get('https://api.com', {
+
+- ✅ Community resources ready    headers: { 'Authorization': 'Bearer token' }
+
+});
+
+**Success Metrics:**const data = response.data;
+
+- Documentation is comprehensive and clear```
+
+- Examples demonstrate real-world usage↓
+
+- Ready for community contributions```go
+
+// Go with resty
+
+---client := resty.New()
+
+resp, err := client.R().
+
+## 📊 Timeline Summary    SetHeader("Authorization", "Bearer token").
+
+    Get("https://api.com")
+
+| Phase | Duration | Priority | Status | Impact |if err != nil {
+
+|-------|----------|----------|--------|--------|    return err
+
+| 1-12 | - | - | ✅ COMPLETE | Foundation |}
+
+| 13-14 | Ongoing | P0 | 🔄 60% | Testing & Docs |data := resp.Body()
+
+| **15: Control Flow** | **2-3 weeks** | **P0** | ⏳ NOT STARTED | **+60% coverage** |```
+
+| **16: Modern Syntax** | **2-3 weeks** | **P0** | ⏳ NOT STARTED | **+20% coverage** |
+
+| **17: Error Handling** | **1-2 weeks** | **P1** | ⏳ NOT STARTED | **Production ready** |**Implementation:**
+
+| **18: Real-World Tests** | **1 week** | **P1** | ⏳ NOT STARTED | **Validation** |1. Define transformation rules in mapping file
+
+| **19: Async/Await** | **3-4 weeks** | **P1** | ⏳ NOT STARTED | **Backend apps** |2. Pattern match on AST structure
+
+| **20: Production Polish** | **2 weeks** | **P2** | ⏳ NOT STARTED | **Quality** |3. Rewrite AST nodes
+
+| **TOTAL** | **12-15 weeks** | - | - | **70-80% coverage** |4. Generate transformed Go code
+
 5. Handle edge cases (error handling, callbacks, etc.)
 
+---
+
 **Estimated Effort:** 3-4 weeks
 
+## 🎯 Success Metrics
+
 ---
 
-### 9.4 npm Package Analyzer
+### Phase 15 Success (Control Flow)
 
-**Automated Package Classification:**
+- ✅ Can transpile if/else statements### 9.4 npm Package Analyzer
 
-```python
+- ✅ Can transpile all loop types
+
+- ✅ Can transpile switch statements**Automated Package Classification:**
+
+- ✅ Simple algorithms work (sorting, searching, etc.)
+
+- ✅ Test coverage >60%```python
+
 # Pseudocode for package analyzer
-def analyze_package(package_name):
-    # Download package from npm
-    package = download_npm_package(package_name)
-    
-    # Check for native dependencies
-    if has_native_dependencies(package):
+
+### Phase 16 Success (Modern Syntax)def analyze_package(package_name):
+
+- ✅ Can transpile arrow functions    # Download package from npm
+
+- ✅ Can transpile template literals    package = download_npm_package(package_name)
+
+- ✅ Can transpile destructuring    
+
+- ✅ Modern npm packages transpile    # Check for native dependencies
+
+- ✅ Test coverage >70%    if has_native_dependencies(package):
+
         return "unsupported", "Contains native C/C++ code"
-    
-    # Check if pure TypeScript/JavaScript
-    if is_pure_typescript(package):
-        return "transpilable", "Can be transpiled"
-    
+
+### Phase 17 Success (Error Handling)    
+
+- ✅ Try/catch patterns work    # Check if pure TypeScript/JavaScript
+
+- ✅ Error handling is idiomatic Go    if is_pure_typescript(package):
+
+- ✅ Production code patterns supported        return "transpilable", "Can be transpiled"
+
+- ✅ Test coverage >75%    
+
     # Check for Go equivalent in database
-    go_equivalent = find_go_equivalent(package_name)
-    if go_equivalent:
-        return "equivalent", go_equivalent
-    
-    # Check if we can wrap it with runtime
-    if has_simple_api(package):
+
+### Phase 18 Success (Real-World)    go_equivalent = find_go_equivalent(package_name)
+
+- ✅ Express.js app transpiles and runs    if go_equivalent:
+
+- ✅ CLI tool transpiles and runs        return "equivalent", go_equivalent
+
+- ✅ Data processing script transpiles and runs    
+
+- ✅ <10% manual fixes needed    # Check if we can wrap it with runtime
+
+- ✅ Test coverage >80%    if has_simple_api(package):
+
         return "wrappable", "Can create runtime wrapper"
-    
-    return "manual", "Requires manual intervention"
-```
 
-**Implementation Steps:**
-1. Create CLI tool: `ts2go analyze <package>`
+### Phase 19 Success (Async/Await)    
+
+- ✅ Async functions transpile    return "manual", "Requires manual intervention"
+
+- ✅ Promise patterns work```
+
+- ✅ Backend async apps transpile
+
+- ✅ Generated code is concurrent and safe**Implementation Steps:**
+
+- ✅ Test coverage >85%1. Create CLI tool: `ts2go analyze <package>`
+
 2. Integrate with package.json parser
-3. Build heuristics for classification
-4. Generate report of all dependencies
-5. Suggest alternatives for unsupported packages
 
-**Estimated Effort:** 2-3 weeks
+### Phase 20 Success (Production)3. Build heuristics for classification
+
+- ✅ Test coverage >85%4. Generate report of all dependencies
+
+- ✅ CI/CD pipeline functional5. Suggest alternatives for unsupported packages
+
+- ✅ Documentation complete
+
+- ✅ 3+ example projects**Estimated Effort:** 2-3 weeks
+
+- ✅ Community resources ready
 
 ---
 
-## Phase 10: Module System
+### Final Production Success
 
-### 10.1 Multi-File Project Support
+- ✅ Can transpile 70-80% of backend TypeScript code## Phase 10: Module System
 
-**Project Structure:**
-```
-my-project/
+- ✅ Real projects transpile with <10% manual fixes
+
+- ✅ Generated Go code is idiomatic and performant### 10.1 Multi-File Project Support
+
+- ✅ Test coverage >85%
+
+- ✅ Documentation comprehensive and accurate**Project Structure:**
+
+- ✅ Community validation successful```
+
+- ✅ Ready for 1.0 releasemy-project/
+
 ├── src/
-│   ├── models/
+
+---│   ├── models/
+
 │   │   ├── user.ts
-│   │   └── post.ts
+
+## 🚫 Explicitly Out of Scope│   │   └── post.ts
+
 │   ├── services/
-│   │   └── api.ts
-│   └── index.ts
-├── package.json
-└── tsconfig.json
-```
 
-**Transpile to:**
-```
-my-project-go/
-├── models/
-│   ├── user.go
+### Frontend Frameworks│   │   └── api.ts
+
+- **React/JSX** - No plans to support│   └── index.ts
+
+- **Vue 3** - No plans to support├── package.json
+
+- **Angular** - No plans to support└── tsconfig.json
+
+- **Svelte** - No plans to support```
+
+
+
+**Rationale:****Transpile to:**
+
+- Go is not a frontend language```
+
+- Browser APIs have no Go equivalentsmy-project-go/
+
+- Virtual DOM/reactivity models don't translate├── models/
+
+- Better to keep frontend in JS/TS, transpile backend to Go│   ├── user.go
+
 │   └── post.go
-├── services/
-│   └── api.go
-├── main.go
-├── go.mod
-└── go.sum
-```
 
-**Implementation Steps:**
-1. Parse tsconfig.json for project structure
-2. Build dependency graph of all TS files
-3. Transpile in topological order
-4. Generate package structure
+### Advanced TypeScript Features├── services/
+
+- **Generics** - Too different from Go generics│   └── api.go
+
+- **Decorators** - No Go equivalent├── main.go
+
+- **Symbols** - No Go equivalent├── go.mod
+
+- **Proxy/Reflect** - No Go equivalent└── go.sum
+
+- **WeakMap/WeakSet** - No Go equivalent```
+
+
+
+### Build Tooling**Implementation Steps:**
+
+- **Webpack** - Out of scope1. Parse tsconfig.json for project structure
+
+- **Vite** - Out of scope2. Build dependency graph of all TS files
+
+- **Rollup** - Out of scope3. Transpile in topological order
+
+- **esbuild** - Out of scope4. Generate package structure
+
 5. Handle circular dependencies
-6. Create main.go entry point
+
+**Focus:** Transpile TypeScript source code, not build configurations6. Create main.go entry point
+
 7. Generate go.mod
 
+---
+
 **Estimated Effort:** 3-4 weeks
+
+## 📈 Transpilation Coverage Roadmap
 
 ---
 
-### 10.2 Export/Import System
+| Milestone | Coverage | Features |
 
-```typescript
-// user.ts
-export interface User {
-    id: string;
-    name: string;
+|-----------|----------|----------|### 10.2 Export/Import System
+
+| **Current (Phase 12)** | **15-20%** | Types, classes, basic expressions |
+
+| **After Phase 15** | **40-50%** | + Control flow (if/for/while/switch) |```typescript
+
+| **After Phase 16** | **60-70%** | + Modern syntax (arrows, templates, destructuring) |// user.ts
+
+| **After Phase 17** | **65-75%** | + Error handling (try/catch) |export interface User {
+
+| **After Phase 19** | **70-80%** | + Async/await (backend apps) |    id: string;
+
+| **After Phase 20** | **75-85%** | + Polish & production hardening |    name: string;
+
 }
+
+**Target:** 70-80% of backend TypeScript codebases transpile successfully
 
 export function createUser(name: string): User {
-    return { id: generateId(), name };
+
+---    return { id: generateId(), name };
+
 }
+
+## 🔄 Continuous Improvements
 
 export default User;
-```
-↓
-```go
-// user.go
-package models
+
+### Ongoing Activities```
+
+- Test coverage maintenance (keep >85%)↓
+
+- Documentation updates```go
+
+- Bug fixes and issue triage// user.go
+
+- Community engagementpackage models
+
+- Performance monitoring
 
 type User struct {
-    ID   string
-    Name string
+
+### Future Considerations    ID   string
+
+- VS Code extension for live transpilation    Name string
+
+- Web playground for testing}
+
+- More npm package mappings (currently 49)
+
+- Custom mapping configurationfunc CreateUser(name string) User {
+
+- Plugin system for extensibility    return User{ID: generateID(), Name: name}
+
 }
 
-func CreateUser(name string) User {
-    return User{ID: generateID(), Name: name}
-}
-```
+---```
 
-```typescript
-// main.ts
-import { User, createUser } from './models/user';
-import DefaultUser from './models/user';
-```
+
+
+## 📚 Related Documents```typescript
+
+- [Status](STATUS.md) - Current implementation status// main.ts
+
+- [Deep Analysis](DEEP_ANALYSIS_NOV2.md) - Comprehensive feature auditimport { User, createUser } from './models/user';
+
+- [Architecture](ARCHITECTURE.md) - System designimport DefaultUser from './models/user';
+
+- [API Reference](API_REFERENCE.md) - API documentation```
+
 ↓
-```go
+
+---```go
+
 // main.go
-package main
+
+**Last Updated:** November 2, 2025  package main
+
+**Next Review:** After Phase 15 completion (Week 3)
 
 import "myproject/models"
 
