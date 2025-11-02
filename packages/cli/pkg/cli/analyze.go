@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/yourusername/ts2go/internal/analyzer"
-	"github.com/yourusername/ts2go/internal/mapper"
-	"github.com/yourusername/ts2go/internal/project"
-	"github.com/yourusername/ts2go/internal/transpiler"
+	"github.com/el-j/ts2go/packages/core/internal/analyzer"
+	"github.com/el-j/ts2go/packages/core/internal/mapper"
+	"github.com/el-j/ts2go/packages/core/internal/project"
+	"github.com/el-j/ts2go/packages/core/internal/transpiler"
 )
 
 // AnalyzeCommand implements the 'analyze' subcommand

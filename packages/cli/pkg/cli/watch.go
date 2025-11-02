@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/yourusername/ts2go/internal/transpiler"
+	"github.com/el-j/ts2go/packages/core/internal/transpiler"
 )
 
 // Watcher monitors TypeScript files and automatically transpiles them

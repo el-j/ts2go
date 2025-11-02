@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/yourusername/ts2go/internal/transpiler"
-	"github.com/yourusername/ts2go/pkg/cli"
+	"github.com/el-j/ts2go/packages/core/internal/transpiler"
+	"github.com/el-j/ts2go/packages/cli/pkg/cli"
 )
 
 func main() {
