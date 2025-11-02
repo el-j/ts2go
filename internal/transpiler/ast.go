@@ -40,6 +40,7 @@ const (
 	StringKeyword  = "StringKeyword"
 	NumberKeyword  = "NumberKeyword"
 	BooleanKeyword = "BooleanKeyword"
+	VoidKeyword    = "VoidKeyword"
 	ArrayType      = "ArrayType"
 	TupleType      = "TupleType"
 	TypeLiteral    = "TypeLiteral"
@@ -65,6 +66,7 @@ const (
 	CallExpression              = "CallExpression"
 	PropertyAccessExpression    = "PropertyAccessExpression"
 	NewExpression               = "NewExpression"
+	ConditionalExpression       = "ConditionalExpression" // Ternary operator: condition ? true : false
 	ThisKeyword                 = "ThisKeyword"
 	SuperKeyword                = "SuperKeyword"
 	ExpressionWithTypeArguments = "ExpressionWithTypeArguments"
@@ -84,6 +86,13 @@ const (
 	ReturnStatement     = "ReturnStatement"
 	IfStatement         = "IfStatement"
 	ForStatement        = "ForStatement"
+	ForOfStatement      = "ForOfStatement"      // for (const item of array)
+	ForInStatement      = "ForInStatement"      // for (const key in object)
+	WhileStatement      = "WhileStatement"      // while (condition)
+	DoStatement         = "DoStatement"         // do { } while (condition)
+	SwitchStatement     = "SwitchStatement"     // switch (expr) { case: ... }
+	BreakStatement      = "BreakStatement"      // break;
+	ContinueStatement   = "ContinueStatement"   // continue;
 	ExpressionStatement = "ExpressionStatement"
 
 	// File structure

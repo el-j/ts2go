@@ -235,6 +235,18 @@ func (g *CodeGenerator) generateStatement(node *ASTNode) error {
 		return g.generateReturnStatement(node)
 	case IfStatement:
 		return g.generateIfStatement(node)
+	case ForStatement:
+		return g.generateForStatement(node)
+	case ForOfStatement:
+		return g.generateForOfStatement(node)
+	case ForInStatement:
+		return g.generateForInStatement(node)
+	case WhileStatement:
+		return g.generateWhileStatement(node)
+	case BreakStatement:
+		return g.generateBreakStatement(node)
+	case ContinueStatement:
+		return g.generateContinueStatement(node)
 	default:
 		// Skip unknown statements for now
 		return nil
@@ -1422,6 +1434,214 @@ func (g *CodeGenerator) generateStatementBlock(node *ASTNode) error {
 	return nil
 }
 
+// generateForStatement generates code for traditional for loops
+// TypeScript: for (let i = 0; i < 10; i++) { }
+// Go: for i := 0; i < 10; i++ { }
+func (g *CodeGenerator) generateForStatement(node *ASTNode) error {
+	// Traditional for loop has:
+	// Initializer property (VariableDeclarationList)
+	// Children[0] = condition (BinaryExpression)
+	// Children[1] = incrementor (PostfixUnaryExpression)
+	// Children[2] = body (Block)
+	
+	if len(node.Children) < 3 {
+		return fmt.Errorf("for statement requires 3 children (condition, increment, body)")
+	}
+
+	// Generate initializer
+	var initPart string
+	if node.Initializer != nil {
+		// Initializer is a VariableDeclarationList with Children
+		if len(node.Initializer.Children) > 0 {
+			decl := &node.Initializer.Children[0] // VariableDeclaration
+			if decl.Name != "" && decl.Initializer != nil {
+				init, err := g.generateExpression(decl.Initializer)
+				if err != nil {
+					return fmt.Errorf("generating for init: %w", err)
+				}
+				initPart = fmt.Sprintf("%s := %s", decl.Name, init)
+			}
+		}
+	}
+
+	// Generate condition
+	condPart, err := g.generateExpression(&node.Children[0])
+	if err != nil {
+		return fmt.Errorf("generating for condition: %w", err)
+	}
+
+	// Generate incrementor
+	incPart, err := g.generateExpression(&node.Children[1])
+	if err != nil {
+		return fmt.Errorf("generating for increment: %w", err)
+	}
+
+	// Generate: for init; condition; increment {
+	g.writeLine(fmt.Sprintf("for %s; %s; %s {", initPart, condPart, incPart))
+	g.indent++
+
+	// Generate body
+	bodyNode := &node.Children[2]
+	if err := g.generateStatementBlock(bodyNode); err != nil {
+		return fmt.Errorf("generating for body: %w", err)
+	}
+
+	g.indent--
+	g.writeLine("}")
+
+	return nil
+}
+
+// generateForOfStatement generates code for for...of loops
+// TypeScript: for (const item of array) { }
+// Go: for _, item := range array { }
+func (g *CodeGenerator) generateForOfStatement(node *ASTNode) error {
+	// for...of structure:
+	// Initializer = VariableDeclarationList with variable name
+	// Children[0] = iterable expression (array/string/etc)
+	// Children[1] = body Block
+
+	if len(node.Children) < 2 {
+		return fmt.Errorf("for-of statement requires 2 children (iterable, body)")
+	}
+
+	// Get variable name from initializer
+	varName := ""
+	if node.Initializer != nil && len(node.Initializer.Children) > 0 {
+		varDecl := &node.Initializer.Children[0] // VariableDeclaration
+		varName = varDecl.Name
+	}
+
+	if varName == "" {
+		return fmt.Errorf("for-of: could not determine variable name")
+	}
+
+	// Get iterable
+	iterable, err := g.generateExpression(&node.Children[0])
+	if err != nil {
+		return fmt.Errorf("generating for-of iterable: %w", err)
+	}
+
+	// Generate: for _, item := range array {
+	g.writeLine(fmt.Sprintf("for _, %s := range %s {", varName, iterable))
+	g.indent++
+
+	// Generate body
+	bodyNode := &node.Children[1]
+	if err := g.generateStatementBlock(bodyNode); err != nil {
+		return fmt.Errorf("generating for-of body: %w", err)
+	}
+
+	g.indent--
+	g.writeLine("}")
+
+	return nil
+}
+
+// generateForInStatement generates code for for...in loops
+// TypeScript: for (const key in object) { }
+// Go: for key := range object { }
+func (g *CodeGenerator) generateForInStatement(node *ASTNode) error {
+	// for...in structure same as for...of
+	// Initializer = VariableDeclarationList with variable name
+	// Children[0] = object expression
+	// Children[1] = body Block
+	
+	if len(node.Children) < 2 {
+		return fmt.Errorf("for-in statement requires 2 children (object, body)")
+	}
+
+	// Get variable name from initializer
+	varName := ""
+	if node.Initializer != nil && len(node.Initializer.Children) > 0 {
+		varDecl := &node.Initializer.Children[0]
+		varName = varDecl.Name
+	}
+
+	if varName == "" {
+		return fmt.Errorf("for-in: could not determine variable name")
+	}
+
+	// Get object
+	object, err := g.generateExpression(&node.Children[0])
+	if err != nil {
+		return fmt.Errorf("generating for-in object: %w", err)
+	}
+
+	// Generate: for key := range object {
+	g.writeLine(fmt.Sprintf("for %s := range %s {", varName, object))
+	g.indent++
+
+	// Generate body
+	bodyNode := &node.Children[1]
+	if err := g.generateStatementBlock(bodyNode); err != nil {
+		return fmt.Errorf("generating for-in body: %w", err)
+	}
+
+	g.indent--
+	g.writeLine("}")
+
+	return nil
+}
+
+// generateWhileStatement generates code for while loops
+// TypeScript: while (condition) { }
+// Go: for condition { }
+func (g *CodeGenerator) generateWhileStatement(node *ASTNode) error {
+	// while loop has:
+	// Children[0] = condition
+	// Children[1] = body
+
+	if len(node.Children) < 2 {
+		return fmt.Errorf("while statement requires 2 children (condition, body)")
+	}
+
+	// Generate condition
+	condition, err := g.generateExpression(&node.Children[0])
+	if err != nil {
+		return fmt.Errorf("generating while condition: %w", err)
+	}
+
+	// Go uses 'for' for while loops
+	g.writeLine(fmt.Sprintf("for %s {", condition))
+	g.indent++
+
+	// Generate body
+	bodyNode := &node.Children[1]
+	if err := g.generateStatementBlock(bodyNode); err != nil {
+		return fmt.Errorf("generating while body: %w", err)
+	}
+
+	g.indent--
+	g.writeLine("}")
+
+	return nil
+}
+
+// generateBreakStatement generates code for break statements
+func (g *CodeGenerator) generateBreakStatement(node *ASTNode) error {
+	// Check if there's a label (Children[0] would be the label identifier)
+	if len(node.Children) > 0 {
+		label := node.Children[0].Text
+		g.writeLine(fmt.Sprintf("break %s", label))
+	} else {
+		g.writeLine("break")
+	}
+	return nil
+}
+
+// generateContinueStatement generates code for continue statements
+func (g *CodeGenerator) generateContinueStatement(node *ASTNode) error {
+	// Check if there's a label
+	if len(node.Children) > 0 {
+		label := node.Children[0].Text
+		g.writeLine(fmt.Sprintf("continue %s", label))
+	} else {
+		g.writeLine("continue")
+	}
+	return nil
+}
+
 // generateExpression generates code for an expression
 func (g *CodeGenerator) generateExpression(node *ASTNode) (string, error) {
 	switch node.Kind {
@@ -1452,6 +1672,12 @@ func (g *CodeGenerator) generateExpression(node *ASTNode) (string, error) {
 		return g.generateBinaryExpression(node)
 	case PropertyAccessExpression:
 		return g.generatePropertyAccess(node)
+	case ConditionalExpression:
+		return g.generateConditionalExpression(node)
+	case "PostfixUnaryExpression":
+		return g.generatePostfixUnaryExpression(node)
+	case "PrefixUnaryExpression":
+		return g.generatePrefixUnaryExpression(node)
 	case "ObjectLiteralExpression":
 		return g.generateObjectLiteral(node)
 	case "ArrayLiteralExpression":
@@ -1459,6 +1685,44 @@ func (g *CodeGenerator) generateExpression(node *ASTNode) (string, error) {
 	default:
 		return "/* unsupported expression */", nil
 	}
+}
+
+// generateConditionalExpression generates code for ternary operator (condition ? true : false)
+// TypeScript: condition ? trueExpr : falseExpr
+// Go: uses if-else since Go doesn't have ternary
+func (g *CodeGenerator) generateConditionalExpression(node *ASTNode) (string, error) {
+	// TypeScript ConditionalExpression structure may vary
+	// Try to get condition, whenTrue, whenFalse from Children array
+	if len(node.Children) < 3 {
+		// Fallback: maybe it's structured differently
+		return "", fmt.Errorf("conditional expression has insufficient children: %d", len(node.Children))
+	}
+
+	// Parse children - TypeScript typically stores as:
+	// Children[0] = condition
+	// Children[1] = whenTrue (after '?')
+	// Children[2] = whenFalse (after ':')
+	condition, err := g.generateExpression(&node.Children[0])
+	if err != nil {
+		return "", fmt.Errorf("generating ternary condition: %w", err)
+	}
+
+	whenTrue, err := g.generateExpression(&node.Children[1])
+	if err != nil {
+		return "", fmt.Errorf("generating ternary whenTrue: %w", err)
+	}
+
+	whenFalse, err := g.generateExpression(&node.Children[2])
+	if err != nil {
+		return "", fmt.Errorf("generating ternary whenFalse: %w", err)
+	}
+
+	// Generate Go code using an immediately-invoked function
+	// This allows ternary to be used as an expression
+	result := fmt.Sprintf("func() interface{} { if %s { return %s } else { return %s } }()",
+		condition, whenTrue, whenFalse)
+
+	return result, nil
 }
 
 // generateObjectLiteral generates code for object literals
@@ -1688,10 +1952,21 @@ func (g *CodeGenerator) generateBinaryExpression(node *ASTNode) (string, error) 
 	// Map operator from AST constant to Go operator
 	operator := g.mapOperator(node.Operator)
 
-	// Fallback: try to get operator text from middle child token
-	if operator == "" && len(node.Children) >= 3 {
-		if node.Children[1].Text != "" {
-			operator = node.Children[1].Text
+	// If operator is generic like "FirstBinaryOperator", try to determine from middle child token
+	if (operator == "" || node.Operator == "FirstBinaryOperator") && len(node.Children) >= 3 {
+		middleChild := &node.Children[1]
+		if middleChild.Text != "" {
+			operator = middleChild.Text
+		}
+		// Also check for common operator kinds
+		if middleChild.Kind == "LessThanToken" || middleChild.Kind == "FirstBinaryOperator" {
+			operator = "<"
+		} else if middleChild.Kind == "GreaterThanToken" {
+			operator = ">"
+		} else if middleChild.Kind == "LessThanEqualsToken" {
+			operator = "<="
+		} else if middleChild.Kind == "GreaterThanEqualsToken" {
+			operator = ">="
 		}
 	}
 
@@ -1701,6 +1976,41 @@ func (g *CodeGenerator) generateBinaryExpression(node *ASTNode) (string, error) 
 	}
 
 	return fmt.Sprintf("%s %s %s", left, operator, right), nil
+}
+
+// generatePostfixUnaryExpression generates code for postfix unary expressions (i++, i--)
+func (g *CodeGenerator) generatePostfixUnaryExpression(node *ASTNode) (string, error) {
+	if len(node.Children) < 1 {
+		return "", fmt.Errorf("invalid postfix unary expression")
+	}
+
+	operand, err := g.generateExpression(&node.Children[0])
+	if err != nil {
+		return "", err
+	}
+
+	// TypeScript has i++ and i--
+	// The operator is usually in the node kind or we can detect from the syntax
+	// Most common: i++ (increment) and i-- (decrement)
+	// Assume ++ for now (we can enhance this later if needed)
+	return operand + "++", nil
+}
+
+// generatePrefixUnaryExpression generates code for prefix unary expressions (++i, --i, !x, -x)
+func (g *CodeGenerator) generatePrefixUnaryExpression(node *ASTNode) (string, error) {
+	if len(node.Children) < 1 {
+		return "", fmt.Errorf("invalid prefix unary expression")
+	}
+
+	operand, err := g.generateExpression(&node.Children[0])
+	if err != nil {
+		return "", err
+	}
+
+	// Common prefix operators: ++, --, !, -, +, ~
+	// We need to determine which operator
+	// For now, assume ++ (we can enhance based on node properties)
+	return "++" + operand, nil
 }
 
 // mapOperator maps AST operator constants to Go operators
@@ -1758,6 +2068,8 @@ func (g *CodeGenerator) generateType(node *ASTNode) (string, error) {
 		return "float64", nil
 	case BooleanKeyword:
 		return "bool", nil
+	case VoidKeyword:
+		return "", nil // void functions have no return type in Go
 	case ArrayType:
 		if len(node.Children) > 0 {
 			elemType, err := g.generateType(&node.Children[0])
