@@ -31,6 +31,8 @@ func (g *CodeGenerator) generateExpression(node *ASTNode) (string, error) {
 		return "true", nil
 	case "FalseKeyword":
 		return "false", nil
+	case "NullKeyword":
+		return "nil", nil
 	case BinaryExpression:
 		return g.generateBinaryExpression(node)
 	case PropertyAccessExpression:

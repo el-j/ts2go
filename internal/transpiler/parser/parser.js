@@ -52,8 +52,13 @@ function convertNode(node) {
   }
 
   // Add name for declarations
-  if (node.name && ts.isIdentifier(node.name)) {
-    result.name = node.name.text;
+  if (node.name) {
+    if (ts.isIdentifier(node.name)) {
+      result.name = node.name.text;
+    } else {
+      // For binding patterns (destructuring), include the full pattern
+      result.nameNode = convertNode(node.name);
+    }
   }
 
   // Add operator for binary expressions

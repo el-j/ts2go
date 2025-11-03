@@ -49,9 +49,15 @@ func (g *CodeGenerator) generateStatement(node *ASTNode) error {
 func (g *CodeGenerator) generateVariableStatement(node *ASTNode) error {
 	if node.Declarations != nil {
 		for _, decl := range node.Declarations {
-			// TODO: Add destructuring support in future phase
-			// For now, handle simple variable declarations
+			// Check if this is a destructuring declaration
+			if decl.NameNode != nil {
+				if err := g.generateDestructuring(decl.NameNode, decl.Initializer); err != nil {
+					return err
+				}
+				continue
+			}
 			
+			// Simple variable declaration
 			varName := decl.Name
 			if decl.Initializer != nil {
 				init, err := g.generateExpression(decl.Initializer)
@@ -68,6 +74,50 @@ func (g *CodeGenerator) generateVariableStatement(node *ASTNode) error {
 			}
 		}
 	}
+	return nil
+}
+
+// generateDestructuring generates code for destructuring assignments
+// TypeScript: const {x, y} = obj  or  const [a, b] = arr
+// Go: x := obj["x"].(type); y := obj["y"].(type)  or  a := arr[0]; b := arr[1]
+func (g *CodeGenerator) generateDestructuring(pattern *ASTNode, initializer *ASTNode) error {
+	if initializer == nil {
+		return fmt.Errorf("destructuring requires an initializer")
+	}
+	
+	init, err := g.generateExpression(initializer)
+	if err != nil {
+		return fmt.Errorf("generating destructuring initializer: %w", err)
+	}
+	
+	switch pattern.Kind {
+	case ObjectBindingPattern:
+		// Object destructuring: const {x, y, z} = obj
+		// Generate: x := obj.(map[string]interface{})["x"]; y := obj.(map[string]interface{})["y"]
+		if pattern.Elements != nil {
+			for _, elem := range pattern.Elements {
+				if elem.Name != "" {
+					// Simple property: {x} means extract property "x" from object
+					g.writeLine(fmt.Sprintf(`%s := %s.(map[string]interface{})["%s"]`, elem.Name, init, elem.Name))
+				}
+			}
+		}
+		
+	case ArrayBindingPattern:
+		// Array destructuring: const [a, b, c] = arr
+		// Generate: a := arr.([]interface{})[0]; b := arr.([]interface{})[1]
+		if pattern.Elements != nil {
+			for i, elem := range pattern.Elements {
+				if elem.Name != "" {
+					g.writeLine(fmt.Sprintf("%s := %s.([]interface{})[%d]", elem.Name, init, i))
+				}
+			}
+		}
+		
+	default:
+		return fmt.Errorf("unsupported binding pattern: %s", pattern.Kind)
+	}
+	
 	return nil
 }
 

@@ -8,6 +8,7 @@ type ASTNode struct {
 	End             int       `json:"end"`
 	Text            string    `json:"text,omitempty"`
 	Name            string    `json:"name,omitempty"`
+	NameNode        *ASTNode  `json:"nameNode,omitempty"`  // For binding patterns (destructuring)
 	Type            *ASTNode  `json:"type,omitempty"`
 	Types           []ASTNode `json:"types,omitempty"`
 	Elements        []ASTNode `json:"elements,omitempty"`

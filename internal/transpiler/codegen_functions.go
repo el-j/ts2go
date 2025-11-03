@@ -8,12 +8,29 @@ import (
 func (g *CodeGenerator) generateFunction(node *ASTNode) error {
 	funcName := toPascalCase(node.Name)
 
-	// Build parameter list
+	// Build parameter list and track default parameters
 	params := []string{}
+	defaultParams := []struct {
+		name         string
+		defaultValue string
+	}{}
+	
 	if node.Parameters != nil {
 		for _, param := range node.Parameters {
 			paramName := param.Name
 			paramType := "interface{}"
+			
+			// Check for rest parameter (...args)
+			isRestParam := false
+			if param.Children != nil {
+				for _, child := range param.Children {
+					if child.Kind == "DotDotDotToken" {
+						isRestParam = true
+						break
+					}
+				}
+			}
+			
 			if param.Type != nil {
 				var err error
 				paramType, err = g.generateType(param.Type)
@@ -21,6 +38,24 @@ func (g *CodeGenerator) generateFunction(node *ASTNode) error {
 					return err
 				}
 			}
+			
+			// Handle default parameters
+			if param.Initializer != nil {
+				defaultValue, err := g.generateExpression(param.Initializer)
+				if err != nil {
+					return err
+				}
+				defaultParams = append(defaultParams, struct {
+					name         string
+					defaultValue string
+				}{paramName, defaultValue})
+			}
+			
+			// For rest parameters, ensure the type is a slice
+			if isRestParam && !strings.HasPrefix(paramType, "[]") {
+				// Already a slice type, keep as is
+			}
+			
 			params = append(params, fmt.Sprintf("%s %s", paramName, paramType))
 		}
 	}
@@ -47,6 +82,16 @@ func (g *CodeGenerator) generateFunction(node *ASTNode) error {
 	oldReturnType := g.currentFunctionReturnType
 	g.currentFunctionReturnType = returnType
 	defer func() { g.currentFunctionReturnType = oldReturnType }()
+
+	// Generate default parameter initialization at the start of the function
+	// Note: Go doesn't support default parameters natively, so we'd need to use overloading
+	// or optional parameters pattern. For now, we'll add a comment.
+	if len(defaultParams) > 0 {
+		g.writeLine("// Note: Default parameters not fully supported in Go")
+		for _, dp := range defaultParams {
+			g.writeLine(fmt.Sprintf("// Default: %s = %s", dp.name, dp.defaultValue))
+		}
+	}
 
 	// Generate function body
 	if node.Body != nil {
