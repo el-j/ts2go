@@ -39,6 +39,10 @@ func (g *CodeGenerator) generateStatement(node *ASTNode) error {
 		return g.generateBreakStatement(node)
 	case ContinueStatement:
 		return g.generateContinueStatement(node)
+	case TryStatement:
+		return g.generateTryStatement(node)
+	case ThrowStatement:
+		return g.generateThrowStatement(node)
 	default:
 		// Skip unknown statements for now
 		return nil
@@ -166,12 +170,20 @@ func (g *CodeGenerator) generateReturnStatement(node *ASTNode) error {
 
 // generateIfStatement generates code for if/else statements
 func (g *CodeGenerator) generateIfStatement(node *ASTNode) error {
-	// Get the condition expression (first child)
-	if len(node.Children) == 0 {
+	// Get the condition expression
+	var conditionNode *ASTNode
+	
+	// Check for expression field first (newer parser format)
+	if node.Expression != nil {
+		conditionNode = node.Expression
+	} else if len(node.Children) > 0 {
+		// Fall back to first child
+		conditionNode = &node.Children[0]
+	} else {
 		return fmt.Errorf("if statement missing condition")
 	}
 
-	condition, err := g.generateExpression(&node.Children[0])
+	condition, err := g.generateExpression(conditionNode)
 	if err != nil {
 		return fmt.Errorf("generating if condition: %w", err)
 	}
@@ -634,3 +646,124 @@ func (g *CodeGenerator) generateDefaultClause(node *ASTNode) error {
 }
 
 // generateExpression generates code for an expression
+
+// generateTryStatement generates code for try/catch/finally statements
+// TypeScript: try { } catch (e) { } finally { }
+// Go: Uses defer and recover pattern
+func (g *CodeGenerator) generateTryStatement(node *ASTNode) error {
+if node.Children == nil || len(node.Children) == 0 {
+return fmt.Errorf("try statement has no children")
+}
+
+// Find the try block, catch clause, and finally block
+var tryBlock *ASTNode
+var catchClause *ASTNode
+var finallyBlock *ASTNode
+
+for i := range node.Children {
+child := &node.Children[i]
+switch child.Kind {
+case Block:
+if tryBlock == nil {
+tryBlock = child
+} else {
+// This is the finally block
+finallyBlock = child
+}
+case CatchClause:
+catchClause = child
+}
+}
+
+if tryBlock == nil {
+return fmt.Errorf("try statement missing try block")
+}
+
+// Generate the try block with defer/recover pattern
+g.writeLine("func() {")
+g.indent++
+
+// If there's a catch clause, add defer with recover
+if catchClause != nil {
+// Extract error variable name from catch clause
+errorVarName := "err"
+if catchClause.Children != nil {
+for _, child := range catchClause.Children {
+if child.Kind == VariableDeclaration && child.Name != "" {
+errorVarName = child.Name
+break
+}
+}
+}
+
+g.writeLine("defer func() {")
+g.indent++
+g.writeLine(fmt.Sprintf("if %s := recover(); %s != nil {", errorVarName, errorVarName))
+g.indent++
+
+// Find the catch block
+var catchBlock *ASTNode
+if catchClause.Children != nil {
+for i := range catchClause.Children {
+if catchClause.Children[i].Kind == Block {
+catchBlock = &catchClause.Children[i]
+break
+}
+}
+}
+
+if catchBlock != nil {
+if err := g.generateBlock(catchBlock); err != nil {
+return fmt.Errorf("generating catch block: %w", err)
+}
+}
+
+g.indent--
+g.writeLine("}")
+g.indent--
+g.writeLine("}()")
+}
+
+// If there's a finally block, add another defer
+if finallyBlock != nil {
+g.writeLine("defer func() {")
+g.indent++
+if err := g.generateBlock(finallyBlock); err != nil {
+return fmt.Errorf("generating finally block: %w", err)
+}
+g.indent--
+g.writeLine("}()")
+}
+
+// Generate the try block content
+if err := g.generateBlock(tryBlock); err != nil {
+return fmt.Errorf("generating try block: %w", err)
+}
+
+g.indent--
+g.writeLine("}()")
+
+return nil
+}
+
+// generateThrowStatement generates code for throw statements
+// TypeScript: throw new Error("message")
+// Go: panic(errors.New("message")) or panic(err)
+func (g *CodeGenerator) generateThrowStatement(node *ASTNode) error {
+if node.Expression == nil {
+g.writeLine("panic(nil)")
+return nil
+}
+
+// Generate the expression to throw
+expr, err := g.generateExpression(node.Expression)
+if err != nil {
+return fmt.Errorf("generating throw expression: %w", err)
+}
+
+// If it's a new Error(...), convert to errors.New(...)
+// For simplicity, we'll just panic with the expression
+g.writeLine(fmt.Sprintf("panic(%s)", expr))
+
+return nil
+}

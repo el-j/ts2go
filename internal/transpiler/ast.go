@@ -119,6 +119,9 @@ const (
 	DefaultClause       = "DefaultClause"     // default: statements
 	BreakStatement      = "BreakStatement"    // break;
 	ContinueStatement   = "ContinueStatement" // continue;
+	TryStatement        = "TryStatement"      // try { } catch (e) { } finally { }
+	CatchClause         = "CatchClause"       // catch (error) { }
+	ThrowStatement      = "ThrowStatement"    // throw new Error("msg");
 	ExpressionStatement = "ExpressionStatement"
 
 	// File structure
