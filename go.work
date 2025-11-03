@@ -1,7 +1,6 @@
 go 1.22.5
 
 use (
-	./cmd/ts2go
 	./examples/multipackage-demo
 	./internal/analyzer
 	./internal/mapper
