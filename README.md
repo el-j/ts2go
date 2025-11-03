@@ -17,11 +17,10 @@ cd internal/transpiler/parser && npm install && cd ../../..
 # Build
 make build
 
-# Use CLI
-./ts2go transpile <project-dir> --out output
-
-# Or use the Desktop UI (NEW!)
-./ts2go ui --port 8080 --open
+# Use CLI - Now with UI command!
+./ts2go convert --in app.ts --out app.go      # Single file conversion
+./ts2go transpile <project-dir> --out output  # Full project
+./ts2go ui --port 8080 --open                 # Web UI (NEW!)
 ```
 
 ## Example
