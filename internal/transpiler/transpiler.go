@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/yourusername/ts2go/pkg/optimizer"
+	"github.com/el-j/ts2go/pkg/optimizer"
 )
 
 // TranspileOptions configures the transpilation process

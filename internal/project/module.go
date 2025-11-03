@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/yourusername/ts2go/internal/mapper"
+	"github.com/el-j/ts2go/internal/mapper"
 )
 
 // ModuleGenerator handles go.mod generation
@@ -118,7 +118,7 @@ func (mg *ModuleGenerator) getPackageVersion(_ /* npmPackage */, goPackage strin
 		"go.mongodb.org/mongo-driver":           "v1.13.1",
 		"github.com/go-redis/redis/v8":          "v8.11.5",
 		"gopkg.in/yaml.v3":                      "v3.0.1",
-		"github.com/yourusername/ts2go-runtime": "v0.1.0",
+		"github.com/el-j/ts2go-runtime": "v0.1.0",
 	}
 
 	if version, ok := versions[goPackage]; ok {

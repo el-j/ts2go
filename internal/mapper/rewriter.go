@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/yourusername/ts2go/internal/analyzer"
+	"github.com/el-j/ts2go/internal/analyzer"
 )
 
 // ImportRewriter rewrites TypeScript imports to Go imports

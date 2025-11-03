@@ -3,7 +3,7 @@ package analyzer
 import (
 	"testing"
 
-	"github.com/yourusername/ts2go/internal/transpiler"
+	"github.com/el-j/ts2go/internal/transpiler"
 )
 
 func TestClassifyImportSource(t *testing.T) {

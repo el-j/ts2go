@@ -212,7 +212,7 @@ func TestImportResolver_GenerateImportBlock(t *testing.T) {
 	}
 
 	// Check that it contains both imports
-	if !strings.Contains(importBlock, "github.com/yourusername/ts2go-runtime/fs") {
+	if !strings.Contains(importBlock, "github.com/el-j/ts2go-runtime/fs") {
 		t.Error("Import block should contain fs runtime import")
 	}
 
@@ -345,7 +345,7 @@ func TestIsStdLibPackage(t *testing.T) {
 		{"net/http package", "net/http", true},
 		{"encoding/json package", "encoding/json", true},
 		{"third party package", "github.com/user/project", false},
-		{"runtime package", "github.com/yourusername/ts2go-runtime/fs", false},
+		{"runtime package", "github.com/el-j/ts2go-runtime/fs", false},
 	}
 
 	for _, tt := range tests {

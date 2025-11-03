@@ -90,7 +90,7 @@ func (r *ImportResolver) ResolveImports() ([]ResolvedImport, error) {
 				if _, exists := importMap[runtimePath]; !exists {
 					importMap[runtimePath] = &ResolvedImport{
 						PackagePath: runtimePath,
-						IsRuntime:   strings.HasPrefix(runtimePath, "github.com/yourusername/ts2go-runtime"),
+						IsRuntime:   strings.HasPrefix(runtimePath, "github.com/el-j/ts2go-runtime"),
 						IsStdLib:    isStdLibPackage(runtimePath),
 						Symbols:     []string{},
 					}
@@ -176,11 +176,11 @@ func (r *ImportResolver) GenerateImportBlock() (string, error) {
 func (r *ImportResolver) resolveNpmPackage(npmPackage string) string {
 	// Map common npm packages to Go equivalents
 	mapping := map[string]string{
-		"fs":      "github.com/yourusername/ts2go-runtime/fs",
-		"path":    "github.com/yourusername/ts2go-runtime/path",
+		"fs":      "github.com/el-j/ts2go-runtime/fs",
+		"path":    "github.com/el-j/ts2go-runtime/path",
 		"console": "fmt", // stdlib
-		"axios":   "github.com/yourusername/ts2go-runtime/axios",
-		"lodash":  "github.com/yourusername/ts2go-runtime/lodash",
+		"axios":   "github.com/el-j/ts2go-runtime/axios",
+		"lodash":  "github.com/el-j/ts2go-runtime/lodash",
 	}
 
 	if goPath, exists := mapping[npmPackage]; exists {

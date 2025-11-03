@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/yourusername/ts2go/internal/analyzer"
+	"github.com/el-j/ts2go/internal/analyzer"
 )
 
 func TestRewriteImport(t *testing.T) {
@@ -25,7 +25,7 @@ func TestRewriteImport(t *testing.T) {
 				Type:    analyzer.ImportTypeBuiltin,
 				Symbols: []string{"default"},
 			},
-			expectGoImport: "github.com/yourusername/ts2go/runtime/fs",
+			expectGoImport: "github.com/el-j/ts2go/runtime/fs",
 			expectAlias:    "fs",
 			expectError:    false,
 		},
@@ -233,7 +233,7 @@ func TestGenerateGoImports(t *testing.T) {
 	results := []*RewriteResult{
 		{
 			OriginalSource: "fs",
-			GoImport:       "github.com/yourusername/ts2go/runtime/fs",
+			GoImport:       "github.com/el-j/ts2go/runtime/fs",
 		},
 		{
 			OriginalSource: "axios",
@@ -258,7 +258,7 @@ func TestGenerateGoImports(t *testing.T) {
 
 	// Should contain all packages
 	expectedPkgs := []string{
-		"github.com/yourusername/ts2go/runtime/fs",
+		"github.com/el-j/ts2go/runtime/fs",
 		"github.com/go-resty/resty/v2",
 		"myproject/models",
 	}
@@ -279,7 +279,7 @@ func TestGenerateGoImportsWithErrors(t *testing.T) {
 	results := []*RewriteResult{
 		{
 			OriginalSource: "fs",
-			GoImport:       "github.com/yourusername/ts2go/runtime/fs",
+			GoImport:       "github.com/el-j/ts2go/runtime/fs",
 		},
 		{
 			OriginalSource: "react",
@@ -403,7 +403,7 @@ func createTestMappingDB() *MappingDatabase {
 		Mappings: []Mapping{
 			{
 				Npm:        "fs",
-				Go:         "github.com/yourusername/ts2go/runtime/fs",
+				Go:         "github.com/el-j/ts2go/runtime/fs",
 				Type:       MappingTypeRuntime,
 				Status:     StatusSupported,
 				Complexity: ComplexitySimple,
@@ -420,7 +420,7 @@ func createTestMappingDB() *MappingDatabase {
 			},
 			{
 				Npm:        "path",
-				Go:         "github.com/yourusername/ts2go/runtime/path",
+				Go:         "github.com/el-j/ts2go/runtime/path",
 				Type:       MappingTypeRuntime,
 				Status:     StatusSupported,
 				Complexity: ComplexitySimple,

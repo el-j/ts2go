@@ -1,9 +1,9 @@
-module github.com/yourusername/ts2go/internal/analyzer
+module github.com/el-j/ts2go/internal/analyzer
 
-go 1.21
+go 1.22.5
 
-require (
-	github.com/yourusername/ts2go/internal/transpiler v0.0.0
-)
+toolchain go1.24.9
 
-replace github.com/yourusername/ts2go/internal/transpiler => ../transpiler
+require github.com/el-j/ts2go/internal/transpiler v0.0.0
+
+replace github.com/el-j/ts2go/internal/transpiler => ../transpiler

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/yourusername/ts2go/internal/mapper"
+	"github.com/el-j/ts2go/internal/mapper"
 )
 
 func main() {

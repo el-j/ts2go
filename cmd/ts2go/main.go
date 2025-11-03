@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/yourusername/ts2go/pkg/cli"
+	"github.com/el-j/ts2go/pkg/cli"
 )
 
 const version = "0.1.0"

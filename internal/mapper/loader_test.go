@@ -14,7 +14,7 @@ func TestLoadMappings(t *testing.T) {
 	content := `version: "1.0"
 mappings:
   - npm: "fs"
-    go: "github.com/yourusername/ts2go/runtime/fs"
+    go: "github.com/el-j/ts2go/runtime/fs"
     type: "runtime"
     status: "supported"
     complexity: "simple"
@@ -64,7 +64,7 @@ func TestGetMapping(t *testing.T) {
 		Mappings: []Mapping{
 			{
 				Npm:        "fs",
-				Go:         "github.com/yourusername/ts2go/runtime/fs",
+				Go:         "github.com/el-j/ts2go/runtime/fs",
 				Type:       MappingTypeRuntime,
 				Status:     StatusSupported,
 				Complexity: ComplexitySimple,
@@ -95,7 +95,7 @@ func TestGetMapping(t *testing.T) {
 			name:        "existing runtime package",
 			npmPackage:  "fs",
 			expectError: false,
-			expectedGo:  "github.com/yourusername/ts2go/runtime/fs",
+			expectedGo:  "github.com/el-j/ts2go/runtime/fs",
 		},
 		{
 			name:        "existing equivalent package",

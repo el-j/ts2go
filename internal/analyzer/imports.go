@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/yourusername/ts2go/internal/transpiler"
+	"github.com/el-j/ts2go/internal/transpiler"
 )
 
 // ImportType represents the type of import

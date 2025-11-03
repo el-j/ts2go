@@ -1,4 +1,4 @@
-module github.com/yourusername/ts2go/internal/mapper
+module github.com/el-j/ts2go/internal/mapper
 
 go 1.21
 

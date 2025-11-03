@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yourusername/ts2go/internal/project"
+	"github.com/el-j/ts2go/internal/project"
 )
 
 func TestMultiPackageTranspiler_SimpleProject(t *testing.T) {
