@@ -8,6 +8,17 @@ import (
 func (g *CodeGenerator) generateFunction(node *ASTNode) error {
 	funcName := toPascalCase(node.Name)
 
+	// Check if function is async
+	isAsync := false
+	if node.Modifiers != nil {
+		for _, mod := range node.Modifiers {
+			if mod.Kind == AsyncKeyword {
+				isAsync = true
+				break
+			}
+		}
+	}
+
 	// Build parameter list and track default parameters
 	params := []string{}
 	defaultParams := []struct {
@@ -70,6 +81,15 @@ func (g *CodeGenerator) generateFunction(node *ASTNode) error {
 		}
 	}
 
+	// For async functions, wrap return type in channel
+	if isAsync {
+		if returnType == "" {
+			returnType = "chan interface{}"
+		} else {
+			returnType = fmt.Sprintf("chan %s", returnType)
+		}
+	}
+
 	// Write function signature
 	signature := fmt.Sprintf("func %s(%s)", funcName, strings.Join(params, ", "))
 	if returnType != "" {
@@ -77,6 +97,13 @@ func (g *CodeGenerator) generateFunction(node *ASTNode) error {
 	}
 	g.writeLine(signature + " {")
 	g.indent++
+
+	// For async functions, create result channel
+	if isAsync {
+		g.writeLine("resultCh := make(chan interface{}, 1)")
+		g.writeLine("go func() {")
+		g.indent++
+	}
 
 	// Set the current function return type for context-aware generation
 	oldReturnType := g.currentFunctionReturnType
@@ -98,6 +125,13 @@ func (g *CodeGenerator) generateFunction(node *ASTNode) error {
 		if err := g.generateBlock(node.Body); err != nil {
 			return err
 		}
+	}
+
+	// For async functions, close the goroutine and return channel
+	if isAsync {
+		g.indent--
+		g.writeLine("}()")
+		g.writeLine("return resultCh")
 	}
 
 	g.indent--

@@ -92,6 +92,11 @@ function convertNode(node) {
     result.heritageClauses = Array.from(node.heritageClauses).map(convertNode);
   }
 
+  // Add modifiers for async, static, public, private, etc.
+  if (node.modifiers) {
+    result.modifiers = Array.from(node.modifiers).map(convertNode);
+  }
+
   // Add properties for object literals
   if (node.properties) {
     result.properties = Array.from(node.properties).map(convertNode);

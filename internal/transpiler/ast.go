@@ -21,6 +21,7 @@ type ASTNode struct {
 	Initializer     *ASTNode  `json:"initializer,omitempty"`
 	Declarations    []ASTNode `json:"declarations,omitempty"`
 	Children        []ASTNode `json:"children,omitempty"`
+	Modifiers       []ASTNode `json:"modifiers,omitempty"`   // For async, static, etc.
 	Operator        string    `json:"operator,omitempty"`
 	OperatorNumber  int       `json:"operatorNumber,omitempty"`
 	QuestionDot     bool      `json:"questionDot,omitempty"`
@@ -125,6 +126,10 @@ const (
 	CatchClause         = "CatchClause"       // catch (error) { }
 	ThrowStatement      = "ThrowStatement"    // throw new Error("msg");
 	ExpressionStatement = "ExpressionStatement"
+
+	// Async/Await
+	AsyncKeyword = "AsyncKeyword" // async modifier
+	AwaitExpression = "AwaitExpression" // await expression
 
 	// File structure
 	SourceFile = "SourceFile"

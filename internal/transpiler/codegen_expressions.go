@@ -55,6 +55,8 @@ func (g *CodeGenerator) generateExpression(node *ASTNode) (string, error) {
 		return g.generateTypeOfExpression(node)
 	case DeleteExpression:
 		return g.generateDeleteExpression(node)
+	case AwaitExpression:
+		return g.generateAwaitExpression(node)
 	default:
 		return "/* unsupported expression */", nil
 	}
@@ -719,10 +721,29 @@ return fmt.Sprintf("delete(%s, %s)", obj, key), nil
 }
 }
 
-// Fallback - delete on a simple expression
-operand, err := g.generateExpression(expr)
-if err != nil {
-return "", err
+	// Fallback - delete on a simple expression
+	operand, err := g.generateExpression(expr)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("/* delete %s - not supported in Go */", operand), nil
 }
-return fmt.Sprintf("/* delete %s - not supported in Go */", operand), nil
+
+// generateAwaitExpression generates code for await expression
+// TypeScript: await promise
+// Go: <-channel (receiving from a channel)
+func (g *CodeGenerator) generateAwaitExpression(node *ASTNode) (string, error) {
+	if node.Expression == nil {
+		return "", fmt.Errorf("await expression missing operand")
+	}
+
+	// Generate the expression being awaited (should be a Promise/channel)
+	expr, err := g.generateExpression(node.Expression)
+	if err != nil {
+		return "", fmt.Errorf("generating await operand: %w", err)
+	}
+
+	// In Go, await translates to receiving from a channel
+	// The expression should be a function call that returns a channel
+	return fmt.Sprintf("(<-%s)", expr), nil
 }
