@@ -8,6 +8,7 @@ type ASTNode struct {
 	End             int       `json:"end"`
 	Text            string    `json:"text,omitempty"`
 	Name            string    `json:"name,omitempty"`
+	NameNode        *ASTNode  `json:"nameNode,omitempty"`  // For binding patterns (destructuring)
 	Type            *ASTNode  `json:"type,omitempty"`
 	Types           []ASTNode `json:"types,omitempty"`
 	Elements        []ASTNode `json:"elements,omitempty"`
@@ -20,6 +21,7 @@ type ASTNode struct {
 	Initializer     *ASTNode  `json:"initializer,omitempty"`
 	Declarations    []ASTNode `json:"declarations,omitempty"`
 	Children        []ASTNode `json:"children,omitempty"`
+	Modifiers       []ASTNode `json:"modifiers,omitempty"`   // For async, static, etc.
 	Operator        string    `json:"operator,omitempty"`
 	OperatorNumber  int       `json:"operatorNumber,omitempty"`
 	QuestionDot     bool      `json:"questionDot,omitempty"`
@@ -67,6 +69,9 @@ const (
 	Identifier                  = "Identifier"
 	StringLiteral               = "StringLiteral"
 	NumericLiteral              = "NumericLiteral"
+	TrueKeyword                 = "TrueKeyword"
+	FalseKeyword                = "FalseKeyword"
+	NullKeyword                 = "NullKeyword"
 	TemplateExpression          = "TemplateExpression"      // Template literal: `hello ${name}`
 	TemplateLiteralTypeSpan     = "TemplateLiteralTypeSpan" // Part of template
 	TemplateHead                = "TemplateHead"            // Start of template: `hello ${
@@ -74,9 +79,20 @@ const (
 	TemplateTail                = "TemplateTail"            // End of template: } !`
 	BinaryExpression            = "BinaryExpression"
 	CallExpression              = "CallExpression"
+	TypeOfExpression            = "TypeOfExpression"
+	DeleteExpression            = "DeleteExpression"
 	PropertyAccessExpression    = "PropertyAccessExpression"
+	ElementAccessExpression     = "ElementAccessExpression" // array[index]
 	NewExpression               = "NewExpression"
-	ConditionalExpression       = "ConditionalExpression" // Ternary operator: condition ? true : false
+	ConditionalExpression       = "ConditionalExpression"   // Ternary operator: condition ? true : false
+	ObjectLiteralExpression     = "ObjectLiteralExpression" // { key: value }
+	ArrayLiteralExpression      = "ArrayLiteralExpression"  // [1, 2, 3]
+	SpreadElement               = "SpreadElement"           // ...args
+	ObjectBindingPattern        = "ObjectBindingPattern"    // { x, y } = obj
+	ArrayBindingPattern         = "ArrayBindingPattern"     // [a, b] = arr
+	BindingElement              = "BindingElement"          // Element in binding pattern
+	PrefixUnaryExpression       = "PrefixUnaryExpression"   // ++x, --x, !x
+	PostfixUnaryExpression      = "PostfixUnaryExpression"  // x++, x--
 	ThisKeyword                 = "ThisKeyword"
 	SuperKeyword                = "SuperKeyword"
 	ExpressionWithTypeArguments = "ExpressionWithTypeArguments"
@@ -106,7 +122,14 @@ const (
 	DefaultClause       = "DefaultClause"     // default: statements
 	BreakStatement      = "BreakStatement"    // break;
 	ContinueStatement   = "ContinueStatement" // continue;
+	TryStatement        = "TryStatement"      // try { } catch (e) { } finally { }
+	CatchClause         = "CatchClause"       // catch (error) { }
+	ThrowStatement      = "ThrowStatement"    // throw new Error("msg");
 	ExpressionStatement = "ExpressionStatement"
+
+	// Async/Await
+	AsyncKeyword = "AsyncKeyword" // async modifier
+	AwaitExpression = "AwaitExpression" // await expression
 
 	// File structure
 	SourceFile = "SourceFile"

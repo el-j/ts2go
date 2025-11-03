@@ -1,5 +1,5 @@
 # Binaries
-ts2go
+/ts2go
 *.exe
 *.dll
 *.so

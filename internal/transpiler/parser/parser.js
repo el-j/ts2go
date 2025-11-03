@@ -52,8 +52,13 @@ function convertNode(node) {
   }
 
   // Add name for declarations
-  if (node.name && ts.isIdentifier(node.name)) {
-    result.name = node.name.text;
+  if (node.name) {
+    if (ts.isIdentifier(node.name)) {
+      result.name = node.name.text;
+    } else {
+      // For binding patterns (destructuring), include the full pattern
+      result.nameNode = convertNode(node.name);
+    }
   }
 
   // Add operator for binary expressions
@@ -85,6 +90,11 @@ function convertNode(node) {
   // Add heritage clauses for class inheritance
   if (node.heritageClauses) {
     result.heritageClauses = Array.from(node.heritageClauses).map(convertNode);
+  }
+
+  // Add modifiers for async, static, public, private, etc.
+  if (node.modifiers) {
+    result.modifiers = Array.from(node.modifiers).map(convertNode);
   }
 
   // Add properties for object literals

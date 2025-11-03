@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/yourusername/ts2go/internal/analyzer"
+	"github.com/el-j/ts2go/internal/analyzer"
 )
 
 func TestRewriteImport(t *testing.T) {

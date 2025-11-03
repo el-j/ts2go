@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yourusername/ts2go/internal/analyzer"
-	"github.com/yourusername/ts2go/internal/mapper"
+	"github.com/el-j/ts2go/internal/analyzer"
+	"github.com/el-j/ts2go/internal/mapper"
 )
 
 func TestDetermineModuleName(t *testing.T) {
