@@ -49,13 +49,8 @@ func (g *CodeGenerator) generateStatement(node *ASTNode) error {
 func (g *CodeGenerator) generateVariableStatement(node *ASTNode) error {
 	if node.Declarations != nil {
 		for _, decl := range node.Declarations {
-			// Check if this is a destructuring declaration
-			if decl.BindingPattern != nil {
-				if err := g.generateDestructuring(decl.BindingPattern, decl.Initializer); err != nil {
-					return err
-				}
-				continue
-			}
+			// TODO: Add destructuring support in future phase
+			// For now, handle simple variable declarations
 			
 			varName := decl.Name
 			if decl.Initializer != nil {
@@ -73,62 +68,6 @@ func (g *CodeGenerator) generateVariableStatement(node *ASTNode) error {
 			}
 		}
 	}
-	return nil
-}
-
-// generateDestructuring generates code for destructuring assignments
-// TypeScript: const {x, y} = obj  or  const [a, b] = arr
-// Go: x := obj["x"]; y := obj["y"]  or  a := arr[0]; b := arr[1]
-func (g *CodeGenerator) generateDestructuring(pattern *ASTNode, initializer *ASTNode) error {
-	if initializer == nil {
-		return fmt.Errorf("destructuring requires an initializer")
-	}
-	
-	init, err := g.generateExpression(initializer)
-	if err != nil {
-		return fmt.Errorf("generating destructuring initializer: %w", err)
-	}
-	
-	switch pattern.Kind {
-	case ObjectBindingPattern:
-		// Object destructuring: const {x, y, z} = obj
-		// Generate: x := obj["x"]; y := obj["y"]; z := obj["z"]
-		if pattern.Elements != nil {
-			// Store in temp variable to avoid re-evaluation
-			tempVar := g.generateTempVar()
-			g.writeLine(fmt.Sprintf("%s := %s", tempVar, init))
-			
-			for _, elem := range pattern.Elements {
-				if elem.Name != "" {
-					// Simple property: {x}
-					propertyName := elem.PropertyName
-					if propertyName == "" {
-						propertyName = elem.Name
-					}
-					g.writeLine(fmt.Sprintf(`%s := %s["%s"]`, elem.Name, tempVar, propertyName))
-				}
-			}
-		}
-		
-	case ArrayBindingPattern:
-		// Array destructuring: const [a, b, c] = arr
-		// Generate: a := arr[0]; b := arr[1]; c := arr[2]
-		if pattern.Elements != nil {
-			// Store in temp variable to avoid re-evaluation
-			tempVar := g.generateTempVar()
-			g.writeLine(fmt.Sprintf("%s := %s", tempVar, init))
-			
-			for i, elem := range pattern.Elements {
-				if elem.Name != "" {
-					g.writeLine(fmt.Sprintf("%s := %s[%d]", elem.Name, tempVar, i))
-				}
-			}
-		}
-		
-	default:
-		return fmt.Errorf("unsupported binding pattern: %s", pattern.Kind)
-	}
-	
 	return nil
 }
 

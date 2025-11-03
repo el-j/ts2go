@@ -7,7 +7,7 @@ all: build
 build: build-cli
 
 build-cli:
-	go build -o ts2go ./cmd/ts2go
+	GOWORK=off go build -o ts2go ./cmd/ts2go
 
 # Build desktop app
 build-desktop:
@@ -24,7 +24,7 @@ clean:
 
 # Install CLI globally
 install:
-	cd packages/cli && go install ./cmd/ts2go
+	GOWORK=off go install ./cmd/ts2go
 
 # Development mode for desktop app
 dev-desktop:
