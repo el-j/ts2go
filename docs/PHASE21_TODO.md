@@ -7,12 +7,12 @@
 
 ---
 
-## 🎯 Overall Progress: 42% Complete
+## 🎯 Overall Progress: 52% Complete
 
 ```
-Overall:     ████████▓░░░░░░░░░░░  42%
+Overall:     ██████████▓░░░░░░░░░  52%
 Week 1:      ████████████████████ 100%
-Week 2:      ██████████░░░░░░░░░░  50%
+Week 2:      ████████████████░░░░  80%
 Week 3:      ░░░░░░░░░░░░░░░░░░░░   0%
 Week 4:      ░░░░░░░░░░░░░░░░░░░░   0%
 ```
@@ -89,7 +89,7 @@ Week 4:      ░░░░░░░░░░░░░░░░░░░░   0%
 
 ---
 
-## Week 2: Editor & Transpilation (50% Complete)
+## Week 2: Editor & Transpilation (80% Complete)
 
 ### Code Editor Integration
 - [x] Research and select editor (Monaco vs CodeMirror) - Selected Monaco
@@ -108,9 +108,9 @@ Week 4:      ░░░░░░░░░░░░░░░░░░░░   0%
 - [x] Implement split panes (left: TS, right: Go)
 - [x] Left pane: TypeScript input editor
 - [x] Right pane: Go output viewer
-- [ ] Add pane resize handles (PrimeVue Splitter)
+- [x] Add pane resize handles (PrimeVue Splitter)
+- [x] Implement view toggle (show/hide logs panel)
 - [ ] Save pane sizes to settings
-- [ ] Implement view toggle (show/hide panes)
 
 ### Multi-Tab Support
 - [ ] Implement PrimeVue TabView
@@ -151,13 +151,13 @@ Week 4:      ░░░░░░░░░░░░░░░░░░░░   0%
 - [ ] Display processing speed (files/sec)
 
 ### Log Viewer
-- [ ] Create LogViewer component
-- [ ] Implement color-coded log levels
-- [ ] Add log filtering by level
-- [ ] Implement log search
-- [ ] Add "Clear Logs" button
-- [ ] Implement auto-scroll to latest
-- [ ] Add "Export Logs" functionality
+- [x] Create LogViewer component
+- [x] Implement color-coded log levels
+- [x] Add log filtering by level
+- [x] Implement log search
+- [x] Add "Clear Logs" button
+- [x] Implement auto-scroll to latest
+- [x] Add "Export Logs" functionality
 
 ### Error Handling
 - [ ] Create ErrorDisplay component
@@ -416,16 +416,16 @@ Week 4:      ░░░░░░░░░░░░░░░░░░░░   0%
 ## 📊 Progress Tracking
 
 ### Week 1: 30 / 30 tasks complete (100%) ✅
-### Week 2: 18 / 35 tasks complete (51%)
+### Week 2: 28 / 35 tasks complete (80%)
 ### Week 3: 0 / 32 tasks complete (0%)
 ### Week 4: 0 / 38 tasks complete (0%)
 
-**Total: 48 / 135 tasks complete (35.6%)**
+**Total: 58 / 135 tasks complete (43%)**
 
-### Testing Progress: 30 tests created and passing
+### Testing Progress: 39 tests created and passing
 - ✅ Pinia Stores: 23 tests (100% coverage)
 - ✅ Rust Commands: 3 tests (100% coverage)
-- ✅ Vue Components: 7 tests (CodeEditor component)
+- ✅ Vue Components: 16 tests (CodeEditor: 7, LogViewer: 9)
 - 🔄 Integration: 0 tests (Week 3-4)
 
 ---

@@ -1,11 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import CodeEditor from '../CodeEditor.vue'
 
 describe('CodeEditor Component', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
 
   it('should render editor container', () => {
     const wrapper = mount(CodeEditor, {

@@ -18,45 +18,71 @@
       <button @click="clearCode" class="px-3 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
         <i class="pi pi-trash"></i>
       </button>
+      
+      <button 
+        @click="showLogs = !showLogs" 
+        class="px-3 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+        :title="showLogs ? 'Hide Logs' : 'Show Logs'"
+      >
+        <i class="pi pi-list"></i>
+        <span v-if="logsStore.logs.length > 0" class="ml-1 text-xs bg-primary-600 text-white px-2 py-0.5 rounded-full">
+          {{ logsStore.logs.length }}
+        </span>
+      </button>
     </div>
 
-    <!-- Split Pane Editor -->
-    <div class="flex-1 flex overflow-hidden">
-      <!-- Left Pane: TypeScript Input -->
-      <div class="flex-1 flex flex-col border-r border-gray-200 dark:border-gray-700">
-        <div class="bg-gray-100 dark:bg-gray-900 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            <i class="pi pi-code mr-2"></i>
-            TypeScript Input
-          </span>
-        </div>
-        <div class="flex-1">
-          <CodeEditor 
-            v-model="typescriptCode" 
-            language="typescript"
-            theme="vs-dark"
-          />
-        </div>
-      </div>
+    <!-- Main Content with Splitter -->
+    <Splitter class="flex-1">
+      <!-- Editors Panel -->
+      <SplitterPanel :size="showLogs ? 70 : 100" :minSize="40">
+        <!-- Split Pane Editor -->
+        <Splitter>
+          <!-- Left Pane: TypeScript Input -->
+          <SplitterPanel :size="50" :minSize="20">
+            <div class="h-full flex flex-col">
+              <div class="bg-gray-100 dark:bg-gray-900 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <i class="pi pi-code mr-2"></i>
+                  TypeScript Input
+                </span>
+              </div>
+              <div class="flex-1">
+                <CodeEditor 
+                  v-model="typescriptCode" 
+                  language="typescript"
+                  theme="vs-dark"
+                />
+              </div>
+            </div>
+          </SplitterPanel>
 
-      <!-- Right Pane: Go Output -->
-      <div class="flex-1 flex flex-col">
-        <div class="bg-gray-100 dark:bg-gray-900 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            <i class="pi pi-file-code mr-2"></i>
-            Generated Go Code
-          </span>
-        </div>
-        <div class="flex-1">
-          <CodeEditor 
-            v-model="goCode" 
-            language="go"
-            :readonly="true"
-            theme="vs-dark"
-          />
-        </div>
-      </div>
-    </div>
+          <!-- Right Pane: Go Output -->
+          <SplitterPanel :size="50" :minSize="20">
+            <div class="h-full flex flex-col">
+              <div class="bg-gray-100 dark:bg-gray-900 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <i class="pi pi-file-code mr-2"></i>
+                  Generated Go Code
+                </span>
+              </div>
+              <div class="flex-1">
+                <CodeEditor 
+                  v-model="goCode" 
+                  language="go"
+                  :readonly="true"
+                  theme="vs-dark"
+                />
+              </div>
+            </div>
+          </SplitterPanel>
+        </Splitter>
+      </SplitterPanel>
+
+      <!-- Logs Panel (collapsible) -->
+      <SplitterPanel v-if="showLogs" :size="30" :minSize="20">
+        <LogViewer />
+      </SplitterPanel>
+    </Splitter>
 
     <!-- Progress Bar (shown when transpiling) -->
     <div 
@@ -83,13 +109,17 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import Splitter from 'primevue/splitter'
+import SplitterPanel from 'primevue/splitterpanel'
 import CodeEditor from '../components/CodeEditor.vue'
+import LogViewer from '../components/LogViewer.vue'
 import { useTranspilerStore } from '../stores/transpiler'
 import { useLogsStore } from '../stores/logs'
 import { invoke } from '@tauri-apps/api/core'
 
 const transpilerStore = useTranspilerStore()
 const logsStore = useLogsStore()
+const showLogs = ref(false)
 
 const typescriptCode = ref(`// TypeScript Example
 interface Person {
