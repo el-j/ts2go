@@ -21,6 +21,7 @@ make build
 ./ts2go convert --in app.ts --out app.go      # Single file conversion
 ./ts2go transpile <project-dir> --out output  # Full project transpilation
 ./ts2go analyze <project-dir>                  # Analyze dependencies
+./ts2go ui --port 8080 --open                 # Web UI (legacy, for quick testing)
 ```
 
 ## Example
