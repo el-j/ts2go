@@ -6,8 +6,8 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/yourusername/ts2go/internal/orchestrator"
-	"github.com/yourusername/ts2go/internal/project"
+	"github.com/el-j/ts2go/internal/orchestrator"
+	"github.com/el-j/ts2go/internal/project"
 )
 
 func main() {

@@ -7,7 +7,7 @@ all: build
 build: build-cli
 
 build-cli:
-	cd packages/cli && go build -o ../../ts2go ./cmd/ts2go
+	go build -o ts2go ./packages/cli/cmd/ts2go
 
 # Build desktop app
 build-desktop:

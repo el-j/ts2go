@@ -1,9 +1,7 @@
-go 1.22.5
+go 1.24.9
 
 use (
-	./packages/core
-	./packages/cli
-	./packages/cli/cmd/ts2go
+	.
 	./examples/multipackage-demo
 	./tests
 )
