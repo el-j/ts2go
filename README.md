@@ -17,10 +17,10 @@ cd internal/transpiler/parser && npm install && cd ../../..
 # Build
 make build
 
-# Use CLI - Now with UI command!
+# Use CLI
 ./ts2go convert --in app.ts --out app.go      # Single file conversion
-./ts2go transpile <project-dir> --out output  # Full project
-./ts2go ui --port 8080 --open                 # Web UI (NEW!)
+./ts2go transpile <project-dir> --out output  # Full project transpilation
+./ts2go analyze <project-dir>                  # Analyze dependencies
 ```
 
 ## Example
@@ -81,17 +81,22 @@ func Greet(person Person) string {
 ✅ Console.log mapping  
 ✅ Go runtime library for Node.js APIs  
 
-### 🆕 Desktop UI (Phase 21)
-✅ **Web-based UI** for easy transpilation  
+### ✅ Advanced Features (Phases 16-20 Complete)
+✅ **Control flow** - if/else, for/while loops, switch statements  
+✅ **Error handling** - try/catch/finally, throw statements  
+✅ **Async/await** - Goroutine-based async with channels  
+✅ **Advanced operators** - typeof, instanceof, in, delete  
+
+### 🆕 Desktop UI (Phase 21 - 52% Complete)
+✅ **Tauri + Vue 3 + Monaco Editor** - Professional desktop app  
 ✅ **Split-pane editor** with TypeScript input and Go output  
 ✅ **Real-time transpilation** with instant feedback  
-✅ **Built-in examples** showcasing key features  
-✅ **Responsive design** works on all devices  
+✅ **Resizable panes and LogViewer** component  
+✅ **39 tests passing** with 100% store coverage  
 
 ### In Progress
-🔄 Control flow statements (if/else, loops, switch)  
-🔄 Modern JavaScript syntax (arrow functions, template literals)  
-🔄 Async/await support  
+🔄 Modern JavaScript syntax (arrow functions, template literals, destructuring)  
+🔄 Desktop UI completion (Weeks 3-4 remaining)  
 
 ❌ Frontend frameworks (React, Vue, Angular) - Out of scope  
 
