@@ -19,11 +19,15 @@ export default defineConfig({
         '**/types.ts',
         'src-tauri/'
       ]
+    },
+    deps: {
+      inline: ['monaco-editor']
     }
   },
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      'monaco-editor': fileURLToPath(new URL('./src/test/monaco-mock.ts', import.meta.url))
     }
   }
 })

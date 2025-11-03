@@ -19,6 +19,8 @@
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",
     "@tauri-apps/plugin-shell": "^2.0.1",
+    "@tauri-apps/plugin-dialog": "^2.0.1",
+    "monaco-editor": "^0.52.2",
     "pinia": "^2.2.6",
     "primevue": "^4.2.2",
     "primeicons": "^7.0.0",

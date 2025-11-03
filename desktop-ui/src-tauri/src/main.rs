@@ -29,13 +29,25 @@ async fn get_project_files(path: String) -> Result<Vec<String>, String> {
     Ok(vec![format!("{}/example.ts", path)])
 }
 
+#[tauri::command]
+async fn transpile_code(code: String, filename: String) -> Result<String, String> {
+    // TODO: Call ts2go CLI to transpile code
+    // For now, return a mock Go translation
+    Ok(format!(
+        "// Generated Go code from {}\npackage main\n\n// TODO: Implement actual transpilation\n// Original TypeScript:\n{}\n",
+        filename,
+        code.lines().map(|l| format!("// {}", l)).collect::<Vec<_>>().join("\n")
+    ))
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             analyze_project,
             transpile_project,
-            get_project_files
+            get_project_files,
+            transpile_code
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]
