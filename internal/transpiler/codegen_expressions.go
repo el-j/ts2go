@@ -51,6 +51,10 @@ func (g *CodeGenerator) generateExpression(node *ASTNode) (string, error) {
 		return g.generateObjectLiteral(node)
 	case "ArrayLiteralExpression":
 		return g.generateArrayLiteral(node)
+	case TypeOfExpression:
+		return g.generateTypeOfExpression(node)
+	case DeleteExpression:
+		return g.generateDeleteExpression(node)
 	default:
 		return "/* unsupported expression */", nil
 	}
@@ -481,6 +485,20 @@ func (g *CodeGenerator) generateBinaryExpression(node *ASTNode) (string, error) 
 		return fmt.Sprintf("nullishCoalesce(%s, %s)", left, right), nil
 	}
 
+	// Check for instanceof operator
+	if node.Operator == "InstanceOfKeyword" || node.Operator == "instanceof" {
+		// TypeScript: obj instanceof ClassName
+		// Go: Check type using reflect or type switch
+		return fmt.Sprintf("/* instanceof check: %s is %s */ reflect.TypeOf(%s).String() == reflect.TypeOf((*%s)(nil)).Elem().String()", left, right, left, right), nil
+	}
+
+	// Check for in operator
+	if node.Operator == "InKeyword" || node.Operator == "in" {
+		// TypeScript: "key" in obj
+		// Go: Check map key existence - _, exists := map[key]
+		return fmt.Sprintf("func() bool { _, exists := %s[%s]; return exists }()", right, left), nil
+	}
+
 	// Map operator from AST constant to Go operator
 	operator := g.mapOperator(node.Operator)
 
@@ -648,3 +666,63 @@ func (g *CodeGenerator) generateSpreadElement(node *ASTNode) (string, error) {
 }
 
 // generateType converts a TS type to a Go type
+
+// generateTypeOfExpression generates code for typeof operator
+// TypeScript: typeof x
+// Go: reflect.TypeOf(x).String() - requires import "reflect"
+func (g *CodeGenerator) generateTypeOfExpression(node *ASTNode) (string, error) {
+if node.Expression == nil {
+return "", fmt.Errorf("typeof expression missing operand")
+}
+
+expr, err := g.generateExpression(node.Expression)
+if err != nil {
+return "", fmt.Errorf("generating typeof operand: %w", err)
+}
+
+// Generate Go code using reflect.TypeOf
+// Note: This returns the Go type, not JavaScript type strings
+return fmt.Sprintf("reflect.TypeOf(%s).String()", expr), nil
+}
+
+// generateDeleteExpression generates code for delete operator  
+// TypeScript: delete obj.prop or delete obj["key"]
+// Go: No direct equivalent - generates delete() for maps, comment for others
+func (g *CodeGenerator) generateDeleteExpression(node *ASTNode) (string, error) {
+if node.Expression == nil {
+return "", fmt.Errorf("delete expression missing operand")
+}
+
+// Check if it's a property access or element access
+expr := node.Expression
+if expr.Kind == PropertyAccessExpression {
+// delete obj.prop
+// Generate: delete(map, "key") - only works for maps
+obj, err := g.generateExpression(expr.Expression)
+if err != nil {
+return "", err
+}
+propName := expr.Name
+return fmt.Sprintf("delete(%s, \"%s\")", obj, propName), nil
+} else if expr.Kind == "ElementAccessExpression" {
+// delete obj["key"]
+obj, err := g.generateExpression(expr.Expression)
+if err != nil {
+return "", err
+}
+if len(expr.Children) > 0 {
+key, err := g.generateExpression(&expr.Children[0])
+if err != nil {
+return "", err
+}
+return fmt.Sprintf("delete(%s, %s)", obj, key), nil
+}
+}
+
+// Fallback - delete on a simple expression
+operand, err := g.generateExpression(expr)
+if err != nil {
+return "", err
+}
+return fmt.Sprintf("/* delete %s - not supported in Go */", operand), nil
+}

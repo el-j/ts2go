@@ -78,6 +78,8 @@ const (
 	TemplateTail                = "TemplateTail"            // End of template: } !`
 	BinaryExpression            = "BinaryExpression"
 	CallExpression              = "CallExpression"
+	TypeOfExpression            = "TypeOfExpression"
+	DeleteExpression            = "DeleteExpression"
 	PropertyAccessExpression    = "PropertyAccessExpression"
 	ElementAccessExpression     = "ElementAccessExpression" // array[index]
 	NewExpression               = "NewExpression"
