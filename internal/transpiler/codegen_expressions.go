@@ -131,9 +131,26 @@ func (g *CodeGenerator) generateArrowFunction(node *ASTNode) (string, error) {
 	var bodyCode string
 	if node.Body != nil {
 		if node.Body.Kind == Block {
-			// Block body with statements - for now, indicate it needs to be a full function
-			// Arrow functions with blocks are best transpiled as named functions
-			return "", fmt.Errorf("arrow functions with block bodies not yet fully supported - use function declarations instead")
+			// Block body with statements
+			// Save current output and create temporary buffer
+			oldOutput := g.output.String()
+			g.output.Reset()
+			
+			// Generate block statements
+			if node.Body.Statements != nil {
+				for _, stmt := range node.Body.Statements {
+					if err := g.generateStatement(&stmt); err != nil {
+						g.output.Reset()
+						g.output.WriteString(oldOutput)
+						return "", fmt.Errorf("generating arrow function statement: %w", err)
+					}
+				}
+			}
+			
+			// Get generated code and restore output
+			bodyCode = strings.TrimSpace(g.output.String())
+			g.output.Reset()
+			g.output.WriteString(oldOutput)
 		} else {
 			// Expression body: expr (implicit return)
 			expr, err := g.generateExpression(node.Body)
@@ -583,6 +600,49 @@ func (g *CodeGenerator) mapOperator(op string) string {
 	default:
 		return ""
 	}
+}
+
+// generateElementAccess generates code for array/object element access
+// TypeScript: array[index] or object["key"]
+// Go: array[index] or object["key"]
+func (g *CodeGenerator) generateElementAccess(node *ASTNode) (string, error) {
+	if node.Expression == nil {
+		return "", fmt.Errorf("element access missing expression")
+	}
+
+	expr, err := g.generateExpression(node.Expression)
+	if err != nil {
+		return "", fmt.Errorf("generating element access expression: %w", err)
+	}
+
+	// The argument expression is the index/key
+	if len(node.Children) > 0 && node.Children[0].Kind != "undefined" {
+		index, err := g.generateExpression(&node.Children[0])
+		if err != nil {
+			return "", fmt.Errorf("generating element access index: %w", err)
+		}
+		return fmt.Sprintf("%s[%s]", expr, index), nil
+	}
+
+	return "", fmt.Errorf("element access missing index")
+}
+
+// generateSpreadElement generates code for spread operator
+// TypeScript: ...args
+// Go: args... (in function calls) or append/copy patterns
+func (g *CodeGenerator) generateSpreadElement(node *ASTNode) (string, error) {
+	if node.Expression == nil {
+		return "", fmt.Errorf("spread element missing expression")
+	}
+
+	expr, err := g.generateExpression(node.Expression)
+	if err != nil {
+		return "", fmt.Errorf("generating spread expression: %w", err)
+	}
+
+	// In Go, spread is used differently depending on context
+	// For now, append ... suffix for variadic calls
+	return expr + "...", nil
 }
 
 // generateType converts a TS type to a Go type

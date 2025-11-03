@@ -67,6 +67,9 @@ const (
 	Identifier                  = "Identifier"
 	StringLiteral               = "StringLiteral"
 	NumericLiteral              = "NumericLiteral"
+	TrueKeyword                 = "TrueKeyword"
+	FalseKeyword                = "FalseKeyword"
+	NullKeyword                 = "NullKeyword"
 	TemplateExpression          = "TemplateExpression"      // Template literal: `hello ${name}`
 	TemplateLiteralTypeSpan     = "TemplateLiteralTypeSpan" // Part of template
 	TemplateHead                = "TemplateHead"            // Start of template: `hello ${
@@ -75,8 +78,17 @@ const (
 	BinaryExpression            = "BinaryExpression"
 	CallExpression              = "CallExpression"
 	PropertyAccessExpression    = "PropertyAccessExpression"
+	ElementAccessExpression     = "ElementAccessExpression" // array[index]
 	NewExpression               = "NewExpression"
-	ConditionalExpression       = "ConditionalExpression" // Ternary operator: condition ? true : false
+	ConditionalExpression       = "ConditionalExpression"   // Ternary operator: condition ? true : false
+	ObjectLiteralExpression     = "ObjectLiteralExpression" // { key: value }
+	ArrayLiteralExpression      = "ArrayLiteralExpression"  // [1, 2, 3]
+	SpreadElement               = "SpreadElement"           // ...args
+	ObjectBindingPattern        = "ObjectBindingPattern"    // { x, y } = obj
+	ArrayBindingPattern         = "ArrayBindingPattern"     // [a, b] = arr
+	BindingElement              = "BindingElement"          // Element in binding pattern
+	PrefixUnaryExpression       = "PrefixUnaryExpression"   // ++x, --x, !x
+	PostfixUnaryExpression      = "PostfixUnaryExpression"  // x++, x--
 	ThisKeyword                 = "ThisKeyword"
 	SuperKeyword                = "SuperKeyword"
 	ExpressionWithTypeArguments = "ExpressionWithTypeArguments"
