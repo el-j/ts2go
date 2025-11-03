@@ -1,0 +1,204 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          if [ -f CHANGELOG.md ]; then
+            # Extract section for this version if it exists
+            awk '/^## \[${{ steps.get_version.outputs.version }}\]/{flag=1;next}/^## \[/{flag=0}flag' CHANGELOG.md > RELEASE_NOTES.md || echo "Release ${{ steps.get_version.outputs.version }}" > RELEASE_NOTES.md
+          else
+            echo "Release ${{ steps.get_version.outputs.version }}" > RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+            echo "See [documentation](https://github.com/${{ github.repository }}) for details." >> RELEASE_NOTES.md
+          fi
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name: Release ${{ steps.get_version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+
+  build-and-upload:
+    name: Build & Upload - ${{ matrix.platform }}
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # Linux builds
+          - os: ubuntu-latest
+            platform: linux-amd64
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-latest
+            platform: linux-arm64
+            goos: linux
+            goarch: arm64
+          
+          # macOS builds
+          - os: macos-latest
+            platform: darwin-amd64
+            goos: darwin
+            goarch: amd64
+          - os: macos-latest
+            platform: darwin-arm64
+            goos: darwin
+            goarch: arm64
+          
+          # Windows builds
+          - os: windows-latest
+            platform: windows-amd64
+            goos: windows
+            goarch: amd64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.5'
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install npm dependencies
+        run: |
+          cd internal/transpiler/parser
+          npm ci
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          VERSION=${{ needs.create-release.outputs.version }}
+          if [ "${{ matrix.goos }}" == "windows" ]; then
+            OUTPUT_NAME="ts2go-${VERSION}-${{ matrix.platform }}.exe"
+            go build -ldflags "-s -w -X main.version=${VERSION}" -o "${OUTPUT_NAME}" ./cmd/ts2go
+          else
+            OUTPUT_NAME="ts2go-${VERSION}-${{ matrix.platform }}"
+            go build -ldflags "-s -w -X main.version=${VERSION}" -o "${OUTPUT_NAME}" ./cmd/ts2go
+          fi
+          
+          # Create archive
+          if [ "${{ matrix.goos }}" == "windows" ]; then
+            7z a "ts2go-${VERSION}-${{ matrix.platform }}.zip" "${OUTPUT_NAME}" README.md LICENSE
+            ASSET_PATH="ts2go-${VERSION}-${{ matrix.platform }}.zip"
+          else
+            tar czf "ts2go-${VERSION}-${{ matrix.platform }}.tar.gz" "${OUTPUT_NAME}" README.md
+            ASSET_PATH="ts2go-${VERSION}-${{ matrix.platform }}.tar.gz"
+          fi
+          
+          echo "ASSET_PATH=${ASSET_PATH}" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.create-release.outputs.version }}
+          files: ${{ env.ASSET_PATH }}
+
+      - name: Generate checksums
+        if: matrix.platform == 'linux-amd64'
+        run: |
+          cd ${{ github.workspace }}
+          for file in ts2go-*.tar.gz ts2go-*.zip; do
+            if [ -f "$file" ]; then
+              sha256sum "$file" >> checksums.txt
+            fi
+          done
+        shell: bash
+
+      - name: Upload checksums
+        if: matrix.platform == 'linux-amd64'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.create-release.outputs.version }}
+          files: checksums.txt
+
+  publish-docker:
+    name: Publish Docker Image
+    needs: [create-release, build-and-upload]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,5 +1,11 @@
 # TS2Go
 
+[![CI - Main](https://github.com/el-j/ts2go/actions/workflows/ci-main.yml/badge.svg)](https://github.com/el-j/ts2go/actions/workflows/ci-main.yml)
+[![CI - Develop](https://github.com/el-j/ts2go/actions/workflows/ci-develop.yml/badge.svg)](https://github.com/el-j/ts2go/actions/workflows/ci-develop.yml)
+[![Release](https://github.com/el-j/ts2go/actions/workflows/release.yml/badge.svg)](https://github.com/el-j/ts2go/actions/workflows/release.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/el-j/ts2go)](https://goreportcard.com/report/github.com/el-j/ts2go)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A TypeScript-to-Go transpiler that converts a subset of TypeScript into idiomatic, efficient Go code.
 
 ## Quick Start
@@ -59,6 +65,7 @@ func Greet(person Person) string {
 
 ### Advanced
 - 🗺️ **[Roadmap](docs/ROADMAP.md)** - **Complete plan for all TypeScript features + dependencies**
+- 🎯 **[Next Phase Roadmap](docs/NEXT_PHASE_ROADMAP.md)** - **Detailed plan for upcoming implementation phases**
 - 🔧 **[Dependency Guide](docs/DEPENDENCY_GUIDE.md)** - **Implementation guide for dependency resolution**
 - 🏗️ [Architecture](docs/ARCHITECTURE.md) - Project structure and design
 - 📝 [Implementation Plan](implementationPlan.md) - Original development phases
@@ -89,11 +96,41 @@ func Greet(person Person) string {
 
 ❌ Frontend frameworks (React, Vue, Angular) - Out of scope  
 
+## Installation
+
+### From Source
+```bash
+git clone https://github.com/el-j/ts2go.git
+cd ts2go
+make build
+sudo mv ts2go /usr/local/bin/
+```
+
+### From Release (Coming Soon)
+Download pre-compiled binaries from the [releases page](https://github.com/el-j/ts2go/releases).
+
+### Using Docker
+```bash
+docker pull ghcr.io/el-j/ts2go:latest
+docker run -v $(pwd):/workspace ghcr.io/el-j/ts2go transpile /workspace/my-project
+```
+
 ## Testing
 
 ```bash
 make test
 ```
+
+## CI/CD & Releases
+
+This project uses GitHub Actions for continuous integration and automated releases:
+
+- **Feature Branches:** Automated builds and tests on every push
+- **Develop Branch:** Full test suite with integration tests  
+- **Main Branch:** Production-ready builds with quality checks
+- **Tagged Releases:** Automatic binary compilation for Linux, macOS, and Windows
+
+See our [workflows](.github/workflows/) for details.
 
 ## Project Structure
 

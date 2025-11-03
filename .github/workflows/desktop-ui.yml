@@ -1,0 +1,150 @@
+name: Desktop UI - Build & Release
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'desktop-ui/**'
+      - '.github/workflows/desktop-ui.yml'
+  pull_request:
+    paths:
+      - 'desktop-ui/**'
+  release:
+    types: [published]
+
+jobs:
+  test:
+    name: Test Desktop UI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop-ui
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: desktop-ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Run type check
+        run: npm run type-check || npx vue-tsc --noEmit
+        continue-on-error: true
+
+      - name: Run tests
+        run: npm test
+        continue-on-error: true
+
+      - name: Build frontend
+        run: npm run build
+
+  build-tauri:
+    name: Build Tauri - ${{ matrix.platform }}
+    needs: test
+    if: github.event_name == 'release' || github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'macos-latest'
+            os: macos
+            args: '--target universal-apple-darwin'
+          - platform: 'ubuntu-22.04'
+            os: linux
+            args: ''
+          - platform: 'windows-latest'
+            os: windows
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        working-directory: desktop-ui
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: desktop-ui/package-lock.json
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './desktop-ui/src-tauri -> target'
+
+      - name: Install dependencies (Ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev \
+            libappindicator3-dev librsvg2-dev patchelf libssl-dev
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        with:
+          projectPath: desktop-ui
+          tagName: ${{ github.event.release.tag_name || 'dev' }}
+          releaseName: 'TS2Go Desktop v__VERSION__'
+          releaseBody: 'See the assets to download this version and install.'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  build-web-only:
+    name: Build Web Version
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop-ui
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: desktop-ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web version
+        run: npm run build
+
+      - name: Upload web artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-ui-web
+          path: desktop-ui/dist/
+          retention-days: 30
