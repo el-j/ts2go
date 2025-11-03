@@ -108,8 +108,6 @@ func (g *CodeGenerator) Generate(node *ASTNode) (string, error) {
 
 	if node.Statements != nil {
 		for _, stmt := range node.Statements {
-			// DEBUG
-			fmt.Printf("DEBUG: Processing statement kind=%s\n", stmt.Kind)
 			if stmt.Kind == InterfaceDeclaration || stmt.Kind == TypeAliasDeclaration || stmt.Kind == EnumDeclaration || stmt.Kind == ClassDeclaration || stmt.Kind == FunctionDeclaration {
 				typeDecls = append(typeDecls, stmt)
 			} else {
@@ -117,7 +115,6 @@ func (g *CodeGenerator) Generate(node *ASTNode) (string, error) {
 			}
 		}
 	}
-	fmt.Printf("DEBUG: typeDecls=%d, execStmts=%d\n", len(typeDecls), len(execStmts))
 
 	// Generate type declarations first
 	for _, stmt := range typeDecls {
