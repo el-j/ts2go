@@ -22,9 +22,10 @@
 ### Remaining Gaps
 1. ✅ **Arrow functions** - COMPLETE (expression + block bodies)
 2. ✅ **Template literals** - COMPLETE (already in main)
-3. ❌ **Destructuring** - Not yet implemented
-4. ❌ **Spread/rest operators** - Not yet implemented
-5. 🔄 **Desktop UI** - 52% complete, needs Weeks 3-4 implementation
+3. ✅ **Desktop UI CLI integration** - COMPLETE (all commands implemented)
+4. ❌ **Destructuring** - Not yet implemented
+5. ❌ **Spread/rest operators** - Not yet implemented
+6. 🔄 **Desktop UI polish** - 55% complete, needs Weeks 3-4 for UI refinement
 
 ---
 
@@ -422,11 +423,19 @@ return nil, fmt.Errorf("something went wrong")
 
 ---
 
-## 🔄 Phase 21: Desktop UI Completion (IN PROGRESS - Week 1-2)
+## 🔄 Phase 21: Desktop UI Completion (IN PROGRESS - Week 2)
 
 **Priority:** MEDIUM  
-**Current:** 52% complete (Week 1 & 2 done)  
+**Current:** 55% complete (Week 1 & 2 done, CLI integration complete)  
 **Status:** 🔄 In Progress
+
+### ✅ Completed in This Session
+- ✅ **Tauri backend now calls actual ts2go CLI**
+- ✅ transpile_code integrated with ts2go convert
+- ✅ analyze_project integrated with ts2go analyze  
+- ✅ transpile_project integrated with ts2go transpile
+- ✅ get_project_files with TypeScript file discovery
+- ✅ All TODO comments removed and implemented
 
 ### Remaining Work (from PHASE21_TODO.md)
 
