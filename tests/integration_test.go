@@ -36,7 +36,7 @@ func TestTranspileSimple(t *testing.T) {
 	}
 
 	// Run transpiler
-	cmd := exec.Command("../ts2go", "--in", inputFile, "--out", outputFile)
+	cmd := exec.Command("../ts2go", "convert", "--in", inputFile, "--out", outputFile)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Logf("Transpiler output: %s", string(output))

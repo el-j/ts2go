@@ -1,10 +1,7 @@
-module github.com/ts2go/tests
+module github.com/el-j/ts2go/tests
 
-go 1.22.5
+go 1.24.9
 
-toolchain go1.24.9
-
-replace (
-	github.com/ts2go/runtime => ../runtime
-	github.com/ts2go/transpiler => ../internal/transpiler
+require (
+	github.com/el-j/ts2go v0.0.0
 )
