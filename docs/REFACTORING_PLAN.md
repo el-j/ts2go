@@ -1,8 +1,9 @@
 # Refactoring Phase: Code Organization
 
 **Date:** November 2, 2025  
-**Status:** IN PROGRESS  
-**Reason:** codegen.go is 1943 lines - too large to maintain
+**Updated:** November 4, 2025  
+**Status:** PLANNED (Not Yet Implemented)  
+**Reason:** codegen.go is now 2909 lines - needs refactoring into smaller files
 
 ---
 
@@ -176,14 +177,14 @@ But **Phase 1 is sufficient** for now - same-package split is simpler.
 
 ## Implementation Steps
 
-### Step 1: ✅ Create Helper File (DONE)
-- Created `codegen_helpers.go` with utility functions
-- ~250 lines extracted
+### Step 1: ⏳ Create Helper File
+- Extract utility functions to `codegen_helpers.go`
+- ~250 lines to extract
 
-### Step 2: ⏳ Create Statements File (IN PROGRESS)
+### Step 2: ⏳ Create Statements File
 - Create `codegen_statements.go` with statement generation
-- INCLUDES our new if/else logic
-- Need to remove from original codegen.go
+- INCLUDES if/else, loops, switch, try/catch
+- ~400 lines to extract
 
 ### Step 3: Create Type File
 - Extract all type generation methods
