@@ -14,9 +14,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/yourusername/ts2go/internal/analyzer"
-	"github.com/yourusername/ts2go/internal/project"
-	"github.com/yourusername/ts2go/internal/transpiler"
+	"github.com/el-j/ts2go/internal/analyzer"
+	"github.com/el-j/ts2go/internal/project"
+	"github.com/el-j/ts2go/internal/transpiler"
 )
 
 //go:embed ui_templates/*

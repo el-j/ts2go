@@ -25,12 +25,12 @@ func (g *CodeGenerator) generateFunction(node *ASTNode) error {
 		name         string
 		defaultValue string
 	}{}
-	
+
 	if node.Parameters != nil {
 		for _, param := range node.Parameters {
 			paramName := param.Name
 			paramType := "interface{}"
-			
+
 			// Check for rest parameter (...args)
 			isRestParam := false
 			if param.Children != nil {
@@ -41,7 +41,7 @@ func (g *CodeGenerator) generateFunction(node *ASTNode) error {
 					}
 				}
 			}
-			
+
 			if param.Type != nil {
 				var err error
 				paramType, err = g.generateType(param.Type)
@@ -49,7 +49,7 @@ func (g *CodeGenerator) generateFunction(node *ASTNode) error {
 					return err
 				}
 			}
-			
+
 			// Handle default parameters
 			if param.Initializer != nil {
 				defaultValue, err := g.generateExpression(param.Initializer)
@@ -61,12 +61,12 @@ func (g *CodeGenerator) generateFunction(node *ASTNode) error {
 					defaultValue string
 				}{paramName, defaultValue})
 			}
-			
+
 			// For rest parameters, ensure the type is a slice
 			if isRestParam && !strings.HasPrefix(paramType, "[]") {
 				// Already a slice type, keep as is
 			}
-			
+
 			params = append(params, fmt.Sprintf("%s %s", paramName, paramType))
 		}
 	}

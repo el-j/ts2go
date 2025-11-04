@@ -204,4 +204,3 @@ func (g *CodeGenerator) needsNullishCoalesce(node *ASTNode) bool {
 
 	return false
 }
-

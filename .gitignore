@@ -1,4 +1,4 @@
-# Binaries
+# Binaries (in root only)
 /ts2go
 *.exe
 *.dll
@@ -17,6 +17,7 @@ go.work.sum
 # Node modules
 node_modules/
 package-lock.json
+!internal/transpiler/parser/package-lock.json
 
 # IDE
 .vscode/

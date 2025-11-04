@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+.github
+
+# Build artifacts
+ts2go
+*.exe
+dist/
+output/
+build/
+
+# Dependencies
+**/node_modules
+!internal/transpiler/parser/node_modules
+
+# Go
+**/.DS_Store
+**/*.swp
+**/*.swo
+**/coverage.txt
+**/coverage.html
+
+# IDE
+.vscode
+.idea
+*.iml
+
+# Docs (except essential)
+docs/*
+!docs/GETTING_STARTED.md
+implementationPlan.md
+
+# Tests
+tests/fixtures/output
+test-projects/*/output
+test-projects/*/go-dist
+
+# Desktop UI
+desktop-ui/
+
+# Examples
+examples/*/output
+examples/*/node_modules
+
+# Temporary files
+tmp/
+temp/
+*.log

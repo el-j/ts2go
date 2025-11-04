@@ -143,7 +143,7 @@ func (g *CodeGenerator) generateArrowFunction(node *ASTNode) (string, error) {
 			// Save current output and create temporary buffer
 			oldOutput := g.output.String()
 			g.output.Reset()
-			
+
 			// Generate block statements
 			if node.Body.Statements != nil {
 				for _, stmt := range node.Body.Statements {
@@ -154,7 +154,7 @@ func (g *CodeGenerator) generateArrowFunction(node *ASTNode) (string, error) {
 					}
 				}
 			}
-			
+
 			// Get generated code and restore output
 			bodyCode = strings.TrimSpace(g.output.String())
 			g.output.Reset()
@@ -673,53 +673,53 @@ func (g *CodeGenerator) generateSpreadElement(node *ASTNode) (string, error) {
 // TypeScript: typeof x
 // Go: reflect.TypeOf(x).String() - requires import "reflect"
 func (g *CodeGenerator) generateTypeOfExpression(node *ASTNode) (string, error) {
-if node.Expression == nil {
-return "", fmt.Errorf("typeof expression missing operand")
+	if node.Expression == nil {
+		return "", fmt.Errorf("typeof expression missing operand")
+	}
+
+	expr, err := g.generateExpression(node.Expression)
+	if err != nil {
+		return "", fmt.Errorf("generating typeof operand: %w", err)
+	}
+
+	// Generate Go code using reflect.TypeOf
+	// Note: This returns the Go type, not JavaScript type strings
+	return fmt.Sprintf("reflect.TypeOf(%s).String()", expr), nil
 }
 
-expr, err := g.generateExpression(node.Expression)
-if err != nil {
-return "", fmt.Errorf("generating typeof operand: %w", err)
-}
-
-// Generate Go code using reflect.TypeOf
-// Note: This returns the Go type, not JavaScript type strings
-return fmt.Sprintf("reflect.TypeOf(%s).String()", expr), nil
-}
-
-// generateDeleteExpression generates code for delete operator  
+// generateDeleteExpression generates code for delete operator
 // TypeScript: delete obj.prop or delete obj["key"]
 // Go: No direct equivalent - generates delete() for maps, comment for others
 func (g *CodeGenerator) generateDeleteExpression(node *ASTNode) (string, error) {
-if node.Expression == nil {
-return "", fmt.Errorf("delete expression missing operand")
-}
+	if node.Expression == nil {
+		return "", fmt.Errorf("delete expression missing operand")
+	}
 
-// Check if it's a property access or element access
-expr := node.Expression
-if expr.Kind == PropertyAccessExpression {
-// delete obj.prop
-// Generate: delete(map, "key") - only works for maps
-obj, err := g.generateExpression(expr.Expression)
-if err != nil {
-return "", err
-}
-propName := expr.Name
-return fmt.Sprintf("delete(%s, \"%s\")", obj, propName), nil
-} else if expr.Kind == "ElementAccessExpression" {
-// delete obj["key"]
-obj, err := g.generateExpression(expr.Expression)
-if err != nil {
-return "", err
-}
-if len(expr.Children) > 0 {
-key, err := g.generateExpression(&expr.Children[0])
-if err != nil {
-return "", err
-}
-return fmt.Sprintf("delete(%s, %s)", obj, key), nil
-}
-}
+	// Check if it's a property access or element access
+	expr := node.Expression
+	if expr.Kind == PropertyAccessExpression {
+		// delete obj.prop
+		// Generate: delete(map, "key") - only works for maps
+		obj, err := g.generateExpression(expr.Expression)
+		if err != nil {
+			return "", err
+		}
+		propName := expr.Name
+		return fmt.Sprintf("delete(%s, \"%s\")", obj, propName), nil
+	} else if expr.Kind == "ElementAccessExpression" {
+		// delete obj["key"]
+		obj, err := g.generateExpression(expr.Expression)
+		if err != nil {
+			return "", err
+		}
+		if len(expr.Children) > 0 {
+			key, err := g.generateExpression(&expr.Children[0])
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("delete(%s, %s)", obj, key), nil
+		}
+	}
 
 	// Fallback - delete on a simple expression
 	operand, err := g.generateExpression(expr)

@@ -556,4 +556,3 @@ func (g *CodeGenerator) generateMethodStatement(node *ASTNode, receiverVar strin
 	// We'll need to handle "this" in expressions
 	return g.generateStatement(node)
 }
-

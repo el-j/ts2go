@@ -8,7 +8,7 @@ type ASTNode struct {
 	End             int       `json:"end"`
 	Text            string    `json:"text,omitempty"`
 	Name            string    `json:"name,omitempty"`
-	NameNode        *ASTNode  `json:"nameNode,omitempty"`  // For binding patterns (destructuring)
+	NameNode        *ASTNode  `json:"nameNode,omitempty"` // For binding patterns (destructuring)
 	Type            *ASTNode  `json:"type,omitempty"`
 	Types           []ASTNode `json:"types,omitempty"`
 	Elements        []ASTNode `json:"elements,omitempty"`
@@ -21,7 +21,7 @@ type ASTNode struct {
 	Initializer     *ASTNode  `json:"initializer,omitempty"`
 	Declarations    []ASTNode `json:"declarations,omitempty"`
 	Children        []ASTNode `json:"children,omitempty"`
-	Modifiers       []ASTNode `json:"modifiers,omitempty"`   // For async, static, etc.
+	Modifiers       []ASTNode `json:"modifiers,omitempty"` // For async, static, etc.
 	Operator        string    `json:"operator,omitempty"`
 	OperatorNumber  int       `json:"operatorNumber,omitempty"`
 	QuestionDot     bool      `json:"questionDot,omitempty"`
@@ -128,7 +128,7 @@ const (
 	ExpressionStatement = "ExpressionStatement"
 
 	// Async/Await
-	AsyncKeyword = "AsyncKeyword" // async modifier
+	AsyncKeyword    = "AsyncKeyword"    // async modifier
 	AwaitExpression = "AwaitExpression" // await expression
 
 	// File structure
