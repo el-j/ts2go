@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 export interface TranspilationStatus {
   isRunning: boolean
@@ -7,6 +7,9 @@ export interface TranspilationStatus {
   currentFile: string
   filesProcessed: number
   totalFiles: number
+  startTime: number | null
+  estimatedTimeRemaining: number | null
+  processingSpeed: number | null
 }
 
 export const useTranspilerStore = defineStore('transpiler', () => {
@@ -15,7 +18,21 @@ export const useTranspilerStore = defineStore('transpiler', () => {
     progress: 0,
     currentFile: '',
     filesProcessed: 0,
-    totalFiles: 0
+    totalFiles: 0,
+    startTime: null,
+    estimatedTimeRemaining: null,
+    processingSpeed: null
+  })
+
+  const formattedTimeRemaining = computed(() => {
+    if (!status.value.estimatedTimeRemaining) return null
+    
+    const seconds = Math.floor(status.value.estimatedTimeRemaining / 1000)
+    if (seconds < 60) return `${seconds}s`
+    
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}m ${remainingSeconds}s`
   })
 
   function startTranspilation(totalFiles: number) {
@@ -24,7 +41,10 @@ export const useTranspilerStore = defineStore('transpiler', () => {
       progress: 0,
       currentFile: '',
       filesProcessed: 0,
-      totalFiles
+      totalFiles,
+      startTime: Date.now(),
+      estimatedTimeRemaining: null,
+      processingSpeed: null
     }
   }
 
@@ -32,6 +52,15 @@ export const useTranspilerStore = defineStore('transpiler', () => {
     status.value.filesProcessed = filesProcessed
     status.value.currentFile = currentFile
     status.value.progress = (filesProcessed / status.value.totalFiles) * 100
+    
+    // Calculate processing speed and estimated time remaining
+    if (status.value.startTime && filesProcessed > 0) {
+      const elapsedTime = Date.now() - status.value.startTime
+      status.value.processingSpeed = (filesProcessed / elapsedTime) * 1000 // files per second
+      
+      const remainingFiles = status.value.totalFiles - filesProcessed
+      status.value.estimatedTimeRemaining = remainingFiles / status.value.processingSpeed * 1000
+    }
   }
 
   function stopTranspilation() {
@@ -40,6 +69,7 @@ export const useTranspilerStore = defineStore('transpiler', () => {
 
   return {
     status,
+    formattedTimeRemaining,
     startTranspilation,
     updateProgress,
     stopTranspilation

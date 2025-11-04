@@ -64,6 +64,20 @@ async fn get_project_files(path: String) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+async fn read_file(path: String) -> Result<String, String> {
+    // Read file content
+    fs::read_to_string(&path)
+        .map_err(|e| format!("Failed to read file {}: {}", path, e))
+}
+
+#[tauri::command]
+async fn write_file(path: String, content: String) -> Result<(), String> {
+    // Write content to file
+    fs::write(&path, content)
+        .map_err(|e| format!("Failed to write file {}: {}", path, e))
+}
+
+#[tauri::command]
 async fn transpile_code(code: String, filename: String) -> Result<String, String> {
     // Create temporary file and transpile using ts2go CLI
     let temp_dir = std::env::temp_dir();
@@ -138,7 +152,9 @@ fn main() {
             analyze_project,
             transpile_project,
             get_project_files,
-            transpile_code
+            transpile_code,
+            read_file,
+            write_file
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]

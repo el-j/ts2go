@@ -135,9 +135,9 @@ func main() {
 
 func TestOptimizer_RemoveUnusedFunctions(t *testing.T) {
 	tests := []struct {
-		name          string
-		input         string
-		shouldContain []string
+		name             string
+		input            string
+		shouldContain    []string
 		shouldNotContain []string
 	}{
 		{
@@ -156,7 +156,7 @@ func unusedFunc() {
 	println("never called")
 }
 `,
-			shouldContain: []string{"main", "usedFunc"},
+			shouldContain:    []string{"main", "usedFunc"},
 			shouldNotContain: []string{"unusedFunc"},
 		},
 		{
@@ -175,7 +175,7 @@ func unusedPrivate() {
 	println("unused")
 }
 `,
-			shouldContain: []string{"main", "ExportedFunc"},
+			shouldContain:    []string{"main", "ExportedFunc"},
 			shouldNotContain: []string{"unusedPrivate"},
 		},
 		{
@@ -194,7 +194,7 @@ func unused() {
 	println("unused")
 }
 `,
-			shouldContain: []string{"main", "init"},
+			shouldContain:    []string{"main", "init"},
 			shouldNotContain: []string{"unused"},
 		},
 	}
@@ -283,7 +283,7 @@ this is not valid go code
 
 	opt := NewOptimizer()
 	result, err := opt.Optimize(input)
-	
+
 	// Should return original code without error when parsing fails
 	if err != nil {
 		t.Errorf("Expected no error for invalid code, got: %v", err)

@@ -1,9 +1,15 @@
-name: Release
+name: Release Stable (Main Branch)
 
 on:
   push:
+    branches:
+      - main
     tags:
-      - 'v*.*.*'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/workflows/ci-*.yml'
   workflow_dispatch:
     inputs:
       version:
@@ -32,7 +38,12 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [ -f VERSION ]; then
+            # Use VERSION file if triggered by push (auto-version workflow)
+            VERSION="v$(cat VERSION)"
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
           else
+            # Fallback to tag name
             echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
 
@@ -162,9 +173,88 @@ jobs:
           tag_name: ${{ needs.create-release.outputs.version }}
           files: checksums.txt
 
+  build-desktop:
+    name: Build Desktop - ${{ matrix.platform }}
+    needs: [create-release, build-and-upload]
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: '--target universal-apple-darwin'
+          - platform: ubuntu-22.04
+            args: ''
+          - platform: windows-latest
+            args: ''
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.5'
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'desktop-ui/package-lock.json'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './desktop-ui/src-tauri -> target'
+
+      - name: Install dependencies (Ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev \
+            libappindicator3-dev librsvg2-dev patchelf libssl-dev
+
+      - name: Install parser dependencies
+        run: |
+          cd internal/transpiler/parser
+          npm ci
+
+      - name: Build CLI for bundling
+        run: |
+          VERSION=${{ needs.create-release.outputs.version }}
+          go build -ldflags "-s -w -X main.version=${VERSION}" -o ts2go-cli ./cmd/ts2go
+          mkdir -p desktop-ui/src-tauri/bin
+          mv ts2go-cli desktop-ui/src-tauri/bin/
+
+      - name: Install frontend dependencies
+        working-directory: desktop-ui
+        run: npm ci
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        with:
+          projectPath: desktop-ui
+          tagName: ${{ needs.create-release.outputs.version }}
+          releaseName: 'TS2Go Desktop ${{ needs.create-release.outputs.version }}'
+          releaseBody: 'Stable desktop release'
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
   publish-docker:
     name: Publish Docker Image
-    needs: [create-release, build-and-upload]
+    needs: [create-release, build-and-upload, build-desktop]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:

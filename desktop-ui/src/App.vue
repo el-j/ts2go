@@ -6,6 +6,10 @@
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import { useTheme } from '@/composables/useTheme'
+
+// Initialize theme support
+useTheme()
 </script>
 
 <style scoped>

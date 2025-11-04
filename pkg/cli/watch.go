@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/el-j/ts2go/internal/transpiler"
+	"github.com/fsnotify/fsnotify"
 )
 
 // Watcher monitors TypeScript files and automatically transpiles them

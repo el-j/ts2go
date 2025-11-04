@@ -1,18 +1,15 @@
-name: Desktop UI - Build & Release
+name: Desktop UI - Test & Build
 
 on:
-  push:
+  pull_request:
     branches:
       - main
       - develop
     paths:
       - 'desktop-ui/**'
       - '.github/workflows/desktop-ui.yml'
-  pull_request:
-    paths:
-      - 'desktop-ui/**'
-  release:
-    types: [published]
+  # Note: push triggers removed - releases handled by release-*.yml workflows
+  # This prevents duplicate runs on push events
 
 permissions:
   contents: read
@@ -56,7 +53,7 @@ jobs:
   build-tauri:
     name: Build Tauri - ${{ matrix.platform }}
     needs: test
-    if: github.event_name == 'release' || github.ref == 'refs/heads/main'
+    if: false # Disabled - Tauri builds now handled by release-*.yml workflows
     strategy:
       fail-fast: false
       matrix:

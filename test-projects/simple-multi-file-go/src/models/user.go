@@ -1,8 +1,8 @@
 package models
 
 type User struct {
-	Id string `json:"id"`
-	Name string `json:"name"`
+	Id    string `json:"id"`
+	Name  string `json:"name"`
 	Email string `json:"email"`
 }
 
@@ -13,4 +13,3 @@ func CreateUser(name string, email string) User {
 func GenerateId() string {
 	return MathRandom().ToString(36).Substr(2, 9)
 }
-

@@ -29,7 +29,18 @@
           {{ logsStore.logs.length }}
         </span>
       </button>
+
+      <button 
+        @click="showShortcutsDialog = true" 
+        class="px-3 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+        title="Keyboard Shortcuts (Ctrl+/)"
+      >
+        <i class="pi pi-question-circle"></i>
+      </button>
     </div>
+    
+    <!-- Keyboard Shortcuts Dialog -->
+    <KeyboardShortcutsDialog v-model:visible="showShortcutsDialog" />
 
     <!-- Main Content with Splitter -->
     <Splitter class="flex-1">
@@ -48,6 +59,7 @@
               </div>
               <div class="flex-1">
                 <CodeEditor 
+                  ref="tsEditorRef"
                   v-model="typescriptCode" 
                   language="typescript"
                   theme="vs-dark"
@@ -67,6 +79,7 @@
               </div>
               <div class="flex-1">
                 <CodeEditor 
+                  ref="goEditorRef"
                   v-model="goCode" 
                   language="go"
                   :readonly="true"
@@ -92,8 +105,18 @@
       <div class="flex items-center gap-4">
         <div class="flex-1">
           <div class="flex justify-between text-sm mb-1">
-            <span>{{ transpilerStore.status.currentFile || 'Initializing...' }}</span>
-            <span>{{ transpilerStore.status.filesProcessed }} / {{ transpilerStore.status.totalFiles }} files</span>
+            <div class="flex items-center gap-3">
+              <span>{{ transpilerStore.status.currentFile || 'Initializing...' }}</span>
+              <span v-if="transpilerStore.status.processingSpeed" class="text-xs text-gray-500 dark:text-gray-400">
+                ({{ transpilerStore.status.processingSpeed.toFixed(1) }} files/sec)
+              </span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span>{{ transpilerStore.status.filesProcessed }} / {{ transpilerStore.status.totalFiles }} files</span>
+              <span v-if="transpilerStore.formattedTimeRemaining" class="text-xs text-gray-500 dark:text-gray-400">
+                ~{{ transpilerStore.formattedTimeRemaining }} remaining
+              </span>
+            </div>
           </div>
           <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div 
@@ -113,11 +136,15 @@ import Splitter from 'primevue/splitter'
 import SplitterPanel from 'primevue/splitterpanel'
 import CodeEditor from '../components/CodeEditor.vue'
 import LogViewer from '../components/LogViewer.vue'
+import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog.vue'
 import { useTranspilerStore } from '../stores/transpiler'
 import { useLogsStore } from '../stores/logs'
+import { useHistoryStore } from '../stores/history'
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 import { invoke } from '@tauri-apps/api/core'
 
 const transpilerStore = useTranspilerStore()
+const historyStore = useHistoryStore()
 const logsStore = useLogsStore()
 const showLogs = ref(false)
 
@@ -142,12 +169,53 @@ console.log(greet(user));
 `)
 
 const goCode = ref('// Click "Transpile" to generate Go code')
+const showShortcutsDialog = ref(false)
+const tsEditorRef = ref()
+const goEditorRef = ref()
+
+// Setup keyboard shortcuts
+useKeyboardShortcuts([
+  {
+    key: 's',
+    ctrl: true,
+    description: 'Transpile code',
+    handler: transpileCode
+  },
+  {
+    key: 'l',
+    ctrl: true,
+    description: 'Toggle logs',
+    handler: () => { showLogs.value = !showLogs.value }
+  },
+  {
+    key: 'f',
+    ctrl: true,
+    description: 'Find in editor',
+    handler: () => { tsEditorRef.value?.showFind() }
+  },
+  {
+    key: 'h',
+    ctrl: true,
+    description: 'Replace in editor',
+    handler: () => { tsEditorRef.value?.showReplace() }
+  },
+  {
+    key: '/',
+    ctrl: true,
+    description: 'Show keyboard shortcuts',
+    handler: () => { showShortcutsDialog.value = true }
+  }
+])
 
 async function transpileCode() {
   if (!typescriptCode.value.trim()) {
     logsStore.addLog('error', 'No TypeScript code to transpile')
     return
   }
+
+  const startTime = Date.now()
+  let buildStatus: 'success' | 'failed' = 'success'
+  let errorCount = 0
 
   try {
     transpilerStore.startTranspilation(1)
@@ -166,10 +234,24 @@ async function transpileCode() {
     logsStore.addLog('success', 'Transpilation completed successfully')
     
   } catch (error: any) {
+    buildStatus = 'failed'
+    errorCount = 1
     logsStore.addLog('error', `Transpilation failed: ${error}`)
     goCode.value = `// Error during transpilation:\n// ${error}`
   } finally {
+    const duration = Date.now() - startTime
     transpilerStore.stopTranspilation()
+    
+    // Record build in history
+    historyStore.addBuild({
+      projectPath: '',
+      filesProcessed: buildStatus === 'success' ? 1 : 0,
+      totalFiles: 1,
+      duration,
+      status: buildStatus,
+      errors: errorCount,
+      warnings: 0
+    })
   }
 }
 
