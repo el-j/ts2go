@@ -103,7 +103,7 @@ Week 4:      ██████████░░░░░░░░░░  50%  
 - [x] Auto-scroll to latest
 
 **Test Coverage:**
-- 53 tests passing (from 42)
+- 63 tests passing (from 33)
 - 100% store coverage
 - Component tests for CodeEditor, LogViewer
 
@@ -206,7 +206,7 @@ Week 4:      ██████████░░░░░░░░░░  50%  
 **In Progress / Remaining:**
 
 **Testing (40%):**
-- [x] Unit tests for all stores (53 tests)
+- [x] Unit tests for all stores (63 tests)
 - [x] Component tests (CodeEditor, LogViewer)
 - [ ] E2E tests with Playwright
 - [ ] Cross-platform testing
@@ -278,10 +278,17 @@ Week 4:      ██████████░░░░░░░░░░  50%  
 ## 🧪 Testing Status
 
 **Current Coverage:**
-- **Total Tests:** 53 passing
-- **Store Tests:** 48 (100% coverage)
+- **Total Tests:** 63 passing
+- **Store Tests:** 56 (100% coverage)
   - project: 5 tests
   - transpiler: 6 tests
+  - logs: 6 tests
+  - settings: 9 tests
+  - editor: 11 tests
+  - history: 10 tests
+- **Component Tests:** 16
+  - CodeEditor: 7 tests
+  - LogViewer: 9 tests
   - settings: 9 tests
   - logs: 6 tests
   - editor: 11 tests
@@ -393,7 +400,7 @@ npm run tauri:build -- --target x86_64-unknown-linux-gnu # Linux
 ## 🚀 Success Metrics
 
 **Technical Metrics:**
-- ✅ 53 tests passing (100% pass rate)
+- ✅ 63 tests passing (100% pass rate)
 - ✅ 100% store coverage
 - ✅ 0 TypeScript errors
 - ✅ 0 linting errors
@@ -474,6 +481,6 @@ npm run tauri:build -- --target x86_64-unknown-linux-gnu # Linux
 
 ---
 
-**Status:** Phase 21 is 82% complete and on track for v1.0 release.  
+**Status:** Phase 21 is 85% complete and on track for v1.0 release.  
 **Last Review:** November 4, 2025  
 **Next Review:** November 6, 2025

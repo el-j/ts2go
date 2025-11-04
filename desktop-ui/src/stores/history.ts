@@ -51,20 +51,20 @@ export const useHistoryStore = defineStore('history', () => {
     }
 
     // Persist to localStorage
-    saveTolocalStorage()
+    saveToLocalStorage()
   }
 
   function removeBuild(buildId: string) {
     builds.value = builds.value.filter(b => b.id !== buildId)
-    saveTolocalStorage()
+    saveToLocalStorage()
   }
 
   function clearHistory() {
     builds.value = []
-    saveTolocalStorage()
+    saveToLocalStorage()
   }
 
-  function saveTolocalStorage() {
+  function saveToLocalStorage() {
     try {
       localStorage.setItem('ts2go-build-history', JSON.stringify(builds.value))
     } catch (e) {

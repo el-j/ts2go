@@ -1,0 +1,195 @@
+name: Release Alpha (Feature Branches)
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'copilot/**'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/workflows/ci-*.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  create-alpha-release:
+    name: Create Alpha Release
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip-release]')"
+    outputs:
+      tag_name: ${{ steps.create_tag.outputs.tag_name }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create alpha tag
+        id: create_tag
+        run: |
+          # Extract branch name and sanitize
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          SAFE_BRANCH=$(echo "$BRANCH_NAME" | tr '/' '-' | tr '_' '-' | tr '[:upper:]' '[:lower:]')
+          
+          # Get short commit SHA
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          
+          # Create alpha version tag
+          TAG_NAME="v0.0.0-alpha.${SAFE_BRANCH}.${SHORT_SHA}"
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          
+          # Create and push tag
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${TAG_NAME}" -m "Alpha release from ${BRANCH_NAME} (${SHORT_SHA})"
+          git push origin "${TAG_NAME}"
+
+      - name: Create Alpha Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.create_tag.outputs.tag_name }}
+          name: "Alpha Release - ${{ steps.create_tag.outputs.tag_name }}"
+          body: |
+            **Alpha Release from Feature Branch**
+            
+            Branch: `${{ github.ref_name }}`
+            Commit: ${{ github.sha }}
+            
+            ⚠️ **This is an alpha release for testing purposes only.**
+            
+            Features and functionality may be incomplete or unstable.
+            Not recommended for production use.
+          draft: false
+          prerelease: true
+
+  build-cli:
+    name: Build CLI - ${{ matrix.platform }}
+    needs: create-alpha-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-amd64
+            goos: linux
+            goarch: amd64
+          - os: macos-latest
+            platform: darwin-arm64
+            goos: darwin
+            goarch: arm64
+          - os: windows-latest
+            platform: windows-amd64
+            goos: windows
+            goarch: amd64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.5'
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install npm dependencies
+        run: |
+          cd internal/transpiler/parser
+          npm ci
+
+      - name: Build CLI
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          TAG_NAME="${{ needs.create-alpha-release.outputs.tag_name }}"
+          if [ "${{ matrix.goos }}" == "windows" ]; then
+            OUTPUT_NAME="ts2go-${TAG_NAME}-${{ matrix.platform }}.exe"
+            go build -ldflags "-s -w -X main.version=${TAG_NAME}" -o "${OUTPUT_NAME}" ./cmd/ts2go
+            7z a "ts2go-${TAG_NAME}-${{ matrix.platform }}.zip" "${OUTPUT_NAME}" README.md
+            ASSET_PATH="ts2go-${TAG_NAME}-${{ matrix.platform }}.zip"
+          else
+            OUTPUT_NAME="ts2go-${TAG_NAME}-${{ matrix.platform }}"
+            go build -ldflags "-s -w -X main.version=${TAG_NAME}" -o "${OUTPUT_NAME}" ./cmd/ts2go
+            tar czf "ts2go-${TAG_NAME}-${{ matrix.platform }}.tar.gz" "${OUTPUT_NAME}" README.md
+            ASSET_PATH="ts2go-${TAG_NAME}-${{ matrix.platform }}.tar.gz"
+          fi
+          echo "ASSET_PATH=${ASSET_PATH}" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Upload CLI Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.create-alpha-release.outputs.tag_name }}
+          files: ${{ env.ASSET_PATH }}
+
+  build-desktop:
+    name: Build Desktop - ${{ matrix.platform }}
+    needs: create-alpha-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            os: macos
+            args: '--target universal-apple-darwin'
+          - platform: ubuntu-22.04
+            os: linux
+            args: ''
+          - platform: windows-latest
+            os: windows
+            args: ''
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: desktop-ui/package-lock.json
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './desktop-ui/src-tauri -> target'
+
+      - name: Install dependencies (Ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev \
+            libappindicator3-dev librsvg2-dev patchelf libssl-dev
+
+      - name: Install frontend dependencies
+        working-directory: desktop-ui
+        run: npm ci
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop-ui
+          tagName: ${{ needs.create-alpha-release.outputs.tag_name }}
+          releaseName: 'TS2Go Desktop ${{ needs.create-alpha-release.outputs.tag_name }}'
+          releaseBody: 'Alpha desktop release - testing only'
+          releaseDraft: false
+          prerelease: true
+          args: ${{ matrix.args }}
