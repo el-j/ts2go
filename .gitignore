@@ -18,6 +18,7 @@ go.work.sum
 node_modules/
 package-lock.json
 !internal/transpiler/parser/package-lock.json
+!desktop-ui/package-lock.json
 
 # IDE
 .vscode/
