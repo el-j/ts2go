@@ -139,10 +139,12 @@ import LogViewer from '../components/LogViewer.vue'
 import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog.vue'
 import { useTranspilerStore } from '../stores/transpiler'
 import { useLogsStore } from '../stores/logs'
+import { useHistoryStore } from '../stores/history'
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 import { invoke } from '@tauri-apps/api/core'
 
 const transpilerStore = useTranspilerStore()
+const historyStore = useHistoryStore()
 const logsStore = useLogsStore()
 const showLogs = ref(false)
 
@@ -211,6 +213,10 @@ async function transpileCode() {
     return
   }
 
+  const startTime = Date.now()
+  let buildStatus: 'success' | 'failed' = 'success'
+  let errorCount = 0
+
   try {
     transpilerStore.startTranspilation(1)
     logsStore.addLog('info', 'Starting transpilation...')
@@ -228,10 +234,24 @@ async function transpileCode() {
     logsStore.addLog('success', 'Transpilation completed successfully')
     
   } catch (error: any) {
+    buildStatus = 'failed'
+    errorCount = 1
     logsStore.addLog('error', `Transpilation failed: ${error}`)
     goCode.value = `// Error during transpilation:\n// ${error}`
   } finally {
+    const duration = Date.now() - startTime
     transpilerStore.stopTranspilation()
+    
+    // Record build in history
+    historyStore.addBuild({
+      projectPath: '',
+      filesProcessed: buildStatus === 'success' ? 1 : 0,
+      totalFiles: 1,
+      duration,
+      status: buildStatus,
+      errors: errorCount,
+      warnings: 0
+    })
   }
 }
 
