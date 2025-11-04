@@ -21,11 +21,11 @@ permissions:
   contents: write
 
 jobs:
+  # Step 1: Create the GitHub release with version tag and release notes
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
       version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Checkout code
@@ -69,6 +69,7 @@ jobs:
           draft: false
           prerelease: false
 
+  # Step 2: Build CLI binaries for all platforms and upload to the release
   build-and-upload:
     name: Build & Upload - ${{ matrix.platform }}
     needs: create-release
@@ -155,24 +156,8 @@ jobs:
           tag_name: ${{ needs.create-release.outputs.version }}
           files: ${{ env.ASSET_PATH }}
 
-      - name: Generate checksums
-        if: matrix.platform == 'linux-amd64'
-        run: |
-          cd ${{ github.workspace }}
-          for file in ts2go-*.tar.gz ts2go-*.zip; do
-            if [ -f "$file" ]; then
-              sha256sum "$file" >> checksums.txt
-            fi
-          done
-        shell: bash
-
-      - name: Upload checksums
-        if: matrix.platform == 'linux-amd64'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ needs.create-release.outputs.version }}
-          files: checksums.txt
-
+  # Step 3: Build Tauri desktop apps and upload to the same release
+  # Waits for CLI builds to complete to ensure all artifacts are collected
   build-desktop:
     name: Build Desktop - ${{ matrix.platform }}
     needs: [create-release, build-and-upload]
@@ -246,12 +231,45 @@ jobs:
         with:
           projectPath: desktop-ui
           tagName: ${{ needs.create-release.outputs.version }}
-          releaseName: 'TS2Go Desktop ${{ needs.create-release.outputs.version }}'
-          releaseBody: 'Stable desktop release'
-          releaseDraft: false
-          prerelease: false
+          releaseId: ${{ needs.create-release.outputs.version }}
           args: ${{ matrix.args }}
 
+  # Step 4: Generate checksums for all CLI artifacts after all builds complete
+  generate-checksums:
+    name: Generate Checksums
+    needs: [create-release, build-and-upload, build-desktop]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release assets
+        uses: robinraju/release-downloader@v1.11
+        with:
+          tag: ${{ needs.create-release.outputs.version }}
+          fileName: "ts2go-*.tar.gz"
+          
+      - name: Download Windows release assets
+        uses: robinraju/release-downloader@v1.11
+        with:
+          tag: ${{ needs.create-release.outputs.version }}
+          fileName: "ts2go-*.zip"
+          
+      - name: Generate checksums for all artifacts
+        run: |
+          sha256sum ts2go-*.tar.gz ts2go-*.zip > checksums.txt 2>/dev/null || true
+          if [ -s checksums.txt ]; then
+            cat checksums.txt
+          else
+            echo "No CLI artifacts found to checksum"
+          fi
+        shell: bash
+
+      - name: Upload checksums
+        if: hashFiles('checksums.txt') != ''
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.create-release.outputs.version }}
+          files: checksums.txt
+
+  # Step 5: Publish Docker images (only for tag-based releases)
   publish-docker:
     name: Publish Docker Image
     needs: [create-release, build-and-upload, build-desktop]
