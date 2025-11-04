@@ -29,7 +29,18 @@
           {{ logsStore.logs.length }}
         </span>
       </button>
+
+      <button 
+        @click="showShortcutsDialog = true" 
+        class="px-3 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+        title="Keyboard Shortcuts (Ctrl+/)"
+      >
+        <i class="pi pi-question-circle"></i>
+      </button>
     </div>
+    
+    <!-- Keyboard Shortcuts Dialog -->
+    <KeyboardShortcutsDialog v-model:visible="showShortcutsDialog" />
 
     <!-- Main Content with Splitter -->
     <Splitter class="flex-1">
@@ -113,8 +124,10 @@ import Splitter from 'primevue/splitter'
 import SplitterPanel from 'primevue/splitterpanel'
 import CodeEditor from '../components/CodeEditor.vue'
 import LogViewer from '../components/LogViewer.vue'
+import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog.vue'
 import { useTranspilerStore } from '../stores/transpiler'
 import { useLogsStore } from '../stores/logs'
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 import { invoke } from '@tauri-apps/api/core'
 
 const transpilerStore = useTranspilerStore()
@@ -142,6 +155,29 @@ console.log(greet(user));
 `)
 
 const goCode = ref('// Click "Transpile" to generate Go code')
+const showShortcutsDialog = ref(false)
+
+// Setup keyboard shortcuts
+useKeyboardShortcuts([
+  {
+    key: 's',
+    ctrl: true,
+    description: 'Transpile code',
+    handler: transpileCode
+  },
+  {
+    key: 'l',
+    ctrl: true,
+    description: 'Toggle logs',
+    handler: () => { showLogs.value = !showLogs.value }
+  },
+  {
+    key: '/',
+    ctrl: true,
+    description: 'Show keyboard shortcuts',
+    handler: () => { showShortcutsDialog.value = true }
+  }
+])
 
 async function transpileCode() {
   if (!typescriptCode.value.trim()) {
