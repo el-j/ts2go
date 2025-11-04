@@ -1,5 +1,14 @@
 .PHONY: build build-cli build-desktop test clean install help
 
+# Detect OS for binary name
+ifeq ($(OS),Windows_NT)
+    BINARY_NAME := ts2go.exe
+    RM := del /Q
+else
+    BINARY_NAME := ts2go
+    RM := rm -f
+endif
+
 # Default target
 all: build
 
@@ -7,7 +16,7 @@ all: build
 build: build-cli
 
 build-cli:
-	go build -o ts2go ./cmd/ts2go
+	go build -o $(BINARY_NAME) ./cmd/ts2go
 
 # Build desktop app
 build-desktop:
@@ -19,7 +28,7 @@ test:
 
 # Clean build artifacts
 clean:
-	rm -f ts2go
+	$(RM) $(BINARY_NAME)
 	cd desktop-ui && rm -rf dist node_modules src-tauri/target
 
 # Install CLI globally
