@@ -59,6 +59,7 @@
               </div>
               <div class="flex-1">
                 <CodeEditor 
+                  ref="tsEditorRef"
                   v-model="typescriptCode" 
                   language="typescript"
                   theme="vs-dark"
@@ -78,6 +79,7 @@
               </div>
               <div class="flex-1">
                 <CodeEditor 
+                  ref="goEditorRef"
                   v-model="goCode" 
                   language="go"
                   :readonly="true"
@@ -103,8 +105,18 @@
       <div class="flex items-center gap-4">
         <div class="flex-1">
           <div class="flex justify-between text-sm mb-1">
-            <span>{{ transpilerStore.status.currentFile || 'Initializing...' }}</span>
-            <span>{{ transpilerStore.status.filesProcessed }} / {{ transpilerStore.status.totalFiles }} files</span>
+            <div class="flex items-center gap-3">
+              <span>{{ transpilerStore.status.currentFile || 'Initializing...' }}</span>
+              <span v-if="transpilerStore.status.processingSpeed" class="text-xs text-gray-500 dark:text-gray-400">
+                ({{ transpilerStore.status.processingSpeed.toFixed(1) }} files/sec)
+              </span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span>{{ transpilerStore.status.filesProcessed }} / {{ transpilerStore.status.totalFiles }} files</span>
+              <span v-if="transpilerStore.formattedTimeRemaining" class="text-xs text-gray-500 dark:text-gray-400">
+                ~{{ transpilerStore.formattedTimeRemaining }} remaining
+              </span>
+            </div>
           </div>
           <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div 
@@ -156,6 +168,8 @@ console.log(greet(user));
 
 const goCode = ref('// Click "Transpile" to generate Go code')
 const showShortcutsDialog = ref(false)
+const tsEditorRef = ref()
+const goEditorRef = ref()
 
 // Setup keyboard shortcuts
 useKeyboardShortcuts([
@@ -170,6 +184,18 @@ useKeyboardShortcuts([
     ctrl: true,
     description: 'Toggle logs',
     handler: () => { showLogs.value = !showLogs.value }
+  },
+  {
+    key: 'f',
+    ctrl: true,
+    description: 'Find in editor',
+    handler: () => { tsEditorRef.value?.showFind() }
+  },
+  {
+    key: 'h',
+    ctrl: true,
+    description: 'Replace in editor',
+    handler: () => { tsEditorRef.value?.showReplace() }
   },
   {
     key: '/',

@@ -5,6 +5,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import * as monaco from 'monaco-editor'
+import { useSettingsStore } from '@/stores/settings'
 
 interface Props {
   modelValue: string
@@ -25,6 +26,18 @@ const emit = defineEmits<{
 
 const editorContainer = ref<HTMLElement>()
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
+const settingsStore = useSettingsStore()
+
+// Expose editor actions for external use
+defineExpose({
+  showFind: () => {
+    editor?.getAction('actions.find')?.run()
+  },
+  showReplace: () => {
+    editor?.getAction('editor.action.startFindReplaceAction')?.run()
+  },
+  getEditor: () => editor
+})
 
 onMounted(() => {
   if (!editorContainer.value) return
@@ -35,13 +48,18 @@ onMounted(() => {
     theme: props.theme,
     readOnly: props.readonly,
     automaticLayout: true,
-    minimap: { enabled: true },
-    fontSize: 14,
-    lineNumbers: 'on',
+    minimap: { enabled: settingsStore.settings.minimap },
+    fontSize: settingsStore.settings.fontSize,
+    lineNumbers: settingsStore.settings.lineNumbers ? 'on' : 'off',
     folding: true,
     scrollBeyondLastLine: false,
-    wordWrap: 'on',
-    tabSize: 2,
+    wordWrap: settingsStore.settings.wordWrap ? 'on' : 'off',
+    tabSize: settingsStore.settings.tabSize,
+    find: {
+      addExtraSpaceOnTop: false,
+      autoFindInSelection: 'never',
+      seedSearchStringFromSelection: 'always'
+    }
   })
 
   editor.onDidChangeModelContent(() => {
@@ -49,6 +67,19 @@ onMounted(() => {
       emit('update:modelValue', editor.getValue())
     }
   })
+
+  // Watch settings changes and update editor
+  watch(() => settingsStore.settings, (newSettings) => {
+    if (editor) {
+      editor.updateOptions({
+        minimap: { enabled: newSettings.minimap },
+        fontSize: newSettings.fontSize,
+        lineNumbers: newSettings.lineNumbers ? 'on' : 'off',
+        wordWrap: newSettings.wordWrap ? 'on' : 'off',
+        tabSize: newSettings.tabSize
+      })
+    }
+  }, { deep: true })
 })
 
 watch(() => props.modelValue, (newValue) => {

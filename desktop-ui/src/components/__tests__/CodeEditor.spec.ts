@@ -1,13 +1,20 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import CodeEditor from '../CodeEditor.vue'
 
 describe('CodeEditor Component', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
 
   it('should render editor container', () => {
     const wrapper = mount(CodeEditor, {
       props: {
         modelValue: 'test code'
+      },
+      global: {
+        plugins: [createPinia()]
       }
     })
 
@@ -18,6 +25,9 @@ describe('CodeEditor Component', () => {
     const wrapper = mount(CodeEditor, {
       props: {
         modelValue: 'const x = 1;'
+      },
+      global: {
+        plugins: [createPinia()]
       }
     })
 
@@ -29,6 +39,9 @@ describe('CodeEditor Component', () => {
       props: {
         modelValue: '',
         language: 'go'
+      },
+      global: {
+        plugins: [createPinia()]
       }
     })
 
@@ -39,6 +52,9 @@ describe('CodeEditor Component', () => {
     const wrapper = mount(CodeEditor, {
       props: {
         modelValue: ''
+      },
+      global: {
+        plugins: [createPinia()]
       }
     })
 
@@ -50,6 +66,9 @@ describe('CodeEditor Component', () => {
       props: {
         modelValue: '',
         readonly: true
+      },
+      global: {
+        plugins: [createPinia()]
       }
     })
 
@@ -61,6 +80,9 @@ describe('CodeEditor Component', () => {
       props: {
         modelValue: '',
         theme: 'vs'
+      },
+      global: {
+        plugins: [createPinia()]
       }
     })
 
@@ -71,6 +93,9 @@ describe('CodeEditor Component', () => {
     const wrapper = mount(CodeEditor, {
       props: {
         modelValue: ''
+      },
+      global: {
+        plugins: [createPinia()]
       }
     })
 
