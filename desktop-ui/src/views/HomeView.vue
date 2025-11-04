@@ -54,6 +54,15 @@
         </router-link>
         
         <router-link 
+          to="/analyze" 
+          class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors mb-1"
+          :class="{ 'bg-white/20': $route.path === '/analyze' }"
+        >
+          <i class="pi pi-search"></i>
+          <span>Analyze</span>
+        </router-link>
+        
+        <router-link 
           to="/settings" 
           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors mb-1"
           :class="{ 'bg-white/20': $route.path === '/settings' }"
