@@ -7,11 +7,11 @@ all: build
 build: build-cli
 
 build-cli:
-	GOWORK=off go build -o ts2go ./cmd/ts2go
+	go build -o ts2go ./cmd/ts2go
 
 # Build desktop app
 build-desktop:
-	cd packages/desktop && npm run build
+	cd desktop-ui && npm run tauri build
 
 # Run tests
 test:
@@ -20,19 +20,19 @@ test:
 # Clean build artifacts
 clean:
 	rm -f ts2go
-	cd packages/desktop && rm -rf dist node_modules
+	cd desktop-ui && rm -rf dist node_modules src-tauri/target
 
 # Install CLI globally
 install:
-	GOWORK=off go install ./cmd/ts2go
+	go install ./cmd/ts2go
 
 # Development mode for desktop app
 dev-desktop:
-	cd packages/desktop && npm run dev
+	cd desktop-ui && npm run tauri dev
 
 # Install desktop dependencies
 install-desktop:
-	cd packages/desktop && npm install
+	cd desktop-ui && npm install
 
 # Show help
 help:
