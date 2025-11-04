@@ -38,7 +38,12 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [ -f VERSION ]; then
+            # Use VERSION file if triggered by push (auto-version workflow)
+            VERSION="v$(cat VERSION)"
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
           else
+            # Fallback to tag name
             echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
 

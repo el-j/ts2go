@@ -1,6 +1,6 @@
 {
   "name": "ts2go-desktop",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "description": "TS2Go Desktop Application - TypeScript to Go Transpiler UI",
   "type": "module",
   "scripts": {
