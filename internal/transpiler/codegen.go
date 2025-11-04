@@ -1309,13 +1309,21 @@ func (g *CodeGenerator) generateExpressionStatement(node *ASTNode) error {
 
 // generateReturnStatement generates code for return statements
 func (g *CodeGenerator) generateReturnStatement(node *ASTNode) error {
-	if len(node.Children) == 0 {
+	// Check for return expression in Expression property first, then Children
+	var returnExpr *ASTNode
+	if node.Expression != nil {
+		returnExpr = node.Expression
+	} else if len(node.Children) > 0 {
+		returnExpr = &node.Children[0]
+	}
+
+	if returnExpr == nil {
 		g.writeLine("return")
 		return nil
 	}
 
 	// Generate the expression to return
-	expr, err := g.generateExpression(&node.Children[0])
+	expr, err := g.generateExpression(returnExpr)
 	if err != nil {
 		return err
 	}
@@ -1925,9 +1933,29 @@ func (g *CodeGenerator) generateArrowFunction(node *ASTNode) (string, error) {
 	var bodyCode string
 	if node.Body != nil {
 		if node.Body.Kind == Block {
-			// Block body with statements - for now, indicate it needs to be a full function
-			// Arrow functions with blocks are best transpiled as named functions
-			return "", fmt.Errorf("arrow functions with block bodies not yet fully supported - use function declarations instead")
+			// Block body with statements
+			// For arrow functions with blocks, we need to capture the generated code
+			// Save current output and create temporary buffer
+			oldOutput := g.output
+			g.output = strings.Builder{}
+			oldIndent := g.indent
+			g.indent = 0
+
+			// Generate the block statements
+			if node.Body.Statements != nil {
+				for _, stmt := range node.Body.Statements {
+					if err := g.generateStatement(&stmt); err != nil {
+						g.output = oldOutput
+						g.indent = oldIndent
+						return "", fmt.Errorf("generating arrow function block statement: %w", err)
+					}
+				}
+			}
+
+			// Capture generated code and restore output
+			bodyCode = strings.TrimSpace(g.output.String())
+			g.output = oldOutput
+			g.indent = oldIndent
 		} else {
 			// Expression body: expr (implicit return)
 			expr, err := g.generateExpression(node.Body)
@@ -1939,6 +1967,10 @@ func (g *CodeGenerator) generateArrowFunction(node *ASTNode) (string, error) {
 	}
 
 	// Generate: func(params) returnType { body }
+	if strings.Contains(bodyCode, "\n") {
+		// Multi-line body
+		return fmt.Sprintf("func(%s) %s {\n\t%s\n}", strings.Join(params, ", "), returnType, bodyCode), nil
+	}
 	return fmt.Sprintf("func(%s) %s { %s }", strings.Join(params, ", "), returnType, bodyCode), nil
 }
 
