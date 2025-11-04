@@ -106,18 +106,18 @@ func (mg *ModuleGenerator) collectDependencies() (map[string]string, error) {
 func (mg *ModuleGenerator) getPackageVersion(_ /* npmPackage */, goPackage string) string {
 	// Default version mapping
 	versions := map[string]string{
-		"github.com/go-resty/resty/v2":          "v2.11.0",
-		"github.com/gin-gonic/gin":              "v1.9.1",
-		"github.com/gorilla/mux":                "v1.8.1",
-		"github.com/stretchr/testify":           "v1.8.4",
-		"github.com/sirupsen/logrus":            "v1.9.3",
-		"go.uber.org/zap":                       "v1.26.0",
-		"github.com/spf13/cobra":                "v1.8.0",
-		"github.com/google/uuid":                "v1.5.0",
-		"github.com/lib/pq":                     "v1.10.9",
-		"go.mongodb.org/mongo-driver":           "v1.13.1",
-		"github.com/go-redis/redis/v8":          "v8.11.5",
-		"gopkg.in/yaml.v3":                      "v3.0.1",
+		"github.com/go-resty/resty/v2":  "v2.11.0",
+		"github.com/gin-gonic/gin":      "v1.9.1",
+		"github.com/gorilla/mux":        "v1.8.1",
+		"github.com/stretchr/testify":   "v1.8.4",
+		"github.com/sirupsen/logrus":    "v1.9.3",
+		"go.uber.org/zap":               "v1.26.0",
+		"github.com/spf13/cobra":        "v1.8.0",
+		"github.com/google/uuid":        "v1.5.0",
+		"github.com/lib/pq":             "v1.10.9",
+		"go.mongodb.org/mongo-driver":   "v1.13.1",
+		"github.com/go-redis/redis/v8":  "v8.11.5",
+		"gopkg.in/yaml.v3":              "v3.0.1",
 		"github.com/el-j/ts2go-runtime": "v0.1.0",
 	}
 

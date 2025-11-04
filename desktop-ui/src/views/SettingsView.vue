@@ -3,7 +3,6 @@ import { ref, watch } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
-import InputNumber from 'primevue/inputnumber'
 import InputSwitch from 'primevue/inputswitch'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
@@ -81,7 +80,7 @@ function selectOutputDirectory() {
           <!-- Settings Tabs -->
           <TabView class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
             <!-- Application Settings -->
-            <TabPanel header="Application">
+            <TabPanel header="Application" value="0">
               <div class="space-y-6">
                 <!-- Theme -->
                 <div class="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
@@ -160,7 +159,7 @@ function selectOutputDirectory() {
             </TabPanel>
 
             <!-- Project Settings -->
-            <TabPanel header="Project">
+            <TabPanel header="Project" value="1">
               <div class="space-y-6">
                 <!-- Go Module Name -->
                 <div class="py-3 border-b border-gray-200 dark:border-gray-700">
@@ -210,7 +209,7 @@ function selectOutputDirectory() {
             </TabPanel>
 
             <!-- Editor Settings -->
-            <TabPanel header="Editor">
+            <TabPanel header="Editor" value="2">
               <div class="space-y-6">
                 <!-- Tab Size -->
                 <div class="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">

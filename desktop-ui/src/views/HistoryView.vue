@@ -13,7 +13,7 @@ const historyStore = useHistoryStore()
 const chartData = computed(() => {
   const last10 = historyStore.builds.slice(0, 10).reverse()
   return {
-    labels: last10.map((b, i) => `Build ${i + 1}`),
+    labels: last10.map((_b, i) => `Build ${i + 1}`),
     datasets: [
       {
         label: 'Duration (ms)',

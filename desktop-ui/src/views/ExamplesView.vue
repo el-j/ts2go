@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import ExampleGallery, { type Example } from '@/components/ExampleGallery.vue'
+import ExampleGallery from '@/components/ExampleGallery.vue'
+import type { Example } from '@/data/examples'
 import Splitter from 'primevue/splitter'
 import SplitterPanel from 'primevue/splitterpanel'
 import Card from 'primevue/card'

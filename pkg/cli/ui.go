@@ -102,7 +102,7 @@ func (s *UIServer) handleIndex(w http.ResponseWriter, r *http.Request) {
 func (s *UIServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"status": "ok",
+		"status":  "ok",
 		"version": "0.1.0",
 	})
 }
@@ -243,13 +243,13 @@ type AnalyzeRequest struct {
 
 // AnalyzeResponse represents an analyze response
 type AnalyzeResponse struct {
-	Success      bool              `json:"success"`
-	Dependencies []string          `json:"dependencies"`
-	Imports      []string          `json:"imports"`
-	Exports      []string          `json:"exports"`
-	Stats        map[string]int    `json:"stats"`
-	Warnings     []string          `json:"warnings"`
-	Error        string            `json:"error,omitempty"`
+	Success      bool           `json:"success"`
+	Dependencies []string       `json:"dependencies"`
+	Imports      []string       `json:"imports"`
+	Exports      []string       `json:"exports"`
+	Stats        map[string]int `json:"stats"`
+	Warnings     []string       `json:"warnings"`
+	Error        string         `json:"error,omitempty"`
 }
 
 // handleAnalyze analyzes TypeScript code and returns information

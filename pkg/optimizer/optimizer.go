@@ -82,7 +82,7 @@ func (o *Optimizer) removeUnusedImports(file *ast.File) {
 		var newSpecs []ast.Spec
 		for _, spec := range genDecl.Specs {
 			importSpec := spec.(*ast.ImportSpec)
-			
+
 			// Get import name (either explicit or from path)
 			var importName string
 			if importSpec.Name != nil {
@@ -163,7 +163,7 @@ func (o *Optimizer) removeUnusedVariables(file *ast.File) {
 		for _, spec := range genDecl.Specs {
 			valueSpec := spec.(*ast.ValueSpec)
 			keepSpec := false
-			
+
 			// Keep the spec if any name is used or exported
 			for _, name := range valueSpec.Names {
 				if name.Name == "_" {
@@ -218,7 +218,7 @@ func (o *Optimizer) removeUnusedFunctions(file *ast.File) {
 		if funcDecl, ok := decl.(*ast.FuncDecl); ok {
 			funcName := funcDecl.Name.Name
 			declaredFuncs[funcName] = funcDecl
-			
+
 			// Keep exported functions (start with uppercase)
 			if len(funcName) > 0 && funcName[0] >= 'A' && funcName[0] <= 'Z' {
 				alwaysKeep[funcName] = true
@@ -253,7 +253,7 @@ func (o *Optimizer) removeUnusedFunctions(file *ast.File) {
 		}
 
 		funcName := funcDecl.Name.Name
-		
+
 		// Keep function if it's used or should always be kept
 		if usedFuncs[funcName] || alwaysKeep[funcName] {
 			newDecls = append(newDecls, decl)

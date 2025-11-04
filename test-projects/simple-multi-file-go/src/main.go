@@ -9,7 +9,7 @@ func Main() interface{} {
 	userInfo := GetUserService()
 	fmt.Println(userInfo)
 	users := GetAllUsers()
-	fmt.Println(/* unsupported expression */)
+	fmt.Println( /* unsupported expression */ )
 }
 
 func main() {
