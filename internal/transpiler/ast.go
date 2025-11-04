@@ -75,8 +75,15 @@ const (
 	BinaryExpression            = "BinaryExpression"
 	CallExpression              = "CallExpression"
 	PropertyAccessExpression    = "PropertyAccessExpression"
+	ElementAccessExpression     = "ElementAccessExpression" // Array/map access: arr[0] or obj["key"]
 	NewExpression               = "NewExpression"
 	ConditionalExpression       = "ConditionalExpression" // Ternary operator: condition ? true : false
+	SpreadElement               = "SpreadElement"         // Spread operator: ...array or ...object
+	ArrayLiteralExpression      = "ArrayLiteralExpression" // Array literal: [1, 2, 3]
+	ObjectLiteralExpression     = "ObjectLiteralExpression" // Object literal: { a: 1, b: 2 }
+	ObjectBindingPattern        = "ObjectBindingPattern"   // Destructuring: { a, b } = obj
+	ArrayBindingPattern         = "ArrayBindingPattern"    // Destructuring: [a, b] = arr
+	BindingElement              = "BindingElement"         // Element in destructuring pattern
 	ThisKeyword                 = "ThisKeyword"
 	SuperKeyword                = "SuperKeyword"
 	ExpressionWithTypeArguments = "ExpressionWithTypeArguments"

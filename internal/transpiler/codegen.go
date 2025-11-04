@@ -13,6 +13,7 @@ type CodeGenerator struct {
 	currentFunctionReturnType string          // Track the current function's return type for type assertions
 	currentReceiverVar        string          // Track the current method's receiver variable for "this" replacement
 	currentClassMembers       map[string]bool // Track private members of current class (name -> isPrivate)
+	tempVarCounter            int             // Counter for generating unique temp variable names
 
 	// Module system support
 	module     interface{} // *module.Module - using interface{} to avoid circular dependency
@@ -1268,6 +1269,14 @@ func (g *CodeGenerator) generateBlock(node *ASTNode) error {
 func (g *CodeGenerator) generateVariableStatement(node *ASTNode) error {
 	if node.Declarations != nil {
 		for _, decl := range node.Declarations {
+			// Check if this is a destructuring pattern
+			if decl.Kind == ArrayBindingPattern || decl.Kind == ObjectBindingPattern {
+				if err := g.generateDestructuringDeclaration(&decl); err != nil {
+					return err
+				}
+				continue
+			}
+			
 			varName := decl.Name
 			if decl.Initializer != nil {
 				init, err := g.generateExpression(decl.Initializer)
@@ -1285,6 +1294,140 @@ func (g *CodeGenerator) generateVariableStatement(node *ASTNode) error {
 		}
 	}
 	return nil
+}
+
+// generateDestructuringDeclaration handles array and object destructuring
+func (g *CodeGenerator) generateDestructuringDeclaration(decl *ASTNode) error {
+	if decl.Kind == ArrayBindingPattern {
+		return g.generateArrayDestructuring(decl)
+	} else if decl.Kind == ObjectBindingPattern {
+		return g.generateObjectDestructuring(decl)
+	}
+	return nil
+}
+
+// generateArrayDestructuring generates code for array destructuring
+// TypeScript: const [a, b, ...rest] = array
+// Go: a := array[0]; b := array[1]; rest := array[2:]
+func (g *CodeGenerator) generateArrayDestructuring(decl *ASTNode) error {
+	if decl.Initializer == nil {
+		return fmt.Errorf("array destructuring requires initializer")
+	}
+
+	// Generate the array expression
+	arrayExpr, err := g.generateExpression(decl.Initializer)
+	if err != nil {
+		return err
+	}
+
+	// Create temporary variable for the array
+	tempVar := g.generateTempVar()
+	g.writeLine(fmt.Sprintf("%s := %s", tempVar, arrayExpr))
+
+	// Extract elements from the binding pattern
+	elements := decl.Elements
+	if elements == nil && len(decl.Children) > 0 {
+		// Try to get elements from Children
+		for _, child := range decl.Children {
+			if child.Kind == BindingElement {
+				elements = append(elements, child)
+			}
+		}
+	}
+
+	for i, element := range elements {
+		if element.Name == "" {
+			continue // Skip empty slots
+		}
+
+		// Check for rest element (...rest)
+		if element.Kind == SpreadElement || strings.HasPrefix(element.Name, "...") {
+			restName := strings.TrimPrefix(element.Name, "...")
+			if restName == "" && len(element.Children) > 0 {
+				restName = element.Children[0].Name
+			}
+			// Rest element gets remaining items: rest := array[i:]
+			g.writeLine(fmt.Sprintf("%s := %s[%d:]", restName, tempVar, i))
+			break
+		}
+
+		// Regular element: a := array[0]
+		g.writeLine(fmt.Sprintf("%s := %s[%d]", element.Name, tempVar, i))
+	}
+
+	return nil
+}
+
+// generateObjectDestructuring generates code for object destructuring
+// TypeScript: const {name, age, ...rest} = object
+// Go: name := object["name"]; age := object["age"]; rest := {...}
+func (g *CodeGenerator) generateObjectDestructuring(decl *ASTNode) error {
+	if decl.Initializer == nil {
+		return fmt.Errorf("object destructuring requires initializer")
+	}
+
+	// Generate the object expression
+	objExpr, err := g.generateExpression(decl.Initializer)
+	if err != nil {
+		return err
+	}
+
+	// Create temporary variable for the object
+	tempVar := g.generateTempVar()
+	g.writeLine(fmt.Sprintf("%s := %s", tempVar, objExpr))
+
+	// Extract properties from the binding pattern
+	properties := decl.Properties
+	if properties == nil && len(decl.Children) > 0 {
+		properties = decl.Children
+	}
+
+	// Track which keys are extracted for rest operator
+	extractedKeys := []string{}
+
+	for _, prop := range properties {
+		if prop.Kind == SpreadElement {
+			// Rest element: collect remaining properties
+			restName := prop.Name
+			if restName == "" && len(prop.Children) > 0 {
+				restName = prop.Children[0].Name
+			}
+			// Generate code to create new map with remaining properties
+			g.writeLine(fmt.Sprintf("%s := make(map[string]interface{})", restName))
+			g.writeLine(fmt.Sprintf("for k, v := range %s {", tempVar))
+			g.indent++
+			if len(extractedKeys) > 0 {
+				g.writeLine(fmt.Sprintf("if k != \"%s\" {", strings.Join(extractedKeys, "\" && k != \"")))
+				g.indent++
+				g.writeLine(fmt.Sprintf("%s[k] = v", restName))
+				g.indent--
+				g.writeLine("}")
+			} else {
+				g.writeLine(fmt.Sprintf("%s[k] = v", restName))
+			}
+			g.indent--
+			g.writeLine("}")
+			continue
+		}
+
+		// Regular property extraction
+		propName := prop.Name
+		if propName == "" && len(prop.Children) > 0 {
+			propName = prop.Children[0].Name
+		}
+
+		// Extract: name := object["name"]
+		g.writeLine(fmt.Sprintf("%s := %s[\"%s\"]", propName, tempVar, propName))
+		extractedKeys = append(extractedKeys, propName)
+	}
+
+	return nil
+}
+
+// generateTempVar generates a unique temporary variable name
+func (g *CodeGenerator) generateTempVar() string {
+	g.tempVarCounter++
+	return fmt.Sprintf("__tmp%d", g.tempVarCounter)
 }
 
 // generateExpressionStatement generates code for expression statements
@@ -1837,6 +1980,8 @@ func (g *CodeGenerator) generateExpression(node *ASTNode) (string, error) {
 		return g.generateBinaryExpression(node)
 	case PropertyAccessExpression:
 		return g.generatePropertyAccess(node)
+	case ElementAccessExpression:
+		return g.generateElementAccess(node)
 	case ConditionalExpression:
 		return g.generateConditionalExpression(node)
 	case ArrowFunction:
@@ -2039,13 +2184,27 @@ func (g *CodeGenerator) generateTemplateExpression(node *ASTNode) (string, error
 // generateObjectLiteral generates code for object literals
 func (g *CodeGenerator) generateObjectLiteral(node *ASTNode) (string, error) {
 	if node.Properties == nil || len(node.Properties) == 0 {
-		return "{}", nil
+		return "map[string]interface{}{}", nil
 	}
 
-	// Generate struct field initializations
+	// Check for spread elements
+	hasSpread := false
+	for _, prop := range node.Properties {
+		if prop.Kind == SpreadElement || prop.Kind == "SpreadAssignment" {
+			hasSpread = true
+			break
+		}
+	}
+
+	// If has spread, generate as map with merging
+	if hasSpread {
+		return g.generateObjectLiteralWithSpread(node)
+	}
+
+	// Generate map entries
 	fields := []string{}
 	for _, prop := range node.Properties {
-		if prop.Kind == "PropertyAssignment" {
+		if prop.Kind == "PropertyAssignment" || prop.Kind == "ShorthandPropertyAssignment" {
 			// Property name
 			propName := prop.Name
 
@@ -2057,18 +2216,74 @@ func (g *CodeGenerator) generateObjectLiteral(node *ASTNode) (string, error) {
 				if err != nil {
 					return "", err
 				}
+			} else {
+				// Shorthand: {name} is same as {name: name}
+				value = propName
 			}
 
-			fields = append(fields, fmt.Sprintf("%s: %s", toPascalCase(propName), value))
+			fields = append(fields, fmt.Sprintf("\"%s\": %s", propName, value))
 		}
 	}
 
-	// Return as a struct initialization
-	// If we have a known return type, prepend it to the literal
-	if g.currentFunctionReturnType != "" && g.currentFunctionReturnType != "interface{}" {
-		return fmt.Sprintf("%s{%s}", g.currentFunctionReturnType, strings.Join(fields, ", ")), nil
+	// Return as map literal
+	return fmt.Sprintf("map[string]interface{}{%s}", strings.Join(fields, ", ")), nil
+}
+
+// generateObjectLiteralWithSpread generates object literal with spread operator
+// TypeScript: {...obj1, a: 1, ...obj2}
+// Go: Merge maps using a helper or inline code
+func (g *CodeGenerator) generateObjectLiteralWithSpread(node *ASTNode) (string, error) {
+	// We need to generate this as a multi-statement expression
+	// For now, return inline code that creates and merges maps
+	parts := []string{}
+	
+	for _, prop := range node.Properties {
+		if prop.Kind == SpreadElement || prop.Kind == "SpreadAssignment" {
+			// Spread: merge another object
+			var spreadExpr *ASTNode
+			if prop.Expression != nil {
+				spreadExpr = prop.Expression
+			} else if len(prop.Children) > 0 {
+				spreadExpr = &prop.Children[0]
+			}
+			
+			if spreadExpr != nil {
+				spreadValue, err := g.generateExpression(spreadExpr)
+				if err != nil {
+					return "", err
+				}
+				parts = append(parts, fmt.Sprintf("__spread(%s)", spreadValue))
+			}
+		} else if prop.Kind == "PropertyAssignment" || prop.Kind == "ShorthandPropertyAssignment" {
+			propName := prop.Name
+			var value string
+			var err error
+			if prop.Initializer != nil {
+				value, err = g.generateExpression(prop.Initializer)
+				if err != nil {
+					return "", err
+				}
+			} else {
+				value = propName
+			}
+			parts = append(parts, fmt.Sprintf("map[string]interface{}{\"%s\": %s}", propName, value))
+		}
 	}
-	return fmt.Sprintf("{%s}", strings.Join(fields, ", ")), nil
+	
+	// Use a merge function (we'll need to add this to runtime)
+	if len(parts) == 0 {
+		return "map[string]interface{}{}", nil
+	}
+	if len(parts) == 1 {
+		return parts[0], nil
+	}
+	
+	// Chain merges: __merge(__merge(a, b), c)
+	result := parts[0]
+	for i := 1; i < len(parts); i++ {
+		result = fmt.Sprintf("__merge(%s, %s)", result, parts[i])
+	}
+	return result, nil
 }
 
 // generateArrayLiteral generates code for array literals
@@ -2077,21 +2292,76 @@ func (g *CodeGenerator) generateArrayLiteral(node *ASTNode) (string, error) {
 		return "[]interface{}{}", nil
 	}
 
-	// Generate array elements
-	elements := []string{}
+	// Check for spread elements
+	hasSpread := false
 	for _, elem := range node.Elements {
-		value, err := g.generateExpression(&elem)
-		if err != nil {
-			return "", err
+		if elem.Kind == SpreadElement {
+			hasSpread = true
+			break
 		}
-		elements = append(elements, value)
 	}
 
-	// For tuple types used as inline values, generate as struct
-	// This is a heuristic - if used in a context expecting a tuple type,
-	// we return it as an inline struct initialization
-	// For now, return as array slice
-	return fmt.Sprintf("[]interface{}{%s}", strings.Join(elements, ", ")), nil
+	// If no spread elements, generate simple array
+	if !hasSpread {
+		elements := []string{}
+		for _, elem := range node.Elements {
+			value, err := g.generateExpression(&elem)
+			if err != nil {
+				return "", err
+			}
+			elements = append(elements, value)
+		}
+		return fmt.Sprintf("[]interface{}{%s}", strings.Join(elements, ", ")), nil
+	}
+
+	// Handle spread elements with append
+	// [...arr1, x, ...arr2] becomes append(append(arr1, x), arr2...)
+	var result string
+	for i, elem := range node.Elements {
+		if elem.Kind == SpreadElement {
+			// Spread element: get the array to spread
+			var spreadExpr *ASTNode
+			if elem.Expression != nil {
+				spreadExpr = elem.Expression
+			} else if len(elem.Children) > 0 {
+				spreadExpr = &elem.Children[0]
+			}
+			
+			if spreadExpr == nil {
+				continue
+			}
+			
+			spreadValue, err := g.generateExpression(spreadExpr)
+			if err != nil {
+				return "", err
+			}
+			
+			if result == "" {
+				result = spreadValue
+			} else {
+				result = fmt.Sprintf("append(%s, %s...)", result, spreadValue)
+			}
+		} else {
+			// Regular element
+			value, err := g.generateExpression(&elem)
+			if err != nil {
+				return "", err
+			}
+			
+			if result == "" {
+				result = fmt.Sprintf("[]interface{}{%s}", value)
+			} else {
+				result = fmt.Sprintf("append(%s, %s)", result, value)
+			}
+		}
+		
+		// Ensure proper nesting for multiple operations
+		if i == 0 && result != "" {
+			// First element sets the base
+		}
+	}
+
+	return result, nil
 }
 
 // generatePropertyAccess generates code for property access (e.g., person.name or Color.Red)
@@ -2148,6 +2418,35 @@ func (g *CodeGenerator) generatePropertyAccess(node *ASTNode) (string, error) {
 	}
 
 	return fmt.Sprintf("%s.%s", object, property), nil
+}
+
+// generateElementAccess generates code for element access (array[index] or map[key])
+func (g *CodeGenerator) generateElementAccess(node *ASTNode) (string, error) {
+	// ElementAccessExpression has the object in Expression property
+	var objectNode *ASTNode
+	if node.Expression != nil {
+		objectNode = node.Expression
+	} else {
+		return "", fmt.Errorf("invalid element access: no object found")
+	}
+
+	object, err := g.generateExpression(objectNode)
+	if err != nil {
+		return "", err
+	}
+
+	// Get the index/key - it's the first child (argumentExpression)
+	if len(node.Children) == 0 {
+		return "", fmt.Errorf("element access missing index")
+	}
+	
+	indexNode := &node.Children[0]
+	index, err := g.generateExpression(indexNode)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s[%s]", object, index), nil
 }
 
 // generateCallExpression generates code for function calls
