@@ -1,0 +1,428 @@
+name: Deploy Documentation to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - 'pkg/cli/ui_templates/**'
+      - '.github/workflows/deploy-docs.yml'
+  workflow_dispatch:
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build Documentation Site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Build documentation site
+        run: |
+          mkdir -p site
+          
+          # Create main landing page
+          cat > site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>TS2Go - TypeScript to Go Transpiler</title>
+              <style>
+                  * { margin: 0; padding: 0; box-sizing: border-box; }
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      line-height: 1.6;
+                      color: #333;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      padding: 20px;
+                  }
+                  .container {
+                      max-width: 1200px;
+                      background: white;
+                      border-radius: 12px;
+                      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                      overflow: hidden;
+                  }
+                  .header {
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      color: white;
+                      padding: 60px 40px;
+                      text-align: center;
+                  }
+                  .header h1 {
+                      font-size: 3em;
+                      margin-bottom: 20px;
+                      font-weight: 700;
+                  }
+                  .header p {
+                      font-size: 1.3em;
+                      opacity: 0.95;
+                      margin-bottom: 30px;
+                  }
+                  .badges {
+                      display: flex;
+                      gap: 10px;
+                      justify-content: center;
+                      flex-wrap: wrap;
+                  }
+                  .content {
+                      padding: 60px 40px;
+                  }
+                  .grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                      gap: 30px;
+                      margin-top: 40px;
+                  }
+                  .card {
+                      padding: 30px;
+                      border: 2px solid #e0e0e0;
+                      border-radius: 8px;
+                      transition: all 0.3s;
+                      background: white;
+                  }
+                  .card:hover {
+                      border-color: #667eea;
+                      transform: translateY(-5px);
+                      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+                  }
+                  .card h3 {
+                      color: #667eea;
+                      font-size: 1.5em;
+                      margin-bottom: 15px;
+                  }
+                  .card p {
+                      color: #666;
+                      margin-bottom: 20px;
+                  }
+                  .btn {
+                      display: inline-block;
+                      padding: 12px 24px;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      color: white;
+                      text-decoration: none;
+                      border-radius: 6px;
+                      font-weight: 600;
+                      transition: transform 0.2s;
+                  }
+                  .btn:hover {
+                      transform: scale(1.05);
+                  }
+                  .section {
+                      margin-top: 60px;
+                  }
+                  .section h2 {
+                      font-size: 2em;
+                      margin-bottom: 30px;
+                      color: #333;
+                      text-align: center;
+                  }
+                  .footer {
+                      background: #f8f9fa;
+                      padding: 40px;
+                      text-align: center;
+                      color: #666;
+                  }
+                  code {
+                      background: #f5f5f5;
+                      padding: 2px 8px;
+                      border-radius: 4px;
+                      font-family: 'Courier New', monospace;
+                      color: #667eea;
+                  }
+                  .quick-start {
+                      background: #f8f9fa;
+                      padding: 30px;
+                      border-radius: 8px;
+                      margin-top: 30px;
+                  }
+                  .quick-start pre {
+                      background: #2d2d2d;
+                      color: #f8f8f2;
+                      padding: 20px;
+                      border-radius: 6px;
+                      overflow-x: auto;
+                      margin: 15px 0;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="header">
+                      <h1>🚀 TS2Go</h1>
+                      <p>A TypeScript-to-Go transpiler that converts TypeScript into idiomatic, efficient Go code</p>
+                      <div class="badges">
+                          <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License">
+                          <img src="https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white" alt="TypeScript">
+                          <img src="https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white" alt="Go">
+                      </div>
+                  </div>
+
+                  <div class="content">
+                      <div class="quick-start">
+                          <h3>Quick Start</h3>
+                          <pre># Install
+go install github.com/el-j/ts2go/cmd/ts2go@latest
+
+# Convert a file
+ts2go convert --in app.ts --out app.go
+
+# Transpile a project
+ts2go transpile ./my-project --out ./output</pre>
+                      </div>
+
+                      <div class="section">
+                          <h2>📚 Documentation</h2>
+                          <div class="grid">
+                              <div class="card">
+                                  <h3>📖 Getting Started</h3>
+                                  <p>Learn how to install and use TS2Go with step-by-step guides</p>
+                                  <a href="docs/GETTING_STARTED_v2.html" class="btn">Read Guide</a>
+                              </div>
+                              <div class="card">
+                                  <h3>🏗️ Architecture</h3>
+                                  <p>Understand the internal structure and design of TS2Go</p>
+                                  <a href="docs/ARCHITECTURE.html" class="btn">View Architecture</a>
+                              </div>
+                              <div class="card">
+                                  <h3>📝 Examples</h3>
+                                  <p>Explore code examples and real-world use cases</p>
+                                  <a href="docs/EXAMPLES.html" class="btn">See Examples</a>
+                              </div>
+                              <div class="card">
+                                  <h3>🔧 API Reference</h3>
+                                  <p>Complete API documentation for developers</p>
+                                  <a href="docs/API_REFERENCE.html" class="btn">Browse API</a>
+                              </div>
+                              <div class="card">
+                                  <h3>🚢 Release Process</h3>
+                                  <p>Documentation for releases and deployments</p>
+                                  <a href="docs/RELEASE_PROCESS.html" class="btn">View Process</a>
+                              </div>
+                              <div class="card">
+                                  <h3>🎨 Web Demo</h3>
+                                  <p>Try TS2Go in your browser without installation</p>
+                                  <a href="demo/" class="btn">Try Demo</a>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="section">
+                          <h2>🎯 Features</h2>
+                          <div class="grid">
+                              <div class="card">
+                                  <h3>Type-Safe</h3>
+                                  <p>Converts TypeScript types to Go structs and interfaces</p>
+                              </div>
+                              <div class="card">
+                                  <h3>Idiomatic Go</h3>
+                                  <p>Generates clean, idiomatic Go code following best practices</p>
+                              </div>
+                              <div class="card">
+                                  <h3>Project Support</h3>
+                                  <p>Transpile entire TypeScript projects with dependency analysis</p>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="footer">
+                      <p>TS2Go is open source and available under the MIT License</p>
+                      <p><a href="https://github.com/el-j/ts2go" style="color: #667eea;">View on GitHub</a></p>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+          
+          # Create docs directory
+          mkdir -p site/docs
+          
+          # Convert markdown docs to HTML (simple conversion)
+          # In production, use a proper static site generator like mkdocs
+          for md in docs/*.md; do
+            if [ -f "$md" ]; then
+              filename=$(basename "$md" .md)
+              cat > "site/docs/${filename}.html" << DOCEOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>${filename} - TS2Go Documentation</title>
+              <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown.min.css">
+              <style>
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      max-width: 980px;
+                      margin: 0 auto;
+                      padding: 45px;
+                      background: #f6f8fa;
+                  }
+                  .markdown-body {
+                      background: white;
+                      padding: 45px;
+                      border-radius: 6px;
+                      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+                  }
+                  .nav {
+                      margin-bottom: 20px;
+                      padding: 10px;
+                      background: white;
+                      border-radius: 6px;
+                      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+                  }
+                  .nav a {
+                      color: #667eea;
+                      text-decoration: none;
+                      margin-right: 20px;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="nav">
+                  <a href="../">← Home</a>
+                  <a href="../docs/">📚 All Docs</a>
+                  <a href="https://github.com/el-j/ts2go">GitHub</a>
+              </div>
+              <div class="markdown-body">
+          DOCEOF
+              # Add markdown content (would need markdown processor in real implementation)
+              echo "<pre>$(cat "$md")</pre>" >> "site/docs/${filename}.html"
+              cat >> "site/docs/${filename}.html" << 'DOCEOF'
+              </div>
+          </body>
+          </html>
+          DOCEOF
+            fi
+          done
+          
+          # Create docs index
+          cat > site/docs/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Documentation - TS2Go</title>
+              <style>
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      max-width: 1200px;
+                      margin: 0 auto;
+                      padding: 40px;
+                      background: #f6f8fa;
+                  }
+                  h1 { color: #667eea; margin-bottom: 30px; }
+                  .doc-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                      gap: 20px;
+                  }
+                  .doc-card {
+                      background: white;
+                      padding: 20px;
+                      border-radius: 8px;
+                      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                      transition: transform 0.2s;
+                  }
+                  .doc-card:hover {
+                      transform: translateY(-5px);
+                      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+                  }
+                  .doc-card a {
+                      color: #667eea;
+                      text-decoration: none;
+                      font-weight: 600;
+                      font-size: 1.1em;
+                  }
+                  .nav { margin-bottom: 30px; }
+                  .nav a { color: #667eea; margin-right: 20px; text-decoration: none; }
+              </style>
+          </head>
+          <body>
+              <div class="nav">
+                  <a href="../">← Home</a>
+                  <a href="https://github.com/el-j/ts2go">GitHub</a>
+              </div>
+              <h1>📚 TS2Go Documentation</h1>
+              <div class="doc-grid" id="docs"></div>
+              <script>
+                  // This would be generated from actual docs
+                  const docs = [
+                      { name: 'Getting Started', file: 'GETTING_STARTED_v2.html', desc: 'Installation and first steps' },
+                      { name: 'Architecture', file: 'ARCHITECTURE.html', desc: 'System design and structure' },
+                      { name: 'API Reference', file: 'API_REFERENCE.html', desc: 'Complete API documentation' },
+                      { name: 'Examples', file: 'EXAMPLES.html', desc: 'Code examples and patterns' },
+                      { name: 'Release Process', file: 'RELEASE_PROCESS.html', desc: 'How releases work' },
+                      { name: 'CI/CD Guide', file: 'CI_CD_GUIDE.html', desc: 'Continuous integration setup' },
+                      { name: 'Migration Guide', file: 'MIGRATION_GUIDE.html', desc: 'Migrating from TypeScript' },
+                  ];
+                  const container = document.getElementById('docs');
+                  docs.forEach(doc => {
+                      const card = document.createElement('div');
+                      card.className = 'doc-card';
+                      card.innerHTML = \`
+                          <a href="\${doc.file}">\${doc.name}</a>
+                          <p style="color: #666; margin-top: 10px;">\${doc.desc}</p>
+                      \`;
+                      container.appendChild(card);
+                  });
+              </script>
+          </body>
+          </html>
+          EOF
+          
+          # Copy web UI demo
+          mkdir -p site/demo
+          cp pkg/cli/ui_templates/index.html site/demo/index.html
+          
+          # Add note that this is a static demo
+          sed -i 's/<title>TS2Go/<title>[Demo] TS2Go/' site/demo/index.html || true
+          
+          echo "Documentation site built successfully!"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -263,7 +263,30 @@ jobs:
           tag_name: ${{ needs.create-release.outputs.version }}
           files: checksums.txt
 
-  # Step 5: Publish Docker images (only for tag-based releases)
+  # Step 5: Deploy documentation to GitHub Pages (only for stable releases)
+  deploy-docs:
+    name: Deploy Documentation
+    needs: [create-release, build-and-upload, build-desktop]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger docs deployment
+        run: |
+          echo "Triggering GitHub Pages deployment workflow"
+          # The deploy-docs.yml workflow will handle the actual deployment
+          # This is just a placeholder to track in release process
+
+  # Step 6: Publish Docker images (only for tag-based releases)
   publish-docker:
     name: Publish Docker Image
     needs: [create-release, build-and-upload, build-desktop]
