@@ -235,17 +235,11 @@ jobs:
     needs: [create-beta-release, build-cli, build-desktop]
     runs-on: ubuntu-latest
     steps:
-      - name: Download release assets
+      - name: Download all CLI release assets
         uses: robinraju/release-downloader@v1.11
         with:
           tag: ${{ needs.create-beta-release.outputs.tag_name }}
-          fileName: "ts2go-*.tar.gz"
-          
-      - name: Download Windows release assets
-        uses: robinraju/release-downloader@v1.11
-        with:
-          tag: ${{ needs.create-beta-release.outputs.tag_name }}
-          fileName: "ts2go-*.zip"
+          fileName: "ts2go-*"
           
       - name: Generate checksums for all artifacts
         run: |
