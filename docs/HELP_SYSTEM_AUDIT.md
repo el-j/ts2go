@@ -152,11 +152,13 @@ This document audits the current state of help and documentation across the TS2G
    - Test basic functionality
    - Update help text
 
-2. **Create GitHub Pages Site** (2-3 hours)
-   - Add gh-pages workflow to release.yml
-   - Create simple documentation site structure
+2. **Create GitHub Pages Site** (2-3 days)
+   - Set up static site generator (mkdocs/vuepress/docusaurus)
+   - Create documentation site structure  
+   - Configure GitHub Pages workflow
    - Deploy docs/ content
    - Host web UI as demo
+   - Note: Placeholder workflow created, needs proper implementation
 
 3. **Per-Command Help** (1-2 hours)
    - Add `--help` flag to each command
