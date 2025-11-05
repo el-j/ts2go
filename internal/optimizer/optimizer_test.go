@@ -307,7 +307,3 @@ func normalizeWhitespace(s string) string {
 	}
 	return strings.Join(result, "\n")
 }
-
-func countLines(s string) int {
-	return len(strings.Split(strings.TrimSpace(s), "\n"))
-}

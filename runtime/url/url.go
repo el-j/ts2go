@@ -165,7 +165,7 @@ func (qs *QueryString) Unescape(s string) (string, error) {
 	return url.QueryUnescape(s)
 }
 
-// Global QueryString instance
+// DefaultQueryString is the global QueryString instance
 var DefaultQueryString = &QueryString{}
 
 // Package-level convenience functions for QueryString

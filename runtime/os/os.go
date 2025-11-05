@@ -119,7 +119,7 @@ func (o *OS) Endianness() string {
 	return "BE" // Big Endian
 }
 
-// Global OS instance
+// Default is the global OS instance
 var Default = &OS{}
 
 // --- Package-level convenience functions ---

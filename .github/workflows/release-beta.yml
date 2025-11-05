@@ -29,7 +29,10 @@ jobs:
         id: create_tag
         run: |
           # Get latest beta tag or start from 0
-          LATEST_BETA=$(git tag -l "v*-beta.*" | sort -V | tail -n 1 || echo "v0.0.0-beta.0")
+          LATEST_BETA=$(git tag -l "v*-beta.*" | sort -V | tail -n 1)
+          if [ -z "$LATEST_BETA" ]; then
+            LATEST_BETA="v0.0.0-beta.0"
+          fi
           
           if [ "$LATEST_BETA" == "v0.0.0-beta.0" ]; then
             BETA_NUM=1
