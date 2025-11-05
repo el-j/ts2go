@@ -24,7 +24,7 @@ type Process struct {
 	ExecPath string
 }
 
-// Global process instance
+// Default is the global process instance
 var Default *Process
 
 func init() {

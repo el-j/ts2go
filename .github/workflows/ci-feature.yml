@@ -59,6 +59,14 @@ jobs:
             fi
           done
 
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: Run staticcheck
+        run: |
+          # Run staticcheck only on main packages, excluding examples/real-world
+          staticcheck ./cmd/... ./internal/... ./pkg/... ./runtime/... ./tests/...
+
       - name: Build CLI
         run: make build
 
