@@ -19,7 +19,6 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[skip-release]')"
     outputs:
       tag_name: ${{ steps.create_tag.outputs.tag_name }}
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -228,8 +227,33 @@ jobs:
         with:
           projectPath: desktop-ui
           tagName: ${{ needs.create-beta-release.outputs.tag_name }}
-          releaseName: 'TS2Go Desktop ${{ needs.create-beta-release.outputs.tag_name }}'
-          releaseBody: 'Beta desktop release from develop branch'
-          releaseDraft: false
-          prerelease: true
+          releaseId: ${{ needs.create-beta-release.outputs.tag_name }}
           args: ${{ matrix.args }}
+
+  generate-checksums:
+    name: Generate Checksums
+    needs: [create-beta-release, build-cli, build-desktop]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all CLI release assets
+        uses: robinraju/release-downloader@v1.11
+        with:
+          tag: ${{ needs.create-beta-release.outputs.tag_name }}
+          fileName: "ts2go-*"
+          
+      - name: Generate checksums for all artifacts
+        run: |
+          sha256sum ts2go-*.tar.gz ts2go-*.zip > checksums.txt 2>/dev/null || true
+          if [ -s checksums.txt ]; then
+            cat checksums.txt
+          else
+            echo "No CLI artifacts found to checksum"
+          fi
+        shell: bash
+
+      - name: Upload checksums
+        if: hashFiles('checksums.txt') != ''
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.create-beta-release.outputs.tag_name }}
+          files: checksums.txt

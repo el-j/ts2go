@@ -33,6 +33,11 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
+	case "ui":
+		if err := cli.UICommand(args); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 	case "help", "h", "-h", "--help":
 		printUsage()
 	case "version", "v", "-v", "--version":
