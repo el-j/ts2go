@@ -233,8 +233,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: desktop-ui
+          tauriScript: npm run tauri:build
           tagName: ${{ needs.create-beta-release.outputs.tag_name }}
-          releaseId: ${{ needs.create-beta-release.outputs.tag_name }}
           args: ${{ matrix.args }}
 
   generate-checksums:
