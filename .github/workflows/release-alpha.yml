@@ -49,6 +49,8 @@ jobs:
       - name: Create Alpha Release
         id: create_release
         uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.create_tag.outputs.tag_name }}
           name: "Alpha Release - ${{ steps.create_tag.outputs.tag_name }}"
@@ -127,6 +129,8 @@ jobs:
 
       - name: Upload CLI Asset
         uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ needs.create-alpha-release.outputs.tag_name }}
           files: ${{ env.ASSET_PATH }}
@@ -228,6 +232,8 @@ jobs:
       - name: Upload checksums
         if: hashFiles('checksums.txt') != ''
         uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ needs.create-alpha-release.outputs.tag_name }}
           files: checksums.txt
