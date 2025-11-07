@@ -207,6 +207,7 @@ func (g *CodeGenerator) generateTemplateExpression(node *ASTNode) (string, error
 						return "", fmt.Errorf("generating template expression: %w", err)
 					}
 					// Convert expression to string using fmt.Sprint
+					g.trackImport("fmt")
 					parts = append(parts, fmt.Sprintf("fmt.Sprint(%s)", expr))
 				}
 
@@ -377,6 +378,7 @@ func (g *CodeGenerator) generateCallExpression(node *ASTNode) (string, error) {
 
 			// Special case for console.log
 			if obj == "console" && prop == "log" {
+				g.trackImport("fmt")
 				args := []string{}
 				// Arguments are in node.Children
 				for _, arg := range node.Children {

@@ -204,3 +204,21 @@ func (g *CodeGenerator) needsNullishCoalesce(node *ASTNode) bool {
 
 	return false
 }
+
+
+// trackImport adds an import to the tracking map
+func (g *CodeGenerator) trackImport(pkg string) {
+if g.imports == nil {
+g.imports = make(map[string]bool)
+}
+g.imports[pkg] = true
+}
+
+// getTrackedImports returns a slice of all tracked imports
+func (g *CodeGenerator) getTrackedImports() []string {
+result := []string{}
+for imp := range g.imports {
+result = append(result, imp)
+}
+return result
+}
