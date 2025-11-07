@@ -281,6 +281,6 @@ For questions about this assessment:
 
 ---
 
-**Assessment completed by:** GitHub Copilot Agent  
+**Assessment completed by:** Automated Release Readiness Assessment Tool  
 **Date:** November 7, 2025  
 **Confidence in assessment:** 95%

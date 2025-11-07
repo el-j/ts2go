@@ -511,6 +511,6 @@ Severity: moderate
 
 ---
 
-**Report Compiled By:** GitHub Copilot Agent  
+**Report Compiled By:** Automated Release Readiness Assessment  
 **Date:** November 7, 2025  
 **Version:** 1.0
