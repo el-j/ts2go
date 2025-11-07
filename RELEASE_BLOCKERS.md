@@ -69,8 +69,9 @@ esbuild  <=0.24.2 - 6 moderate severity vulnerabilities
 
 **Required Actions:**
 1. ✅ DONE: Update happy-dom to v20.0.10+
-2. Consider updating vitest to v4.x (breaking change, requires testing)
-3. Document that esbuild issues only affect development, not production
+2. ✅ DONE: Add Node.js >=20.0.0 requirement to package.json engines
+3. Consider updating vitest to v4.x (breaking change, requires testing)
+4. Document that esbuild issues only affect development, not production
 
 **Estimated Effort:** 2-3 days (for vitest upgrade and testing)  
 **Priority:** P1 - Should fix before release, not blocking
