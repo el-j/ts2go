@@ -8,48 +8,20 @@ import (
 func (g *CodeGenerator) Generate(node *ASTNode) (string, error) {
 	g.output.Reset()
 	g.indent = 0
+	g.imports = make(map[string]bool) // Reset imports for this generation
 
 	// Check if we need helper functions
 	needsOptionalAccess := g.needsOptionalAccess(node)
 	needsNullishCoalesce := g.needsNullishCoalesce(node)
 
-	// Add package declaration
-	if g.module != nil {
-		// Use module package name
-		g.writeLine(g.getPackageDeclaration())
-	} else {
-		g.writeLine("package main")
-	}
-	g.writeLine("")
-
-	// Add imports
-	var importBlock string
-	if g.resolver != nil {
-		// Use module resolver to generate imports
-		importBlock = g.getModuleImports()
-	} else {
-		// Fallback to simple import collection
-		imports := g.collectImports(node)
-		if len(imports) > 0 {
-			var builder strings.Builder
-			builder.WriteString("import (\n")
-			for _, imp := range imports {
-				builder.WriteString(fmt.Sprintf("\t\"%s\"\n", imp))
-			}
-			builder.WriteString(")")
-			importBlock = builder.String()
-		}
+	// Track imports needed for helper functions
+	if needsOptionalAccess {
+		g.trackImport("reflect")
 	}
 
-	if importBlock != "" {
-		g.writeLine(importBlock)
-		g.writeLine("")
-	}
-
+	// Generate body into the output builder (to track imports)
 	// Add helper functions if needed
 	if needsOptionalAccess {
-		g.writeLine("import \"reflect\"")
-		g.writeLine("")
 		g.writeLine("// optionalAccess provides safe property access for optional chaining")
 		g.writeLine("func optionalAccess(obj interface{}, field string) interface{} {")
 		g.indent++
@@ -136,7 +108,47 @@ func (g *CodeGenerator) Generate(node *ASTNode) (string, error) {
 		g.writeLine("}")
 	}
 
-	return g.output.String(), nil
+	// Get the generated body
+	body := g.output.String()
+
+	// Now build the final output with package, imports, and body
+	result := strings.Builder{}
+
+	// Add package declaration
+	if g.module != nil {
+		result.WriteString(g.getPackageDeclaration())
+	} else {
+		result.WriteString("package main")
+	}
+	result.WriteString("\n\n")
+
+	// Add imports (now we know what's needed)
+	if g.resolver != nil {
+		// Use module resolver to generate imports
+		importBlock := g.getModuleImports()
+		if importBlock != "" {
+			result.WriteString(importBlock)
+		}
+	} else {
+		// Use tracked imports
+		trackedImports := g.getTrackedImports()
+		if len(trackedImports) > 0 {
+			if len(trackedImports) == 1 {
+				result.WriteString(fmt.Sprintf("import \"%s\"\n\n", trackedImports[0]))
+			} else {
+				result.WriteString("import (\n")
+				for _, imp := range trackedImports {
+					result.WriteString(fmt.Sprintf("\t\"%s\"\n", imp))
+				}
+				result.WriteString(")\n\n")
+			}
+		}
+	}
+
+	// Add the body
+	result.WriteString(body)
+
+	return result.String(), nil
 }
 
 // collectImports analyzes the AST to determine needed imports

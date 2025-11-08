@@ -147,13 +147,22 @@ func (g *CodeGenerator) generateExpressionStatement(node *ASTNode) error {
 
 // generateReturnStatement generates code for return statements
 func (g *CodeGenerator) generateReturnStatement(node *ASTNode) error {
-	if len(node.Children) == 0 {
+	// Check for expression in the Expression field (primary) or Children (fallback)
+	var expressionNode *ASTNode
+	if node.Expression != nil {
+		expressionNode = node.Expression
+	} else if len(node.Children) > 0 {
+		expressionNode = &node.Children[0]
+	}
+
+	// Empty return statement
+	if expressionNode == nil {
 		g.writeLine("return")
 		return nil
 	}
 
 	// Generate the expression to return
-	expr, err := g.generateExpression(&node.Children[0])
+	expr, err := g.generateExpression(expressionNode)
 	if err != nil {
 		return err
 	}
