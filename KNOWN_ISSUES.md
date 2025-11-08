@@ -1,6 +1,6 @@
 # Known Issues and Limitations
 
-**Last Updated:** November 8, 2025  
+**Last Updated:** November 9, 2025  
 **Version:** 0.5.1
 
 ---
@@ -234,7 +234,124 @@ May generate incomplete constructor code.
 
 ---
 
-## Modern JavaScript Features (Not Yet Implemented)
+## Modern JavaScript Features
+
+### NEW: Spread Operators (Arrays)
+
+**Status:** ✅ IMPLEMENTED  
+**Priority:** P1 - High  
+**Implemented:** Current version
+
+**Feature:**
+Array spread operators now work correctly.
+
+**Example:**
+```typescript
+const arr1 = [1, 2, 3];
+const arr2 = [4, 5, 6];
+const combined = [...arr1, ...arr2];
+const withExtra = [...arr1, 7, 8, ...arr2];
+```
+
+Generates:
+```go
+import "github.com/ts2go/runtime/array"
+
+arr1 := []interface{}{1, 2, 3}
+arr2 := []interface{}{4, 5, 6}
+combined := array.Concat(arr1, arr2)
+withExtra := array.Concat(arr1, []interface{}{7, 8}, arr2)
+```
+
+**Note:** Uses runtime/array Concat function for efficient merging.
+
+---
+
+### NEW: Rest Parameters
+
+**Status:** ✅ IMPLEMENTED  
+**Priority:** P1 - High  
+**Implemented:** Current version
+
+**Feature:**
+Rest parameters (...args) now transpile to Go variadic parameters.
+
+**Example:**
+```typescript
+function sum(...numbers: number[]): number {
+    let total = 0;
+    for (const num of numbers) {
+        total += num;
+    }
+    return total;
+}
+```
+
+Generates:
+```go
+func Sum(numbers ...float64) float64 {
+    total := 0
+    for _, num := range numbers {
+        total += num
+    }
+    return total
+}
+```
+
+**Note:** Properly extracts element type from array type for variadic parameter.
+
+---
+
+### NEW: Default Parameters
+
+**Status:** ✅ IMPLEMENTED  
+**Priority:** P1 - High  
+**Implemented:** Current version
+
+**Feature:**
+Default parameter values now supported using optional variadic pattern.
+
+**Example:**
+```typescript
+function greet(name: string = "World"): string {
+    return "Hello, " + name + "!";
+}
+
+function multiply(a: number, b: number = 2): number {
+    return a * b;
+}
+```
+
+Generates:
+```go
+func Greet(_name_opt ...string) string {
+    name := "World"
+    if len(_name_opt) > 0 {
+        name = _name_opt[0]
+    }
+    return "Hello, " + name + "!"
+}
+
+func Multiply(a float64, _b_opt ...float64) float64 {
+    b := 2
+    if len(_b_opt) > 0 {
+        b = _b_opt[0]
+    }
+    return a * b
+}
+```
+
+**Usage:**
+```go
+Greet()           // Uses default "World"
+Greet("Alice")    // Uses "Alice"
+Multiply(5)       // Uses default 2, returns 10
+Multiply(5, 3)    // Uses 3, returns 15
+```
+
+**Note:** Function body uses normal parameter names, not the _opt versions.
+
+---
 
 ### 6. Array/Object Destructuring
 
@@ -268,7 +385,7 @@ const age = person.age;
 
 ---
 
-### 7. Spread Operator for Objects
+### 7. Object Spread Operator
 
 **Status:** ❌ Not Implemented  
 **Priority:** P1 - High  
@@ -289,58 +406,7 @@ const merged = Object.assign({}, obj1, obj2, { extra: value });
 
 ---
 
-### 8. Rest Parameters
-
-**Status:** ❌ Not Implemented  
-**Priority:** P1 - High  
-**Target Fix:** v0.7.0-beta
-
-**Missing Features:**
-```typescript
-function sum(...numbers: number[]): number {
-    return numbers.reduce((a, b) => a + b, 0);
-}
-```
-
-**Workaround:**
-```typescript
-// Use explicit array parameter
-function sum(numbers: number[]): number {
-    return numbers.reduce((a, b) => a + b, 0);
-}
-```
-
-**Tracking:** See ROADMAP_TO_1.0.0.md Phase 2
-
----
-
-### 9. Default Parameters
-
-**Status:** ❌ Not Implemented  
-**Priority:** P1 - High  
-**Target Fix:** v0.7.0-beta
-
-**Missing Features:**
-```typescript
-function greet(name: string = "World"): string {
-    return `Hello, ${name}!`;
-}
-```
-
-**Workaround:**
-```typescript
-// Use function overloading or explicit checks
-function greet(name?: string): string {
-    const actualName = name || "World";
-    return `Hello, ${actualName}!`;
-}
-```
-
-**Tracking:** See ROADMAP_TO_1.0.0.md Phase 2
-
----
-
-### 10. Computed Property Names
+### 8. Computed Property Names
 
 **Status:** ❌ Not Implemented  
 **Priority:** P2 - Medium  
