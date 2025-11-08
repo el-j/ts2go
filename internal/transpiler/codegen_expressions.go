@@ -400,11 +400,11 @@ func (g *CodeGenerator) generateCallExpression(node *ASTNode) (string, error) {
 				"shift": true, "unshift": true, "reverse": true,
 				"slice": true, "concat": true, "join": true,
 			}
-			
+
 			if arrayMethods[prop] {
 				// Track import for array runtime
 				g.trackImport("github.com/ts2go/runtime/array")
-				
+
 				// Generate object expression
 				objExpr, err := g.generateExpression(objNode)
 				if err != nil {
@@ -423,7 +423,7 @@ func (g *CodeGenerator) generateCallExpression(node *ASTNode) (string, error) {
 
 				// Map JavaScript method names to Go function names
 				methodName := toPascalCase(prop)
-				
+
 				// Handle special cases
 				if prop == "push" || prop == "pop" || prop == "shift" || prop == "unshift" {
 					// These methods modify the array in place, need pointer
