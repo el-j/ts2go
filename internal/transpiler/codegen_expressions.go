@@ -277,21 +277,74 @@ func (g *CodeGenerator) generateArrayLiteral(node *ASTNode) (string, error) {
 		return "[]interface{}{}", nil
 	}
 
-	// Generate array elements
-	elements := []string{}
+	// Check if any elements are spread elements
+	hasSpread := false
 	for _, elem := range node.Elements {
-		value, err := g.generateExpression(&elem)
-		if err != nil {
-			return "", err
+		if elem.Kind == SpreadElement {
+			hasSpread = true
+			break
 		}
-		elements = append(elements, value)
 	}
 
-	// For tuple types used as inline values, generate as struct
-	// This is a heuristic - if used in a context expecting a tuple type,
-	// we return it as an inline struct initialization
-	// For now, return as array slice
-	return fmt.Sprintf("[]interface{}{%s}", strings.Join(elements, ", ")), nil
+	// If no spread elements, use simple literal syntax
+	if !hasSpread {
+		elements := []string{}
+		for _, elem := range node.Elements {
+			value, err := g.generateExpression(&elem)
+			if err != nil {
+				return "", err
+			}
+			elements = append(elements, value)
+		}
+		return fmt.Sprintf("[]interface{}{%s}", strings.Join(elements, ", ")), nil
+	}
+
+	// If there are spread elements, we need to use array.Concat or append
+	// Track import for array runtime
+	g.trackImport("github.com/ts2go/runtime/array")
+
+	// Build list of slices to concatenate
+	slices := []string{}
+	currentLiteral := []string{}
+
+	for _, elem := range node.Elements {
+		if elem.Kind == SpreadElement {
+			// If we have accumulated literal elements, add them as a slice
+			if len(currentLiteral) > 0 {
+				slices = append(slices, fmt.Sprintf("[]interface{}{%s}", strings.Join(currentLiteral, ", ")))
+				currentLiteral = []string{}
+			}
+
+			// Add the spread expression
+			if elem.Expression != nil {
+				expr, err := g.generateExpression(elem.Expression)
+				if err != nil {
+					return "", err
+				}
+				slices = append(slices, expr)
+			}
+		} else {
+			// Regular element - accumulate for literal
+			value, err := g.generateExpression(&elem)
+			if err != nil {
+				return "", err
+			}
+			currentLiteral = append(currentLiteral, value)
+		}
+	}
+
+	// Add any remaining literal elements
+	if len(currentLiteral) > 0 {
+		slices = append(slices, fmt.Sprintf("[]interface{}{%s}", strings.Join(currentLiteral, ", ")))
+	}
+
+	// If only one slice, return it directly
+	if len(slices) == 1 {
+		return slices[0], nil
+	}
+
+	// Use array.Concat to merge all slices
+	return fmt.Sprintf("array.Concat(%s)", strings.Join(slices, ", ")), nil
 }
 
 // generatePropertyAccess generates code for property access (e.g., person.name or Color.Red)
