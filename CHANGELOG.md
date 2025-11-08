@@ -19,13 +19,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Next Phase Roadmap documentation
 - CI badges in README
 - Installation instructions for multiple methods
+- **ROADMAP_TO_1.0.0.md** - Comprehensive 12-week roadmap to stable release
+- **KNOWN_ISSUES.md** - Documentation of current limitations and workarounds
 
 ### Changed
 - Fixed `go.work` file to include `cmd/ts2go` module
 - Updated README with better documentation structure
+- Updated README to reference new roadmap and known issues documents
 
 ### Fixed
 - Build system now properly compiles the main CLI binary
+- **Go syntax errors in transpiled example files**
+  - Fixed struct literals missing type names in `processor.go`
+  - Fixed object literals to use `map[string]interface{}` syntax in `server.go`
+  - Fixed indentation in `codegen_helpers.go`
+  - All files now pass `gofmt -s -l .` check
+- **Security: Desktop UI dependency vulnerabilities**
+  - Updated happy-dom to v20.0.10+ (fixed critical VM escape vulnerability)
+  - Resolved 7 vulnerabilities (1 critical, 6 moderate)
 
 ## [0.1.0] - 2025-11-03
 
