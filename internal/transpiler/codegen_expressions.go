@@ -390,6 +390,53 @@ func (g *CodeGenerator) generateCallExpression(node *ASTNode) (string, error) {
 				}
 				return fmt.Sprintf("fmt.Println(%s)", strings.Join(args, ", ")), nil
 			}
+
+			// Special case for array methods (filter, map, reduce, etc.)
+			arrayMethods := map[string]bool{
+				"filter": true, "map": true, "reduce": true,
+				"find": true, "findIndex": true, "some": true,
+				"every": true, "includes": true, "indexOf": true,
+				"forEach": true, "push": true, "pop": true,
+				"shift": true, "unshift": true, "reverse": true,
+				"slice": true, "concat": true, "join": true,
+			}
+			
+			if arrayMethods[prop] {
+				// Track import for array runtime
+				g.trackImport("github.com/ts2go/runtime/array")
+				
+				// Generate object expression
+				objExpr, err := g.generateExpression(objNode)
+				if err != nil {
+					return "", err
+				}
+
+				// Generate arguments
+				args := []string{}
+				for _, arg := range node.Children {
+					argStr, err := g.generateExpression(&arg)
+					if err != nil {
+						return "", err
+					}
+					args = append(args, argStr)
+				}
+
+				// Map JavaScript method names to Go function names
+				methodName := toPascalCase(prop)
+				
+				// Handle special cases
+				if prop == "push" || prop == "pop" || prop == "shift" || prop == "unshift" {
+					// These methods modify the array in place, need pointer
+					return fmt.Sprintf("array.%s(&%s, %s)", methodName, objExpr, strings.Join(args, ", ")), nil
+				} else {
+					// Other methods return new slices
+					if len(args) > 0 {
+						return fmt.Sprintf("array.%s(%s, %s)", methodName, objExpr, strings.Join(args, ", ")), nil
+					} else {
+						return fmt.Sprintf("array.%s(%s)", methodName, objExpr), nil
+					}
+				}
+			}
 		}
 	}
 
