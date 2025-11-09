@@ -109,6 +109,110 @@ async fn write_file(path: String, content: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn load_project_folder(path: String) -> Result<serde_json::Value, String> {
+    // Load project folder and return file tree structure
+    let mut files = Vec::new();
+    find_typescript_files(Path::new(&path), &mut files)
+        .map_err(|e| format!("Failed to load project: {}", e))?;
+    
+    // Build file tree structure
+    let tree = build_file_tree(&path, &files)?;
+    
+    Ok(serde_json::json!({
+        "root": path,
+        "files": files,
+        "tree": tree
+    }))
+}
+
+#[tauri::command]
+async fn auto_transpile_project(path: String) -> Result<serde_json::Value, String> {
+    // Auto-transpile entire project
+    let cli_path = get_cli_binary_path();
+    let output_dir = format!("{}_go", path.trim_end_matches('/'));
+    
+    // Create output directory
+    fs::create_dir_all(&output_dir)
+        .map_err(|e| format!("Failed to create output directory: {}", e))?;
+    
+    // Transpile project
+    let result = Command::new(&cli_path)
+        .arg("transpile")
+        .arg(&path)
+        .arg("--out")
+        .arg(&output_dir)
+        .output()
+        .map_err(|e| format!("Failed to execute ts2go transpile: {}. CLI path: {:?}", e, cli_path))?;
+    
+    if result.status.success() {
+        // Count transpiled files
+        let mut go_files = Vec::new();
+        find_go_files(Path::new(&output_dir), &mut go_files)
+            .map_err(|e| format!("Failed to count output files: {}", e))?;
+        
+        Ok(serde_json::json!({
+            "success": true,
+            "output_dir": output_dir,
+            "files_transpiled": go_files.len(),
+            "message": format!("Successfully transpiled {} files to {}", go_files.len(), output_dir)
+        }))
+    } else {
+        let error = String::from_utf8_lossy(&result.stderr);
+        Ok(serde_json::json!({
+            "success": false,
+            "error": error.to_string()
+        }))
+    }
+}
+
+// Helper function to build file tree structure
+fn build_file_tree(root: &str, files: &[String]) -> Result<serde_json::Value, String> {
+    use std::collections::HashMap;
+    
+    let root_path = Path::new(root);
+    let mut tree: HashMap<String, Vec<String>> = HashMap::new();
+    
+    for file in files {
+        let file_path = Path::new(file);
+        if let Ok(rel_path) = file_path.strip_prefix(root_path) {
+            let parent = rel_path.parent()
+                .and_then(|p| p.to_str())
+                .unwrap_or("");
+            let filename = file_path.file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("");
+            
+            tree.entry(parent.to_string())
+                .or_insert_with(Vec::new)
+                .push(filename.to_string());
+        }
+    }
+    
+    Ok(serde_json::to_value(tree).unwrap())
+}
+
+// Helper function to find Go files
+fn find_go_files(dir: &Path, files: &mut Vec<String>) -> std::io::Result<()> {
+    if dir.is_dir() {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            
+            if path.is_dir() {
+                find_go_files(&path, files)?;
+            } else if let Some(ext) = path.extension() {
+                if ext == "go" {
+                    if let Some(path_str) = path.to_str() {
+                        files.push(path_str.to_string());
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
 async fn transpile_code(code: String, filename: String) -> Result<String, String> {
     // Create temporary file and transpile using ts2go CLI
     let temp_dir = std::env::temp_dir();
@@ -186,7 +290,9 @@ fn main() {
             get_project_files,
             transpile_code,
             read_file,
-            write_file
+            write_file,
+            load_project_folder,
+            auto_transpile_project
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]
