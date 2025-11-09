@@ -11,7 +11,6 @@ endif
 
 # Default target
 all: build
-
 # Build CLI tool
 build: build-cli
 
@@ -23,7 +22,7 @@ build-desktop: build-cli
 	@echo "Copying CLI binary to desktop-ui/src-tauri/bin..."
 	@mkdir -p desktop-ui/src-tauri/bin
 	@cp $(BINARY_NAME) desktop-ui/src-tauri/bin/ts2go-cli$(if $(findstring .exe,$(BINARY_NAME)),.exe,)
-	cd desktop-ui && npm run tauri build
+	cd desktop-ui && npm run tauri:build
 
 # Run tests
 test:
@@ -43,7 +42,7 @@ dev-desktop: build-cli
 	@echo "Copying CLI binary to desktop-ui/src-tauri/bin..."
 	@mkdir -p desktop-ui/src-tauri/bin
 	@cp $(BINARY_NAME) desktop-ui/src-tauri/bin/ts2go-cli$(if $(findstring .exe,$(BINARY_NAME)),.exe,)
-	cd desktop-ui && npm run tauri dev
+	cd desktop-ui && npm run tauri:dev
 
 # Install desktop dependencies
 install-desktop:
