@@ -1,7 +1,7 @@
 # Known Issues and Limitations
 
 **Last Updated:** November 9, 2025  
-**Version:** 0.5.1
+**Version:** 0.5.1 → 0.7.0-beta
 
 ---
 
@@ -355,54 +355,93 @@ Multiply(5, 3)    // Uses 3, returns 15
 
 ### 6. Array/Object Destructuring
 
-**Status:** ❌ Not Implemented  
+**Status:** ✅ IMPLEMENTED  
 **Priority:** P1 - High  
-**Target Fix:** v0.7.0-beta
+**Implemented:** Current version
 
-**Missing Features:**
+**Features:**
+Array and object destructuring patterns now fully supported.
+
+**Array Destructuring Example:**
 ```typescript
-// Array destructuring
 const [a, b, c] = [1, 2, 3];
-const [first, ...rest] = array;
-
-// Object destructuring
-const {name, age} = person;
-const {x, y, ...rest} = point;
+const [first, second] = ["hello", "world"];
+const [head, ...tail] = [1, 2, 3, 4, 5];
 ```
 
-**Workaround:**
+Generates:
+```go
+_destructure_0 := []interface{}{1, 2, 3}
+a := _destructure_0[0]
+b := _destructure_0[1]
+c := _destructure_0[2]
+
+_destructure_1 := []interface{}{"hello", "world"}
+first := _destructure_1[0]
+second := _destructure_1[1]
+
+_destructure_2 := []interface{}{1, 2, 3, 4, 5}
+head := _destructure_2[0]
+tail := _destructure_2[1:]  // Rest pattern
+```
+
+**Object Destructuring Example:**
 ```typescript
-// Use explicit assignments
-const a = array[0];
-const b = array[1];
-const c = array[2];
-
-const name = person.name;
-const age = person.age;
+const person = {name: "John", age: 30};
+const {name, age} = person;
 ```
 
-**Tracking:** See ROADMAP_TO_1.0.0.md Phase 2
+Generates:
+```go
+person := map[string]interface{}{"name": "John", "age": 30}
+_destructure_0 := person
+name := _destructure_0.(map[string]interface{})["name"]
+age := _destructure_0.(map[string]interface{})["age"]
+```
+
+**Note:** Uses temporary variables to avoid duplicating initializer expressions.
 
 ---
 
 ### 7. Object Spread Operator
 
-**Status:** ❌ Not Implemented  
+**Status:** ✅ IMPLEMENTED  
 **Priority:** P1 - High  
-**Target Fix:** v0.7.0-beta
+**Implemented:** Current version
 
-**Missing Features:**
+**Feature:**
+Object spread operators now work correctly, generating inline merge functions.
+
+**Example:**
 ```typescript
-const merged = {...obj1, ...obj2, extra: value};
+const obj1 = {a: 1, b: 2};
+const obj2 = {c: 3, d: 4};
+const merged = {...obj1, ...obj2};
+const withExtra = {...obj1, e: 5, ...obj2};
 ```
 
-**Workaround:**
-```typescript
-// Use Object.assign or manual property copying
-const merged = Object.assign({}, obj1, obj2, { extra: value });
+Generates:
+```go
+obj1 := map[string]interface{}{"a": 1, "b": 2}
+obj2 := map[string]interface{}{"c": 3, "d": 4}
+
+merged := func() map[string]interface{} {
+    _merge_0 := make(map[string]interface{})
+    for k, v := range obj1 { _merge_0[k] = v }
+    for k, v := range obj2 { _merge_0[k] = v }
+    return _merge_0
+}()
+
+withExtra := func() map[string]interface{} {
+    _merge_1 := make(map[string]interface{})
+    for k, v := range obj1 { _merge_1[k] = v }
+    for k, v := range map[string]interface{}{"e": 5} { _merge_1[k] = v }
+    for k, v := range obj2 { _merge_1[k] = v }
+    return _merge_1
+}()
 ```
 
-**Tracking:** See ROADMAP_TO_1.0.0.md Phase 2
+**Note:** Later properties override earlier ones (standard JavaScript behavior).
 
 ---
 
