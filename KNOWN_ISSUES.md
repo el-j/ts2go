@@ -494,7 +494,36 @@ These examples demonstrate the transpiler's *current* output capabilities. They 
 
 ## Desktop UI Issues
 
-### 12. Desktop UI Incomplete (52% Complete)
+### 12. Desktop UI Build Issue - Missing CLI Binary
+
+**Status:** ✅ FIXED  
+**Priority:** P0 - Critical  
+**Fixed In:** Current version
+
+**Issue:**
+Desktop UI build failed with error: "glob pattern bin/ts2go-cli* path not found or didn't match any files."
+
+**Root Cause:**
+The Tauri build configuration expected the CLI binary to be present in `desktop-ui/src-tauri/bin/` directory before building, but the build process didn't create it.
+
+**Fix:**
+Updated `Makefile` to automatically:
+1. Build the CLI binary first
+2. Create the `src-tauri/bin/` directory
+3. Copy the CLI binary as `ts2go-cli` (or `ts2go-cli.exe` on Windows)
+
+**Usage:**
+```bash
+# From repository root:
+make build-desktop    # Builds desktop app with CLI bundled
+make dev-desktop      # Runs desktop app in development mode
+```
+
+**Note:** The CLI binary is now automatically bundled as a Tauri resource and can be accessed by the desktop app.
+
+---
+
+### 13. Desktop UI Incomplete (52% Complete)
 
 **Status:** 🔄 In Progress  
 **Priority:** P2 - Medium  
@@ -519,7 +548,7 @@ These examples demonstrate the transpiler's *current* output capabilities. They 
 
 ## Performance Issues
 
-### 13. Large Project Transpilation Performance
+### 14. Large Project Transpilation Performance
 
 **Status:** 🟡 Acceptable  
 **Priority:** P2 - Medium  
@@ -544,7 +573,7 @@ Transpilation of very large projects (>50K lines) may be slow.
 
 ## Security Issues
 
-### 14. Desktop UI Dependency Vulnerabilities
+### 15. Desktop UI Dependency Vulnerabilities
 
 **Status:** ✅ Fixed  
 **Priority:** P0 - Critical  
@@ -565,7 +594,7 @@ Any remaining vulnerabilities are in development dependencies only and do not af
 
 ## Type System Limitations
 
-### 15. Complex Generic Types
+### 16. Complex Generic Types
 
 **Status:** 🟡 Partial Support  
 **Priority:** P2 - Medium  
@@ -588,7 +617,7 @@ type Mapper<T extends string, U extends number> = {
 
 ---
 
-### 16. Conditional Types
+### 17. Conditional Types
 
 **Status:** ❌ Not Implemented  
 **Priority:** P2 - Medium  
@@ -607,7 +636,7 @@ type IsString<T> = T extends string ? true : false;
 
 ## Runtime Library Limitations
 
-### 17. Incomplete Node.js API Coverage
+### 18. Incomplete Node.js API Coverage
 
 **Status:** 🟡 Partial Support  
 **Priority:** P2 - Medium  
@@ -630,7 +659,7 @@ type IsString<T> = T extends string ? true : false;
 
 ## Testing Gaps
 
-### 18. Compilation Tests Not Comprehensive
+### 19. Compilation Tests Not Comprehensive
 
 **Status:** 🔴 In Progress  
 **Priority:** P0 - Critical  

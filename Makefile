@@ -19,7 +19,10 @@ build-cli:
 	go build -o $(BINARY_NAME) ./cmd/ts2go
 
 # Build desktop app
-build-desktop:
+build-desktop: build-cli
+	@echo "Copying CLI binary to desktop-ui/src-tauri/bin..."
+	@mkdir -p desktop-ui/src-tauri/bin
+	@cp $(BINARY_NAME) desktop-ui/src-tauri/bin/ts2go-cli$(if $(findstring .exe,$(BINARY_NAME)),.exe,)
 	cd desktop-ui && npm run tauri build
 
 # Run tests
@@ -36,7 +39,10 @@ install:
 	go install ./cmd/ts2go
 
 # Development mode for desktop app
-dev-desktop:
+dev-desktop: build-cli
+	@echo "Copying CLI binary to desktop-ui/src-tauri/bin..."
+	@mkdir -p desktop-ui/src-tauri/bin
+	@cp $(BINARY_NAME) desktop-ui/src-tauri/bin/ts2go-cli$(if $(findstring .exe,$(BINARY_NAME)),.exe,)
 	cd desktop-ui && npm run tauri dev
 
 # Install desktop dependencies

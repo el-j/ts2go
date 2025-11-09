@@ -16,15 +16,24 @@
 ## 🚀 Quick Start
 
 ```bash
-# Install dependencies
-npm install
+# From repository root:
 
-# Run development server
-npm run tauri:dev
+# Build desktop app (recommended - handles all dependencies)
+make build-desktop
 
-# Build production version
-npm run tauri:build
+# OR manually:
+
+# 1. Install desktop dependencies
+make install-desktop
+
+# 2. Run development server
+make dev-desktop
+
+# 3. Build production version
+make build-desktop
 ```
+
+**Note:** The Makefile automatically builds the CLI binary and copies it to the correct location (`desktop-ui/src-tauri/bin/ts2go-cli`) before starting Tauri. This is required for the desktop app to function.
 
 ## 📚 Documentation
 
@@ -69,9 +78,16 @@ npm run tauri:dev
 ### Build
 
 ```bash
-# Build for production
-npm run tauri:build
+# From repository root (recommended):
+make build-desktop
+
+# OR manually from desktop-ui directory:
+# 1. First, build CLI from root: cd .. && make build-cli
+# 2. Copy CLI to bin: mkdir -p src-tauri/bin && cp ../ts2go src-tauri/bin/ts2go-cli
+# 3. Then build desktop: npm run tauri:build
 ```
+
+**Important:** The desktop app bundles the CLI binary (`ts2go-cli`) as a resource. The Makefile handles this automatically, but if building manually, ensure the CLI is in `src-tauri/bin/` before building.
 
 ## Project Structure
 
