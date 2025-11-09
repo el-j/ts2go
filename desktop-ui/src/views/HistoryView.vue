@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useHistoryStore } from '@/stores/history'
+import AppLayout from '../components/AppLayout.vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
@@ -78,8 +79,8 @@ function confirmClearHistory() {
 </script>
 
 <template>
-  <div class="h-screen flex">
-    <div class="flex-1 flex flex-col">
+  <AppLayout>
+    <div class="h-full flex flex-col">
       <!-- Header -->
       <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div class="flex items-center justify-between">
@@ -253,7 +254,7 @@ function confirmClearHistory() {
         </div>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <style scoped>

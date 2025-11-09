@@ -1,6 +1,6 @@
 <template>
-  <div class="h-screen flex">
-    <div class="flex-1 flex flex-col">
+  <AppLayout>
+    <div class="h-full flex flex-col">
       <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <h2 class="text-xl font-semibold">Project Management</h2>
       </div>
@@ -8,5 +8,9 @@
         <p>Project view - Coming soon in Week 1</p>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
+
+<script setup lang="ts">
+import AppLayout from '../components/AppLayout.vue'
+</script>

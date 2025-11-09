@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import AppLayout from '../components/AppLayout.vue'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
 import Accordion from 'primevue/accordion'
@@ -78,8 +79,8 @@ function getExportCount(exports: any): number {
 </script>
 
 <template>
-  <div class="h-screen flex">
-    <div class="flex-1 flex flex-col">
+  <AppLayout>
+    <div class="h-full flex flex-col">
       <!-- Header -->
       <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div class="flex items-center justify-between">
@@ -290,7 +291,7 @@ function getExportCount(exports: any): number {
         </div>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <style scoped>

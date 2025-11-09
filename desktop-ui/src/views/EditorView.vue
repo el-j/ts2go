@@ -1,8 +1,9 @@
 <template>
-  <div class="h-screen flex flex-col">
-    <!-- Toolbar -->
-    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center gap-4">
-      <h2 class="text-xl font-semibold">Code Editor</h2>
+  <AppLayout>
+    <div class="h-full flex flex-col">
+      <!-- Toolbar -->
+      <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center gap-4">
+        <h2 class="text-xl font-semibold">Code Editor</h2>
       
       <div class="flex-1"></div>
       
@@ -127,13 +128,15 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import Splitter from 'primevue/splitter'
 import SplitterPanel from 'primevue/splitterpanel'
+import AppLayout from '../components/AppLayout.vue'
 import CodeEditor from '../components/CodeEditor.vue'
 import LogViewer from '../components/LogViewer.vue'
 import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog.vue'

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AppLayout from '@/components/AppLayout.vue'
 import ExampleGallery from '@/components/ExampleGallery.vue'
 import type { Example } from '@/data/examples'
 import Splitter from 'primevue/splitter'
@@ -29,8 +30,8 @@ function openInEditor() {
 </script>
 
 <template>
-  <div class="h-screen flex">
-    <div class="flex-1 flex flex-col">
+  <AppLayout>
+    <div class="h-full flex flex-col">
       <!-- Header -->
       <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div class="flex items-center justify-between">
@@ -105,7 +106,7 @@ function openInEditor() {
         </Splitter>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <style scoped>

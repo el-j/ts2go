@@ -2,19 +2,49 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use tauri::Manager;
+
+// Helper function to get the path to the bundled CLI binary
+fn get_cli_binary_path() -> PathBuf {
+    // In development, use the binary from the bin directory
+    #[cfg(debug_assertions)]
+    {
+        let bin_path = Path::new("bin/ts2go-cli");
+        if bin_path.exists() {
+            return bin_path.to_path_buf();
+        }
+        // Fallback to system ts2go if bin doesn't exist
+        return PathBuf::from("ts2go");
+    }
+    
+    // In release, use the bundled binary
+    #[cfg(not(debug_assertions))]
+    {
+        // The binary is bundled as a resource
+        // Tauri places it in the resource directory
+        #[cfg(target_os = "windows")]
+        {
+            PathBuf::from("ts2go-cli.exe")
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            PathBuf::from("ts2go-cli")
+        }
+    }
+}
 
 // Tauri commands
 #[tauri::command]
 async fn analyze_project(path: String) -> Result<String, String> {
     // Call ts2go CLI to analyze project
-    let output = Command::new("ts2go")
+    let cli_path = get_cli_binary_path();
+    let output = Command::new(&cli_path)
         .arg("analyze")
         .arg(&path)
         .output()
-        .map_err(|e| format!("Failed to execute ts2go analyze: {}", e))?;
+        .map_err(|e| format!("Failed to execute ts2go analyze: {}. CLI path: {:?}", e, cli_path))?;
 
     if output.status.success() {
         String::from_utf8(output.stdout)
@@ -32,7 +62,8 @@ async fn transpile_project(
     optimize: bool,
 ) -> Result<String, String> {
     // Call ts2go CLI to transpile project
-    let mut cmd = Command::new("ts2go");
+    let cli_path = get_cli_binary_path();
+    let mut cmd = Command::new(&cli_path);
     cmd.arg("transpile").arg(&path).arg("--out").arg(&output);
 
     if optimize {
@@ -41,7 +72,7 @@ async fn transpile_project(
 
     let result = cmd
         .output()
-        .map_err(|e| format!("Failed to execute ts2go transpile: {}", e))?;
+        .map_err(|e| format!("Failed to execute ts2go transpile: {}. CLI path: {:?}", e, cli_path))?;
 
     if result.status.success() {
         Ok(format!(
@@ -89,14 +120,15 @@ async fn transpile_code(code: String, filename: String) -> Result<String, String
         .map_err(|e| format!("Failed to write temp file: {}", e))?;
 
     // Call ts2go CLI to convert
-    let result = Command::new("ts2go")
+    let cli_path = get_cli_binary_path();
+    let result = Command::new(&cli_path)
         .arg("convert")
         .arg("--in")
         .arg(&input_path)
         .arg("--out")
         .arg(&output_path)
         .output()
-        .map_err(|e| format!("Failed to execute ts2go convert: {}", e))?;
+        .map_err(|e| format!("Failed to execute ts2go convert: {}. CLI path: {:?}", e, cli_path))?;
 
     // Clean up input file
     let _ = fs::remove_file(&input_path);
