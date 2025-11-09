@@ -67,14 +67,14 @@ const hasErrors = computed(() => errorCount.value > 0)
 
           <!-- Actions -->
           <div class="flex gap-2">
-            <button
+            <Button
               v-if="error.file && error.line"
               @click="emit('jumpToError', error)"
               class="px-3 py-1.5 text-sm bg-primary-600 hover:bg-primary-700 text-white rounded flex items-center gap-2"
             >
               <i class="pi pi-arrow-right"></i>
               Jump to Error
-            </button>
+            </Button>
           </div>
         </div>
       </AccordionTab>

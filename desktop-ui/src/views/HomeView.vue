@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import AppLayout from '../components/AppLayout.vue'
 import RecentProjects from '../components/RecentProjects.vue'
-import Button from 'primevue/button'
+import Button from 'primevue/Button'
 
 const router = useRouter()
 const projectStore = useProjectStore()
@@ -47,7 +47,7 @@ function goToExamples() {
             </h3>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button 
+              <Button 
                 @click="goToProject"
                 class="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 text-left"
               >
@@ -56,9 +56,9 @@ function goToExamples() {
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   Browse and select your TypeScript project to begin
                 </p>
-              </button>
+              </Button>
               
-              <button 
+              <Button 
                 @click="goToEditor"
                 class="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 text-left"
               >
@@ -67,9 +67,9 @@ function goToExamples() {
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   Try transpiling code snippets in real-time
                 </p>
-              </button>
+              </Button>
               
-              <button 
+              <Button 
                 @click="goToExamples"
                 class="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 text-left"
               >
@@ -78,7 +78,7 @@ function goToExamples() {
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   Explore pre-built examples and templates
                 </p>
-              </button>
+              </Button>
             </div>
           </div>
 

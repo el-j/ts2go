@@ -7,7 +7,7 @@ import TabPanel from 'primevue/tabpanel'
 import InputSwitch from 'primevue/inputswitch'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
-import Button from 'primevue/button'
+import Button from 'primevue/Button'
 import Message from 'primevue/message'
 
 const settingsStore = useSettingsStore()

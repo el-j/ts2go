@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useProjectStore, type Project } from '@/stores/project'
 import { useRouter } from 'vue-router'
 import Card from 'primevue/card'
-import Button from 'primevue/button'
+import Button from 'primevue/Button'
 
 const projectStore = useProjectStore()
 const router = useRouter()

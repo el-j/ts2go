@@ -1,10 +1,10 @@
 <template>
   <div class="app-layout flex h-screen">
     <!-- Sidebar Navigation -->
-    <aside class="w-64 bg-gradient-to-br from-primary-600 to-primary-800 text-white flex flex-col flex-shrink-0">
+    <aside class="w-64 bg-linear-to-br from-primary-600 to-primary-800 flex flex-col shrink-0">
       <div class="p-6">
         <h1 class="text-2xl font-bold">TS2Go</h1>
-        <p class="text-sm text-primary-100 mt-1">TypeScript to Go Transpiler</p>
+        <p class="text-sm mt-1">TypeScript to Go Transpiler</p>
       </div>
       
       <nav class="flex-1 px-3 overflow-y-auto">
@@ -72,7 +72,7 @@
         </router-link>
       </nav>
       
-      <div class="p-4 border-t border-white/10 text-xs text-primary-100">
+      <div class="p-4 border-t border-white/10 text-xs ">
         v0.7.0-beta
       </div>
     </aside>

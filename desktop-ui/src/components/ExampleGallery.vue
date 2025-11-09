@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import DataView from 'primevue/dataview'
 import Card from 'primevue/card'
-import Button from 'primevue/button'
+import Button from 'primevue/Button'
 import Tag from 'primevue/tag'
 import { EXAMPLES, type Example } from '@/data/examples'
 

@@ -18,12 +18,12 @@
               <h3>{{ activeFile.name }}</h3>
               <span v-if="activeFile.isDirty" class="unsaved-indicator">(unsaved)</span>
             </div>
-            <textarea
+            <Textarea
               v-model="activeFile.content"
               @input="handleContentChange"
               class="code-editor"
               placeholder="Start typing..."
-            ></textarea>
+            ></Textarea>
           </div>
           <div v-else class="no-file-open">
             <div class="empty-state">

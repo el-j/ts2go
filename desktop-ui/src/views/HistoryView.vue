@@ -2,12 +2,6 @@
 import { computed } from 'vue'
 import { useHistoryStore } from '@/stores/history'
 import AppLayout from '../components/AppLayout.vue'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import Tag from 'primevue/tag'
-import Button from 'primevue/button'
-import Card from 'primevue/card'
-import Chart from 'primevue/chart'
 
 const historyStore = useHistoryStore()
 
@@ -110,7 +104,7 @@ function confirmClearHistory() {
             <Card>
               <template #content>
                 <div class="text-center">
-                  <div class="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                  <div class="text-3xl font-bold">
                     {{ historyStore.builds.length }}
                   </div>
                   <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Builds</div>

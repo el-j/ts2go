@@ -15,9 +15,9 @@
         <span class="tab-icon">{{ getFileIcon(file.name) }}</span>
         <span class="tab-name">{{ file.name }}</span>
         <span v-if="file.isDirty" class="dirty-indicator">●</span>
-        <button class="close-btn" @click.stop="closeFile(file.path)" title="Close">
+        <Button class="close-btn" @click.stop="closeFile(file.path)" title="Close">
           ×
-        </button>
+        </Button>
       </div>
     </div>
   </div>

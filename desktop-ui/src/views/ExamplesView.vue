@@ -7,7 +7,7 @@ import type { Example } from '@/data/examples'
 import Splitter from 'primevue/splitter'
 import SplitterPanel from 'primevue/splitterpanel'
 import Card from 'primevue/card'
-import Button from 'primevue/button'
+import Button from 'primevue/Button'
 
 const router = useRouter()
 const selectedExample = ref<Example | null>(null)

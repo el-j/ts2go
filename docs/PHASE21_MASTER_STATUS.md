@@ -146,7 +146,7 @@ Week 4:      ██████████░░░░░░░░░░  50%  
 - [ ] File watcher in Rust backend
 - [ ] `start_watch_mode` Tauri command
 - [ ] `stop_watch_mode` Tauri command
-- [ ] Watch toggle button in UI
+- [ ] Watch toggle Button in UI
 - [ ] Watch status indicator
 - [ ] Auto-transpile on file change
 - [ ] File change timeline component

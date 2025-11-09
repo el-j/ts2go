@@ -3,18 +3,18 @@
     <div class="tree-header">
       <h3>Files</h3>
       <div class="tree-actions">
-        <button @click="createNewFile" title="New File" class="icon-btn">
+        <Button @click="createNewFile" title="New File" class="icon-btn">
           <span>📄</span>
-        </button>
-        <button @click="createNewFolder" title="New Folder" class="icon-btn">
+        </Button>
+        <Button @click="createNewFolder" title="New Folder" class="icon-btn">
           <span>📁</span>
-        </button>
+        </Button>
       </div>
     </div>
     
     <div v-if="fileTree.length === 0" class="empty-state">
       <p>No files in project</p>
-      <button @click="createNewFile" class="btn-primary">Create File</button>
+      <Button @click="createNewFile" class="btn-primary">Create File</Button>
     </div>
     
     <div v-else class="tree-content">
@@ -102,18 +102,18 @@ function handleDelete(path: string) {
   gap: 4px;
 }
 
-.icon-btn {
+/* .icon-btn {
   padding: 4px 8px;
   background: transparent;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 16px;
-}
+} */
 
-.icon-btn:hover {
+/* .icon-btn:hover {
   background: var(--color-background-mute);
-}
+} */
 
 .tree-content {
   flex: 1;
@@ -131,7 +131,7 @@ function handleDelete(path: string) {
   margin-bottom: 16px;
 }
 
-.btn-primary {
+/* .btn-primary {
   padding: 8px 16px;
   background: var(--color-primary);
   color: white;
@@ -139,9 +139,9 @@ function handleDelete(path: string) {
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-}
+} */
 
-.btn-primary:hover {
+/* .btn-primary:hover {
   opacity: 0.9;
-}
+} */
 </style>

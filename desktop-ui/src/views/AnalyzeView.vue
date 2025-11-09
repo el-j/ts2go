@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import AppLayout from '../components/AppLayout.vue'
-import Button from 'primevue/button'
+import Button from 'primevue/Button'
 import Card from 'primevue/card'
 import Accordion from 'primevue/accordion'
 import AccordionTab from 'primevue/accordiontab'

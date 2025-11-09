@@ -87,7 +87,7 @@ Create a professional, feature-rich desktop application that makes TS2Go accessi
   - Circular dependency detection with warnings
 
 - [ ] **Transpile Command**
-  - One-click transpile button
+  - One-click transpile Button
   - Batch transpilation for multiple files
   - Output directory selection
   - Transpilation options panel:
@@ -145,7 +145,7 @@ async fn stop_watch_mode() -> Result<(), String>
   - Log filtering by level
   - Search logs functionality
   - Export logs to file
-  - Clear logs button
+  - Clear logs Button
   - Auto-scroll to latest log
 
 - [ ] **Process Statistics**
