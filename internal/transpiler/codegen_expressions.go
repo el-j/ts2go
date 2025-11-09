@@ -239,10 +239,71 @@ func (g *CodeGenerator) generateTemplateExpression(node *ASTNode) (string, error
 // generateObjectLiteral generates code for object literals
 func (g *CodeGenerator) generateObjectLiteral(node *ASTNode) (string, error) {
 	if node.Properties == nil || len(node.Properties) == 0 {
-		return "{}", nil
+		return "map[string]interface{}{}", nil
 	}
 
-	// Generate struct field initializations
+	// Check if any properties are spread elements
+	hasSpread := false
+	for _, prop := range node.Properties {
+		if prop.Kind == SpreadElement || prop.Kind == SpreadAssignment {
+			hasSpread = true
+			break
+		}
+	}
+
+	// If there are spread elements, we need to merge maps
+	if hasSpread {
+		// Generate code to create and merge maps
+		parts := []string{}
+		currentProps := []string{}
+
+		for _, prop := range node.Properties {
+			if prop.Kind == SpreadElement || prop.Kind == SpreadAssignment {
+				// If we have accumulated properties, add them as a map literal
+				if len(currentProps) > 0 {
+					parts = append(parts, fmt.Sprintf("map[string]interface{}{%s}", strings.Join(currentProps, ", ")))
+					currentProps = []string{}
+				}
+
+				// Add the spread expression
+				if prop.Expression != nil {
+					expr, err := g.generateExpression(prop.Expression)
+					if err != nil {
+						return "", err
+					}
+					parts = append(parts, expr)
+				}
+			} else if prop.Kind == "PropertyAssignment" {
+				// Regular property
+				propName := prop.Name
+				var value string
+				var err error
+				if prop.Initializer != nil {
+					value, err = g.generateExpression(prop.Initializer)
+					if err != nil {
+						return "", err
+					}
+				}
+				currentProps = append(currentProps, fmt.Sprintf(`"%s": %s`, propName, value))
+			}
+		}
+
+		// Add any remaining properties
+		if len(currentProps) > 0 {
+			parts = append(parts, fmt.Sprintf("map[string]interface{}{%s}", strings.Join(currentProps, ", ")))
+		}
+
+		// If only one part, return it directly
+		if len(parts) == 1 {
+			return parts[0], nil
+		}
+
+		// Use a helper function to merge maps
+		// For now, generate inline merge code
+		return g.generateObjectMerge(parts), nil
+	}
+
+	// No spread elements - generate simple object literal
 	fields := []string{}
 	for _, prop := range node.Properties {
 		if prop.Kind == "PropertyAssignment" {
@@ -259,16 +320,30 @@ func (g *CodeGenerator) generateObjectLiteral(node *ASTNode) (string, error) {
 				}
 			}
 
-			fields = append(fields, fmt.Sprintf("%s: %s", toPascalCase(propName), value))
+			fields = append(fields, fmt.Sprintf(`"%s": %s`, propName, value))
 		}
 	}
 
-	// Return as a struct initialization
-	// If we have a known return type, prepend it to the literal
-	if g.currentFunctionReturnType != "" && g.currentFunctionReturnType != "interface{}" {
-		return fmt.Sprintf("%s{%s}", g.currentFunctionReturnType, strings.Join(fields, ", ")), nil
+	// Return as a map literal
+	return fmt.Sprintf("map[string]interface{}{%s}", strings.Join(fields, ", ")), nil
+}
+
+// generateObjectMerge generates code to merge multiple objects/maps
+func (g *CodeGenerator) generateObjectMerge(parts []string) string {
+	// Create a temporary variable for the merged result
+	tempVar := fmt.Sprintf("_merge_%d", g.tempVarCounter)
+	g.tempVarCounter++
+
+	// Generate inline function that creates and merges maps
+	mergeCode := fmt.Sprintf("func() map[string]interface{} { %s := make(map[string]interface{}); ", tempVar)
+
+	for _, part := range parts {
+		mergeCode += fmt.Sprintf("for k, v := range %s { %s[k] = v }; ", part, tempVar)
 	}
-	return fmt.Sprintf("{%s}", strings.Join(fields, ", ")), nil
+
+	mergeCode += fmt.Sprintf("return %s }()", tempVar)
+
+	return mergeCode
 }
 
 // generateArrayLiteral generates code for array literals

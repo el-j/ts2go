@@ -87,7 +87,8 @@ const (
 	ConditionalExpression       = "ConditionalExpression"   // Ternary operator: condition ? true : false
 	ObjectLiteralExpression     = "ObjectLiteralExpression" // { key: value }
 	ArrayLiteralExpression      = "ArrayLiteralExpression"  // [1, 2, 3]
-	SpreadElement               = "SpreadElement"           // ...args
+	SpreadElement               = "SpreadElement"           // ...args in arrays
+	SpreadAssignment            = "SpreadAssignment"        // ...obj in objects
 	ObjectBindingPattern        = "ObjectBindingPattern"    // { x, y } = obj
 	ArrayBindingPattern         = "ArrayBindingPattern"     // [a, b] = arr
 	BindingElement              = "BindingElement"          // Element in binding pattern
