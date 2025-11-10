@@ -1,7 +1,7 @@
 <template>
-  <div class="project-loader">
-    <div class="loader-content">
-      <h2>Load TypeScript Project</h2>
+  <!-- <div class="project-loader"> -->
+    <!-- <div class="loader-content"> -->
+      
       
       <div class="folder-selector">
         <label>Project Folder:</label>
@@ -63,8 +63,8 @@
       <div v-if="error" class="error-box">
         ⚠️ {{ error }}
       </div>
-    </div>
-  </div>
+    <!-- </div> -->
+  <!-- </div> -->
 </template>
 
 <script setup lang="ts">

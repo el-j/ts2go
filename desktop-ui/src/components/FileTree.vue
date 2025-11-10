@@ -41,7 +41,7 @@ const workspace = useWorkspaceStore()
 const fileTree = computed(() => workspace.fileTree)
 const activeFilePath = computed(() => workspace.activeFilePath)
 
-function handleSelect(path: string, name: string) {
+function handleSelect({path, name}: {path: string, name: string}) {
   workspace.openFile(path, name)
 }
 

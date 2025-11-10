@@ -1,7 +1,7 @@
 <template>
   <div class="file-tabs">
     <div v-if="openFiles.length === 0" class="no-tabs">
-      <span>No files open</span>
+      <!-- <span>No files open</span> -->
     </div>
     
     <div v-else class="tabs-container">
@@ -20,13 +20,14 @@
         </Button>
       </div>
     </div>
+    <!-- <ProjectLoader />  -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+// import ProjectLoader from './ProjectLoader.vue'
 import { useWorkspaceStore } from '../stores/workspace'
-
 const workspace = useWorkspaceStore()
 
 const openFiles = computed(() => workspace.openFiles)
