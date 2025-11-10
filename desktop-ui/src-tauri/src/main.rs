@@ -284,6 +284,7 @@ fn find_typescript_files(dir: &Path, files: &mut Vec<String>) -> std::io::Result
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             analyze_project,
             transpile_project,
