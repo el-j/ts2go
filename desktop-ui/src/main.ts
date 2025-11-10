@@ -12,6 +12,14 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 
+import Accordion from 'primevue/accordion'
+import AccordionTab from 'primevue/accordiontab'
+
+
+
+import Message from 'primevue/message'
+import ProgressSpinner from 'primevue/progressspinner'
+
 import Card from 'primevue/card'
 import Chart from 'primevue/chart'
 
@@ -36,4 +44,10 @@ app.component('Chart',Chart)
 
 app.component('Button',Button)
 app.component('Textarea',Textarea)
+
+app.component('Accordion',Accordion)
+app.component('AccordionTab',AccordionTab)
+app.component('Message',Message)
+app.component('ProgressSpinner',ProgressSpinner)
+
 app.mount('#app')

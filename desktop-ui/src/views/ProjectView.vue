@@ -1,7 +1,22 @@
 <template>
   <AppLayout>
+          <!-- Header -->
+      <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Project View</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              See and edit your TypeScript project files
+            </p>
+          </div>
+  
+        </div>
+      </div>
+      
     <div class="project-view">
+      <ProjectLoader  />
       <!-- File Tabs -->
+      
       <FileTabs />
       
       <!-- Main Content Area -->
@@ -50,9 +65,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import ProjectLoader from '../components/ProjectLoader.vue'
 import AppLayout from '../components/AppLayout.vue'
 import FileTree from '../components/FileTree.vue'
 import FileTabs from '../components/FileTabs.vue'
+
 import { useWorkspaceStore } from '../stores/workspace'
 
 const workspace = useWorkspaceStore()

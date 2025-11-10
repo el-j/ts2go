@@ -2,15 +2,7 @@
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import AppLayout from '../components/AppLayout.vue'
-import Button from 'primevue/Button'
-import Card from 'primevue/card'
-import Accordion from 'primevue/accordion'
-import AccordionTab from 'primevue/accordiontab'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import Tag from 'primevue/tag'
-import Message from 'primevue/message'
-import ProgressSpinner from 'primevue/progressspinner'
+
 import { useLogsStore } from '@/stores/logs'
 
 const logsStore = useLogsStore()
