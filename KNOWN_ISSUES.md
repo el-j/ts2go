@@ -1,7 +1,7 @@
 # Known Issues and Limitations
 
-**Last Updated:** November 13, 2025  
-**Version:** 0.7.0-beta
+**Last Updated:** November 9, 2025  
+**Version:** 0.5.1 → 0.7.0-beta
 
 ---
 
@@ -711,8 +711,9 @@ If you encounter an issue not listed here:
 
 ## Version Roadmap
 
-- **Next 2-4 weeks** - See [NEXT_STEPS.md](NEXT_STEPS.md) for immediate priorities
-- **v0.8.0-beta** (Week 8): Desktop UI completion with advanced features
+- **v0.6.0-beta** (Week 2): Core code generation fixes
+- **v0.7.0-beta** (Week 5): Modern JS features
+- **v0.8.0-beta** (Week 8): Desktop UI completion
 - **v0.9.0-rc** (Week 10): Polish and optimization
 - **v1.0.0** (Week 12): Stable release
 

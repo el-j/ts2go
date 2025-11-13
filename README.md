@@ -53,24 +53,24 @@ func Greet(person Person) string {
 ## Documentation
 
 ### Getting Started
-- 🚀 [Getting Started](docs/GETTING_STARTED_v2.md) - Installation and basic usage
-- 🖥️ [Desktop UI User Guide](desktop-ui/USER_GUIDE.md) - Desktop application guide
+- 🚀 [Getting Started](docs/GETTING_STARTED.md) - Installation and basic usage
+- 🖥️ **[Phase 21: Desktop UI](docs/PHASE21_DESKTOP_UI.md)** - **NEW! Web UI documentation**
 - 📚 [Migration Guide](docs/MIGRATION_GUIDE.md) - Complete guide to migrating projects
 - 💡 [Examples](docs/EXAMPLES.md) - Before/after transpilation examples
 
 ### Reference
 - 📋 [Specification](SPEC.md) - Currently supported TypeScript features
 - 📦 [Package Mappings](docs/PACKAGE_MAPPINGS.md) - npm to Go quick reference (100+ packages)
-- 📊 [Project Status](PROJECT_STATUS.md) - Current implementation status
+- 📊 [Status](docs/STATUS.md) - Current implementation status
 - ⚠️ **[Known Issues](KNOWN_ISSUES.md)** - **Current limitations and workarounds**
 
-### Planning & Roadmaps
-- 🎯 **[Next Steps](NEXT_STEPS.md)** - **Immediate priorities for next 2-4 weeks**
-- 🚀 **[Roadmap to 1.0.0](ROADMAP_TO_1.0.0.md)** - **Complete 12-week plan to stable release**
-- 📅 [Next Phase Roadmap](docs/NEXT_PHASE_ROADMAP.md) - Detailed upcoming phases
+### Advanced
+- 🗺️ **[Roadmap](docs/ROADMAP.md)** - **Complete plan for all TypeScript features + dependencies**
+- 🚀 **[Roadmap to 1.0.0](ROADMAP_TO_1.0.0.md)** - **Comprehensive 12-week plan to stable release**
+- 🎯 **[Next Phase Roadmap](docs/NEXT_PHASE_ROADMAP.md)** - **Detailed plan for upcoming implementation phases**
+- 🔧 **[Dependency Guide](docs/DEPENDENCY_GUIDE.md)** - **Implementation guide for dependency resolution**
 - 🏗️ [Architecture](docs/ARCHITECTURE.md) - Project structure and design
-- 🔧 [Dependency Guide](docs/DEPENDENCY_GUIDE.md) - Implementation guide for dependency resolution
-- 📝 [Implementation Plan](docs/IMPLEMENTATION_PLAN.md) - Development phases overview
+- 📝 [Implementation Plan](implementationPlan.md) - Original development phases
 
 ## Features
 
