@@ -68,114 +68,69 @@ jobs:
             patchelf \
             libssl-dev
 
-      - name: Install desktop dependencies
-        working-directory: desktop-ui
-        run: npm ci
-
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: desktop-ui/src-tauri
 
-      - name: Build CLI (Unix)
-        if: matrix.os_name != 'windows'
-        run: make build-cli
+      - name: Install desktop dependencies
+        run: make install-desktop
 
-      - name: Build CLI (Windows)
-        if: matrix.os_name == 'windows'
-        shell: bash
-        run: go build -o ts2go.exe ./cmd/ts2go
-
-      - name: Prepare bundled resources (Unix)
-        if: matrix.os_name != 'windows'
-        run: |
-          mkdir -p desktop-ui/src-tauri/bin
-          cp ts2go desktop-ui/src-tauri/bin/ts2go-cli
-          mkdir -p desktop-ui/src-tauri/bin/parser
-          cp -R internal/transpiler/parser/* desktop-ui/src-tauri/bin/parser/
-          mkdir -p desktop-ui/src-tauri/bin/mappings
-          cp -R mappings/* desktop-ui/src-tauri/bin/mappings/
-          if command -v node >/dev/null 2>&1; then
-            cp "$(command -v node)" desktop-ui/src-tauri/bin/node
-            chmod +x desktop-ui/src-tauri/bin/node
-          fi
-
-      - name: Prepare bundled resources (Windows)
-        if: matrix.os_name == 'windows'
-        shell: bash
-        run: |
-          mkdir -p desktop-ui/src-tauri/bin
-          cp ts2go.exe desktop-ui/src-tauri/bin/ts2go-cli.exe
-          mkdir -p desktop-ui/src-tauri/bin/parser
-          cp -R internal/transpiler/parser/* desktop-ui/src-tauri/bin/parser/
-          mkdir -p desktop-ui/src-tauri/bin/mappings
-          cp -R mappings/* desktop-ui/src-tauri/bin/mappings/
-          # Copy Node.js executable for Windows
-          NODE_PATH=$(which node)
-          if [ -f "$NODE_PATH" ]; then
-            cp "$NODE_PATH" desktop-ui/src-tauri/bin/node.exe 2>/dev/null || \
-            cp "${NODE_PATH}.exe" desktop-ui/src-tauri/bin/node.exe 2>/dev/null || \
-            echo "Warning: Could not copy node.exe"
-          fi
-
-      - name: Build Desktop App
-        working-directory: desktop-ui
-        run: npm run tauri:build
-
-      - name: Prepare release artifacts (macOS)
-        if: matrix.os_name == 'macos'
-        run: |
-          mkdir -p release/stable/macos
-          cp -R "desktop-ui/src-tauri/target/release/bundle/macos/TS2Go Desktop.app" release/stable/macos/
-
-      - name: Prepare release artifacts (Windows)
-        if: matrix.os_name == 'windows'
-        shell: bash
-        run: |
-          mkdir -p release/stable/windows
-          cp desktop-ui/src-tauri/target/release/bundle/msi/*.msi release/stable/windows/ || true
-          cp desktop-ui/src-tauri/target/release/bundle/nsis/*.exe release/stable/windows/ || true
-
-      - name: Prepare release artifacts (Linux)
-        if: matrix.os_name == 'linux'
-        run: |
-          mkdir -p release/stable/linux
-          cp desktop-ui/src-tauri/target/release/bundle/appimage/*.AppImage release/stable/linux/ || true
-          cp desktop-ui/src-tauri/target/release/bundle/deb/*.deb release/stable/linux/ || true
+      - name: Build Desktop App using Makefile
+        run: make build-desktop
 
       - name: List build artifacts
         shell: bash
         run: |
-          echo "Build artifacts:"
-          ls -lah release/stable/${{ matrix.os_name }}/ || echo "No artifacts found"
+          echo "Build artifacts created by Makefile:"
+          ls -lah release/stable/${{ matrix.os_name }}/ 2>/dev/null || echo "No artifacts in expected location"
+          echo ""
+          echo "Checking Tauri output directory:"
+          ls -lah desktop-ui/src-tauri/target/release/bundle/ 2>/dev/null || echo "No bundle directory"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ts2go-desktop-${{ matrix.os_name }}
-          path: |
-            release/stable/${{ matrix.os_name }}/*
+          path: release/stable/${{ matrix.os_name }}/
           retention-days: 7
+          if-no-files-found: error
 
       - name: Create release archives (on tag)
         if: startsWith(github.ref, 'refs/tags/')
         shell: bash
         run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
           cd release/stable/${{ matrix.os_name }}
+          
           if [ "${{ matrix.os_name }}" == "macos" ]; then
-            zip -r ../../TS2Go-Desktop-${{ matrix.os_name }}.zip *.app
+            # Create a zip of the .app bundle for macOS
+            zip -r "../../TS2Go-Desktop-v${VERSION}-macos.zip" *.app
+            echo "Created: TS2Go-Desktop-v${VERSION}-macos.zip"
           elif [ "${{ matrix.os_name }}" == "windows" ]; then
-            7z a ../../TS2Go-Desktop-${{ matrix.os_name }}.zip *.msi
+            # Copy MSI directly (no need to re-archive installers)
+            for file in *.msi *.exe; do
+              if [ -f "$file" ]; then
+                cp "$file" "../../$(basename "$file" | sed "s/\\.msi/-v${VERSION}.msi/" | sed "s/\\.exe/-v${VERSION}.exe/")"
+                echo "Prepared: $file"
+              fi
+            done
           else
-            tar czf ../../TS2Go-Desktop-${{ matrix.os_name }}.tar.gz *.AppImage *.deb
+            # Create tar.gz with AppImage and deb for Linux
+            tar czf "../../TS2Go-Desktop-v${VERSION}-linux.tar.gz" *.AppImage *.deb 2>/dev/null || \
+            tar czf "../../TS2Go-Desktop-v${VERSION}-linux.tar.gz" *.AppImage 2>/dev/null || \
+            echo "Warning: No Linux artifacts to archive"
+            echo "Created: TS2Go-Desktop-v${VERSION}-linux.tar.gz"
           fi
 
       - name: Upload release assets
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            release/TS2Go-Desktop-${{ matrix.os_name }}.*
+          files: release/TS2Go-Desktop-*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
