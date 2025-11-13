@@ -79,7 +79,7 @@ The split-pane editor provides:
 #### Using the Editor
 
 1. Type or paste TypeScript code in the left pane
-2. Click **Transpile** button or press `Ctrl+S`
+2. Click **Transpile** Button or press `Ctrl+S`
 3. View generated Go code in the right pane
 4. Check logs for any warnings or errors
 
@@ -198,7 +198,7 @@ Access settings by clicking **Settings** in the sidebar or pressing `Ctrl+,`.
 
 ### Resetting Settings
 
-Click **Reset to Defaults** button to restore all settings to their default values.
+Click **Reset to Defaults** Button to restore all settings to their default values.
 
 ---
 

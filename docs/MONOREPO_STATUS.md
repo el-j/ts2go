@@ -40,7 +40,7 @@ ts2go/
   - ✅ File tree sidebar
   - ✅ Settings panel
   - ✅ Dark/light theme toggle
-  - ✅ Copy & download buttons
+  - ✅ Copy & download Buttons
   - ✅ Status bar
   - ✅ Responsive design
 

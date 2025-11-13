@@ -55,7 +55,7 @@
             flex-wrap: wrap;
         }
 
-        .toolbar button {
+        .toolbar Button {
             background: #667eea;
             color: white;
             border: none;
@@ -67,21 +67,21 @@
             transition: all 0.3s ease;
         }
 
-        .toolbar button:hover {
+        .toolbar Button:hover {
             background: #5568d3;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
-        .toolbar button:active {
+        .toolbar Button:active {
             transform: translateY(0);
         }
 
-        .toolbar button.secondary {
+        .toolbar Button.secondary {
             background: #6c757d;
         }
 
-        .toolbar button.secondary:hover {
+        .toolbar Button.secondary:hover {
             background: #5a6268;
         }
 
@@ -150,7 +150,7 @@
             overflow: auto;
         }
 
-        textarea, .output-code {
+        Textarea, .output-code {
             width: 100%;
             height: 100%;
             border: none;
@@ -163,7 +163,7 @@
             color: #212529;
         }
 
-        textarea:focus {
+        Textarea:focus {
             outline: none;
             background: #fff;
         }
@@ -264,8 +264,8 @@
         </div>
 
         <div class="toolbar">
-            <button onclick="transpile()" id="transpileBtn">▶ Transpile</button>
-            <button onclick="clearAll()" class="secondary">🗑 Clear</button>
+            <Button onclick="transpile()" id="transpileBtn">▶ Transpile</Button>
+            <Button onclick="clearAll()" class="secondary">🗑 Clear</Button>
             
             <div class="example-selector">
                 <label for="examples">Examples:</label>
@@ -289,7 +289,7 @@
                     TypeScript Input
                 </div>
                 <div class="editor-content">
-                    <textarea id="typescript-input" placeholder="Enter your TypeScript code here...">// Example TypeScript code
+                    <Textarea id="typescript-input" placeholder="Enter your TypeScript code here...">// Example TypeScript code
 interface Person {
   name: string;
   age: number;
@@ -305,7 +305,7 @@ const user: Person = {
 };
 
 console.log(greet(user));
-</textarea>
+</Textarea>
                 </div>
             </div>
 

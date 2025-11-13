@@ -83,7 +83,7 @@ func (g *CodeGenerator) generateVariableStatement(node *ASTNode) error {
 
 // generateDestructuring generates code for destructuring assignments
 // TypeScript: const {x, y} = obj  or  const [a, b] = arr
-// Go: x := obj["x"].(type); y := obj["y"].(type)  or  a := arr[0]; b := arr[1]
+// Go: temp := obj; x := temp["x"]; y := temp["y"]  or  temp := arr; a := temp[0]; b := temp[1]
 func (g *CodeGenerator) generateDestructuring(pattern *ASTNode, initializer *ASTNode) error {
 	if initializer == nil {
 		return fmt.Errorf("destructuring requires an initializer")
@@ -94,26 +94,67 @@ func (g *CodeGenerator) generateDestructuring(pattern *ASTNode, initializer *AST
 		return fmt.Errorf("generating destructuring initializer: %w", err)
 	}
 
+	// Create a temporary variable to hold the initializer
+	// This avoids duplicating complex expressions
+	tempVar := fmt.Sprintf("_destructure_%d", g.tempVarCounter)
+	g.tempVarCounter++
+	g.writeLine(fmt.Sprintf("%s := %s", tempVar, init))
+
 	switch pattern.Kind {
 	case ObjectBindingPattern:
 		// Object destructuring: const {x, y, z} = obj
-		// Generate: x := obj.(map[string]interface{})["x"]; y := obj.(map[string]interface{})["y"]
+		// Generate: temp := obj; x := temp.(map[string]interface{})["x"]; y := temp.(map[string]interface{})["y"]
 		if pattern.Elements != nil {
 			for _, elem := range pattern.Elements {
 				if elem.Name != "" {
-					// Simple property: {x} means extract property "x" from object
-					g.writeLine(fmt.Sprintf(`%s := %s.(map[string]interface{})["%s"]`, elem.Name, init, elem.Name))
+					// Check if this has a rest indicator in children (DotDotDotToken)
+					hasRest := false
+					if elem.Children != nil {
+						for _, child := range elem.Children {
+							if child.Kind == "DotDotDotToken" {
+								hasRest = true
+								break
+							}
+						}
+					}
+
+					if hasRest {
+						// Rest pattern: {...rest}
+						// For now, just assign the whole object (TODO: implement property exclusion)
+						g.writeLine(fmt.Sprintf("%s := %s", elem.Name, tempVar))
+					} else {
+						// Simple property: {x} means extract property "x" from object
+						g.writeLine(fmt.Sprintf(`%s := %s.(map[string]interface{})["%s"]`, elem.Name, tempVar, elem.Name))
+					}
 				}
 			}
 		}
 
 	case ArrayBindingPattern:
 		// Array destructuring: const [a, b, c] = arr
-		// Generate: a := arr.([]interface{})[0]; b := arr.([]interface{})[1]
+		// Generate: temp := arr; a := temp[0]; b := temp[1]
 		if pattern.Elements != nil {
 			for i, elem := range pattern.Elements {
 				if elem.Name != "" {
-					g.writeLine(fmt.Sprintf("%s := %s.([]interface{})[%d]", elem.Name, init, i))
+					// Check if this has a rest indicator in children (DotDotDotToken)
+					hasRest := false
+					if elem.Children != nil {
+						for _, child := range elem.Children {
+							if child.Kind == "DotDotDotToken" {
+								hasRest = true
+								break
+							}
+						}
+					}
+
+					if hasRest {
+						// Rest pattern: [...rest]
+						// Generate: rest := temp[i:]
+						g.writeLine(fmt.Sprintf("%s := %s[%d:]", elem.Name, tempVar, i))
+					} else {
+						// Regular element
+						g.writeLine(fmt.Sprintf("%s := %s[%d]", elem.Name, tempVar, i))
+					}
 				}
 			}
 		}

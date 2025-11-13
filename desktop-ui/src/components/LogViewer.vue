@@ -21,31 +21,31 @@
         </select>
         
         <!-- Auto-scroll toggle -->
-        <button 
+        <Button 
           @click="autoScroll = !autoScroll"
           :class="['px-2 py-1 text-sm rounded', autoScroll ? 'bg-primary-600 text-white' : 'bg-gray-200 dark:bg-gray-700']"
           title="Auto-scroll to latest"
         >
           <i class="pi pi-angle-double-down"></i>
-        </button>
+        </Button>
         
         <!-- Clear logs -->
-        <button 
+        <Button 
           @click="clearLogs"
           class="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
           title="Clear all logs"
         >
           <i class="pi pi-trash"></i>
-        </button>
+        </Button>
         
         <!-- Export logs -->
-        <button 
+        <Button 
           @click="exportLogs"
           class="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
           title="Export logs"
         >
           <i class="pi pi-download"></i>
-        </button>
+        </Button>
       </div>
     </div>
     
@@ -178,11 +178,11 @@ watch(() => logsStore.logs.length, async () => {
 </script>
 
 <style scoped>
-.log-viewer {
+/* .log-viewer {
   background: white;
 }
 
 :deep(.dark) .log-viewer {
   background: #1f2937;
-}
+} */
 </style>

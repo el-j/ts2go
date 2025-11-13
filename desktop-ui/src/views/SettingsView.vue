@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
+import AppLayout from '../components/AppLayout.vue'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import InputSwitch from 'primevue/inputswitch'
@@ -53,8 +54,8 @@ function selectOutputDirectory() {
 </script>
 
 <template>
-  <div class="h-screen flex">
-    <div class="flex-1 flex flex-col">
+  <AppLayout>
+    <div class="h-full flex flex-col">
       <!-- Header -->
       <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div class="flex items-center justify-between">
@@ -287,7 +288,7 @@ function selectOutputDirectory() {
         </div>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <style scoped>

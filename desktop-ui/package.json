@@ -14,12 +14,14 @@
     "tauri:build": "tauri build",
     "lint": "echo 'Linting skipped - ESLint not configured yet'",
     "format": "echo 'Formatting skipped - Prettier not configured yet'",
-    "type-check": "vue-tsc --noEmit"
+    "type-check": "vue-tsc --noEmit",
+    "align": "magic-helix run"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.1.1",
-    "@tauri-apps/plugin-dialog": "^2.0.1",
-    "@tauri-apps/plugin-shell": "^2.0.1",
+    "@primeuix/themes": "^1.2.5",
+    "@tauri-apps/api": "^2.9.0",
+    "@tauri-apps/plugin-dialog": "^2.4.2",
+    "@tauri-apps/plugin-shell": "^2.3.3",
     "chart.js": "^4.5.1",
     "monaco-editor": "^0.52.2",
     "pinia": "^2.2.6",
@@ -33,12 +35,13 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0-beta.6",
-    "@tauri-apps/cli": "^2.1.0",
+    "@tauri-apps/cli": "^2.9.4",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vitest/ui": "^2.1.8",
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.7.0",
     "happy-dom": "^20.0.10",
+    "magic-agent-helix": "^2.0.0",
     "tailwindcss": "^4.0.0-beta.6",
     "typescript": "~5.6.3",
     "vite": "^6.0.3",

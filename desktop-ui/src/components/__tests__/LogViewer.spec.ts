@@ -58,8 +58,8 @@ describe('LogViewer Component', () => {
     const wrapper = mount(LogViewer)
     expect(wrapper.text()).toContain('Test log')
     
-    // Find and click clear button
-    const clearButton = wrapper.findAll('button').find(btn => 
+    // Find and click clear Button
+    const clearButton = wrapper.findAll('Button').find(btn => 
       btn.element.querySelector('.pi-trash')
     )
     await clearButton?.trigger('click')
@@ -69,7 +69,7 @@ describe('LogViewer Component', () => {
 
   it('should toggle auto-scroll', async () => {
     const wrapper = mount(LogViewer)
-    const autoScrollButton = wrapper.findAll('button').find(btn => 
+    const autoScrollButton = wrapper.findAll('Button').find(btn => 
       btn.element.querySelector('.pi-angle-double-down')
     )
     

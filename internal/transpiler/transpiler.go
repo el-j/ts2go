@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/el-j/ts2go/pkg/optimizer"
 )
@@ -52,6 +53,68 @@ func TranspileWithOptions(input, output string, options TranspileOptions) error 
 	return nil
 }
 
+// findNodeBinary locates the Node.js binary, preferring bundled version
+func findNodeBinary() string {
+	// Try to find bundled node first (for standalone app)
+	if exePath, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exePath)
+
+		// For macOS app bundle: .app/Contents/MacOS/ts2go-cli -> .app/Contents/Resources/bin/node
+		if runtime.GOOS == "darwin" {
+			if contentsDir := filepath.Dir(exeDir); filepath.Base(contentsDir) == "Contents" {
+				bundledNode := filepath.Join(contentsDir, "Resources", "bin", "node")
+				if _, err := os.Stat(bundledNode); err == nil {
+					return bundledNode
+				}
+			}
+		}
+
+		// For Windows/Linux: near executable
+		bundledNode := filepath.Join(exeDir, "node")
+		if runtime.GOOS == "windows" {
+			bundledNode += ".exe"
+		}
+		if _, err := os.Stat(bundledNode); err == nil {
+			return bundledNode
+		}
+
+		// Also try in bin directory next to executable
+		bundledNode = filepath.Join(exeDir, "..", "bin", "node")
+		if runtime.GOOS == "windows" {
+			bundledNode += ".exe"
+		}
+		if _, err := os.Stat(bundledNode); err == nil {
+			return bundledNode
+		}
+	}
+
+	// Fallback to system node
+	// Try common installation paths
+	commonPaths := []string{
+		"/usr/local/bin/node",
+		"/usr/bin/node",
+		"/opt/homebrew/bin/node",
+	}
+
+	// Also check user's home directory for nvm
+	if home, err := os.UserHomeDir(); err == nil {
+		commonPaths = append(commonPaths,
+			filepath.Join(home, ".nvm", "versions", "node", "v20.11.1", "bin", "node"),
+			filepath.Join(home, ".nvm", "versions", "node", "v22.0.0", "bin", "node"),
+			filepath.Join(home, ".nvm", "versions", "node", "v18.0.0", "bin", "node"),
+		)
+	}
+
+	for _, path := range commonPaths {
+		if _, err := os.Stat(path); err == nil {
+			return path
+		}
+	}
+
+	// Ultimate fallback: just use "node" and hope it's in PATH
+	return "node"
+}
+
 // ParseTypeScript uses the Node.js parser to convert TS to AST (public API)
 func ParseTypeScript(inputFile string) (*ASTNode, error) {
 	return parseTypeScript(inputFile)
@@ -74,12 +137,30 @@ func parseTypeScript(inputFile string) (*ASTNode, error) {
 		filepath.Join(filepath.Dir(cwd), "internal", "transpiler", "parser", "parser.js"),
 	}
 
-	// Also try relative to executable
+	// Also try relative to executable (for bundled app)
 	if exePath, err := os.Executable(); err == nil {
 		exeDir := filepath.Dir(exePath)
+
+		// For development and normal builds
 		parserPaths = append(parserPaths,
 			filepath.Join(exeDir, "internal", "transpiler", "parser", "parser.js"),
 			filepath.Join(exeDir, "..", "internal", "transpiler", "parser", "parser.js"),
+		)
+
+		// For macOS app bundle: .app/Contents/MacOS/ts2go-cli -> .app/Contents/Resources/bin/parser/
+		if runtime.GOOS == "darwin" {
+			// Check if we're in a .app bundle structure
+			if contentsDir := filepath.Dir(exeDir); filepath.Base(contentsDir) == "Contents" {
+				appResourcesParser := filepath.Join(contentsDir, "Resources", "bin", "parser", "parser.js")
+				parserPaths = append([]string{appResourcesParser}, parserPaths...)
+			}
+		}
+
+		// For Windows/Linux bundled location: near executable
+		parserPaths = append(parserPaths,
+			filepath.Join(exeDir, "parser", "parser.js"),
+			filepath.Join(exeDir, "..", "parser", "parser.js"),
+			filepath.Join(exeDir, "..", "bin", "parser", "parser.js"),
 		)
 	}
 
@@ -96,15 +177,18 @@ func parseTypeScript(inputFile string) (*ASTNode, error) {
 		return nil, ParseError(inputFile, "parser.js not found. Run 'npm install' in internal/transpiler/parser/")
 	}
 
+	// Find Node.js binary (bundled or system)
+	nodeBinary := findNodeBinary()
+
 	// Execute the Node.js parser
-	cmd := exec.Command("node", parserPath, inputFile)
+	cmd := exec.Command(nodeBinary, parserPath, inputFile)
 	output, err := cmd.Output()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			errMsg := string(exitErr.Stderr)
-			return nil, ParseError(inputFile, errMsg)
+			return nil, ParseError(inputFile, fmt.Sprintf("exec: %q: %s", nodeBinary, errMsg))
 		}
-		return nil, ParseError(inputFile, err.Error())
+		return nil, ParseError(inputFile, fmt.Sprintf("exec: %q: %s", nodeBinary, err.Error()))
 	}
 
 	// Parse JSON output

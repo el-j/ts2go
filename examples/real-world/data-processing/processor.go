@@ -1,10 +1,10 @@
 package main
 
 type DataRecord struct {
-	Id float64 `json:"id"`
-	Name string `json:"name"`
-	Value float64 `json:"value"`
-	Active bool `json:"active"`
+	Id     float64 `json:"id"`
+	Name   string  `json:"name"`
+	Value  float64 `json:"value"`
+	Active bool    `json:"active"`
 }
 
 type DataProcessor struct {
@@ -58,23 +58,23 @@ func (d *DataProcessor) processRecord(record DataRecord) Promise {
 	}
 }
 
-func (d *DataProcessor) PrintRecord( DataRecord) {
+func (d *DataProcessor) PrintRecord(DataRecord) {
 	fmt.Println("ID: " + fmt.Sprint(id) + ", Name: " + fmt.Sprint(name) + ", Value: " + fmt.Sprint(value))
 }
 
 func (d *DataProcessor) MergeData(processors []DataProcessor) []DataRecord {
 	allData := []interface{}{}
 	for _, processor := range processors {
-		allData.Push(/* unsupported expression */)
+		allData.Push( /* unsupported expression */ )
 	}
 	return
 }
 
 func main() {
 	processor := NewDataProcessor()
-	processor.AddRecord({Id: 1, Name: "Record 1", Value: 100, Active: true})
-	processor.AddRecord({Id: 2, Name: "Record 2", Value: 200, Active: false})
-	processor.AddRecord({Id: 3, Name: "Record 3", Value: 300, Active: true})
+	processor.AddRecord(DataRecord{Id: 1, Name: "Record 1", Value: 100, Active: true})
+	processor.AddRecord(DataRecord{Id: 2, Name: "Record 2", Value: 200, Active: false})
+	processor.AddRecord(DataRecord{Id: 3, Name: "Record 3", Value: 300, Active: true})
 	activeRecords := processor.GetActiveRecords()
 	totalValue := processor.GetTotalValue()
 	fmt.Println("Active records:", activeRecords.Length)

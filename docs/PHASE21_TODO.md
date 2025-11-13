@@ -151,7 +151,7 @@ Week 4:      ██████████░░░░░░░░░░  50%
 
 ### Transpilation Functionality
 - [x] Create transpilation in EditorView
-- [x] Implement "Transpile" button
+- [x] Implement "Transpile" Button
 - [x] Call Tauri command from Vue
 - [x] Display transpilation progress
 - [x] Show generated Go code in output pane
@@ -172,7 +172,7 @@ Week 4:      ██████████░░░░░░░░░░  50%
 - [x] Implement color-coded log levels
 - [x] Add log filtering by level
 - [x] Implement log search
-- [x] Add "Clear Logs" button
+- [x] Add "Clear Logs" Button
 - [x] Implement auto-scroll to latest
 - [x] Add "Export Logs" functionality
 
@@ -227,14 +227,14 @@ Week 4:      ██████████░░░░░░░░░░  50%
 - [x] Implement Ctrl+/ for show shortcuts
 - [x] Create KeyboardShortcutsDialog component
 - [x] Display all available shortcuts in dialog
-- [x] Add help button to toolbar
+- [x] Add help Button to toolbar
 - [x] Cross-platform support (Ctrl/Cmd)
 
 ### Watch Mode (Deferred to Later Phase)
 - [ ] Create file watcher in Rust backend
 - [ ] Implement `start_watch_mode` command
 - [ ] Implement `stop_watch_mode` command
-- [ ] Add Watch toggle button in UI
+- [ ] Add Watch toggle Button in UI
 - [ ] Show watch status indicator
 - [ ] Implement auto-transpile on file change
 - [ ] Create file change timeline component
@@ -398,7 +398,7 @@ Week 4:      ██████████░░░░░░░░░░  50%
 - [ ] Improve accessibility (ARIA labels)
 - [ ] Test keyboard navigation
 - [ ] Improve loading states
-- [ ] Add tooltips to buttons
+- [ ] Add tooltips to Buttons
 - [ ] Implement confirmation dialogs
 
 ### Documentation

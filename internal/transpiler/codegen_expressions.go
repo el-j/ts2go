@@ -239,10 +239,71 @@ func (g *CodeGenerator) generateTemplateExpression(node *ASTNode) (string, error
 // generateObjectLiteral generates code for object literals
 func (g *CodeGenerator) generateObjectLiteral(node *ASTNode) (string, error) {
 	if node.Properties == nil || len(node.Properties) == 0 {
-		return "{}", nil
+		return "map[string]interface{}{}", nil
 	}
 
-	// Generate struct field initializations
+	// Check if any properties are spread elements
+	hasSpread := false
+	for _, prop := range node.Properties {
+		if prop.Kind == SpreadElement || prop.Kind == SpreadAssignment {
+			hasSpread = true
+			break
+		}
+	}
+
+	// If there are spread elements, we need to merge maps
+	if hasSpread {
+		// Generate code to create and merge maps
+		parts := []string{}
+		currentProps := []string{}
+
+		for _, prop := range node.Properties {
+			if prop.Kind == SpreadElement || prop.Kind == SpreadAssignment {
+				// If we have accumulated properties, add them as a map literal
+				if len(currentProps) > 0 {
+					parts = append(parts, fmt.Sprintf("map[string]interface{}{%s}", strings.Join(currentProps, ", ")))
+					currentProps = []string{}
+				}
+
+				// Add the spread expression
+				if prop.Expression != nil {
+					expr, err := g.generateExpression(prop.Expression)
+					if err != nil {
+						return "", err
+					}
+					parts = append(parts, expr)
+				}
+			} else if prop.Kind == "PropertyAssignment" {
+				// Regular property
+				propName := prop.Name
+				var value string
+				var err error
+				if prop.Initializer != nil {
+					value, err = g.generateExpression(prop.Initializer)
+					if err != nil {
+						return "", err
+					}
+				}
+				currentProps = append(currentProps, fmt.Sprintf(`"%s": %s`, propName, value))
+			}
+		}
+
+		// Add any remaining properties
+		if len(currentProps) > 0 {
+			parts = append(parts, fmt.Sprintf("map[string]interface{}{%s}", strings.Join(currentProps, ", ")))
+		}
+
+		// If only one part, return it directly
+		if len(parts) == 1 {
+			return parts[0], nil
+		}
+
+		// Use a helper function to merge maps
+		// For now, generate inline merge code
+		return g.generateObjectMerge(parts), nil
+	}
+
+	// No spread elements - generate simple object literal
 	fields := []string{}
 	for _, prop := range node.Properties {
 		if prop.Kind == "PropertyAssignment" {
@@ -259,16 +320,30 @@ func (g *CodeGenerator) generateObjectLiteral(node *ASTNode) (string, error) {
 				}
 			}
 
-			fields = append(fields, fmt.Sprintf("%s: %s", toPascalCase(propName), value))
+			fields = append(fields, fmt.Sprintf(`"%s": %s`, propName, value))
 		}
 	}
 
-	// Return as a struct initialization
-	// If we have a known return type, prepend it to the literal
-	if g.currentFunctionReturnType != "" && g.currentFunctionReturnType != "interface{}" {
-		return fmt.Sprintf("%s{%s}", g.currentFunctionReturnType, strings.Join(fields, ", ")), nil
+	// Return as a map literal
+	return fmt.Sprintf("map[string]interface{}{%s}", strings.Join(fields, ", ")), nil
+}
+
+// generateObjectMerge generates code to merge multiple objects/maps
+func (g *CodeGenerator) generateObjectMerge(parts []string) string {
+	// Create a temporary variable for the merged result
+	tempVar := fmt.Sprintf("_merge_%d", g.tempVarCounter)
+	g.tempVarCounter++
+
+	// Generate inline function that creates and merges maps
+	mergeCode := fmt.Sprintf("func() map[string]interface{} { %s := make(map[string]interface{}); ", tempVar)
+
+	for _, part := range parts {
+		mergeCode += fmt.Sprintf("for k, v := range %s { %s[k] = v }; ", part, tempVar)
 	}
-	return fmt.Sprintf("{%s}", strings.Join(fields, ", ")), nil
+
+	mergeCode += fmt.Sprintf("return %s }()", tempVar)
+
+	return mergeCode
 }
 
 // generateArrayLiteral generates code for array literals
@@ -277,21 +352,74 @@ func (g *CodeGenerator) generateArrayLiteral(node *ASTNode) (string, error) {
 		return "[]interface{}{}", nil
 	}
 
-	// Generate array elements
-	elements := []string{}
+	// Check if any elements are spread elements
+	hasSpread := false
 	for _, elem := range node.Elements {
-		value, err := g.generateExpression(&elem)
-		if err != nil {
-			return "", err
+		if elem.Kind == SpreadElement {
+			hasSpread = true
+			break
 		}
-		elements = append(elements, value)
 	}
 
-	// For tuple types used as inline values, generate as struct
-	// This is a heuristic - if used in a context expecting a tuple type,
-	// we return it as an inline struct initialization
-	// For now, return as array slice
-	return fmt.Sprintf("[]interface{}{%s}", strings.Join(elements, ", ")), nil
+	// If no spread elements, use simple literal syntax
+	if !hasSpread {
+		elements := []string{}
+		for _, elem := range node.Elements {
+			value, err := g.generateExpression(&elem)
+			if err != nil {
+				return "", err
+			}
+			elements = append(elements, value)
+		}
+		return fmt.Sprintf("[]interface{}{%s}", strings.Join(elements, ", ")), nil
+	}
+
+	// If there are spread elements, we need to use array.Concat or append
+	// Track import for array runtime
+	g.trackImport("github.com/ts2go/runtime/array")
+
+	// Build list of slices to concatenate
+	slices := []string{}
+	currentLiteral := []string{}
+
+	for _, elem := range node.Elements {
+		if elem.Kind == SpreadElement {
+			// If we have accumulated literal elements, add them as a slice
+			if len(currentLiteral) > 0 {
+				slices = append(slices, fmt.Sprintf("[]interface{}{%s}", strings.Join(currentLiteral, ", ")))
+				currentLiteral = []string{}
+			}
+
+			// Add the spread expression
+			if elem.Expression != nil {
+				expr, err := g.generateExpression(elem.Expression)
+				if err != nil {
+					return "", err
+				}
+				slices = append(slices, expr)
+			}
+		} else {
+			// Regular element - accumulate for literal
+			value, err := g.generateExpression(&elem)
+			if err != nil {
+				return "", err
+			}
+			currentLiteral = append(currentLiteral, value)
+		}
+	}
+
+	// Add any remaining literal elements
+	if len(currentLiteral) > 0 {
+		slices = append(slices, fmt.Sprintf("[]interface{}{%s}", strings.Join(currentLiteral, ", ")))
+	}
+
+	// If only one slice, return it directly
+	if len(slices) == 1 {
+		return slices[0], nil
+	}
+
+	// Use array.Concat to merge all slices
+	return fmt.Sprintf("array.Concat(%s)", strings.Join(slices, ", ")), nil
 }
 
 // generatePropertyAccess generates code for property access (e.g., person.name or Color.Red)
@@ -389,6 +517,53 @@ func (g *CodeGenerator) generateCallExpression(node *ASTNode) (string, error) {
 					args = append(args, argStr)
 				}
 				return fmt.Sprintf("fmt.Println(%s)", strings.Join(args, ", ")), nil
+			}
+
+			// Special case for array methods (filter, map, reduce, etc.)
+			arrayMethods := map[string]bool{
+				"filter": true, "map": true, "reduce": true,
+				"find": true, "findIndex": true, "some": true,
+				"every": true, "includes": true, "indexOf": true,
+				"forEach": true, "push": true, "pop": true,
+				"shift": true, "unshift": true, "reverse": true,
+				"slice": true, "concat": true, "join": true,
+			}
+
+			if arrayMethods[prop] {
+				// Track import for array runtime
+				g.trackImport("github.com/ts2go/runtime/array")
+
+				// Generate object expression
+				objExpr, err := g.generateExpression(objNode)
+				if err != nil {
+					return "", err
+				}
+
+				// Generate arguments
+				args := []string{}
+				for _, arg := range node.Children {
+					argStr, err := g.generateExpression(&arg)
+					if err != nil {
+						return "", err
+					}
+					args = append(args, argStr)
+				}
+
+				// Map JavaScript method names to Go function names
+				methodName := toPascalCase(prop)
+
+				// Handle special cases
+				if prop == "push" || prop == "pop" || prop == "shift" || prop == "unshift" {
+					// These methods modify the array in place, need pointer
+					return fmt.Sprintf("array.%s(&%s, %s)", methodName, objExpr, strings.Join(args, ", ")), nil
+				} else {
+					// Other methods return new slices
+					if len(args) > 0 {
+						return fmt.Sprintf("array.%s(%s, %s)", methodName, objExpr, strings.Join(args, ", ")), nil
+					} else {
+						return fmt.Sprintf("array.%s(%s)", methodName, objExpr), nil
+					}
+				}
 			}
 		}
 	}

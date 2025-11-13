@@ -1,25 +1,26 @@
 <template>
-  <div class="h-screen flex flex-col">
-    <!-- Toolbar -->
-    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center gap-4">
-      <h2 class="text-xl font-semibold">Code Editor</h2>
+  <AppLayout>
+    <div class="h-full flex flex-col">
+      <!-- Toolbar -->
+      <div class=" border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center gap-4">
+        <h2 class="text-xl font-semibold">Code Editor</h2>
       
       <div class="flex-1"></div>
       
-      <button 
+      <Button 
         @click="transpileCode" 
         class="btn-secondary flex items-center gap-2"
         :disabled="transpilerStore.status.isRunning"
       >
         <i class="pi pi-play"></i>
         <span>{{ transpilerStore.status.isRunning ? 'Transpiling...' : 'Transpile' }}</span>
-      </button>
+      </Button>
       
-      <button @click="clearCode" class="px-3 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
+      <Button @click="clearCode" class="px-3 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
         <i class="pi pi-trash"></i>
-      </button>
+      </Button>
       
-      <button 
+      <Button 
         @click="showLogs = !showLogs" 
         class="px-3 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
         :title="showLogs ? 'Hide Logs' : 'Show Logs'"
@@ -28,15 +29,15 @@
         <span v-if="logsStore.logs.length > 0" class="ml-1 text-xs bg-primary-600 text-white px-2 py-0.5 rounded-full">
           {{ logsStore.logs.length }}
         </span>
-      </button>
+      </Button>
 
-      <button 
+      <Button 
         @click="showShortcutsDialog = true" 
         class="px-3 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
         title="Keyboard Shortcuts (Ctrl+/)"
       >
         <i class="pi pi-question-circle"></i>
-      </button>
+      </Button>
     </div>
     
     <!-- Keyboard Shortcuts Dialog -->
@@ -127,13 +128,15 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import Splitter from 'primevue/splitter'
 import SplitterPanel from 'primevue/splitterpanel'
+import AppLayout from '../components/AppLayout.vue'
 import CodeEditor from '../components/CodeEditor.vue'
 import LogViewer from '../components/LogViewer.vue'
 import KeyboardShortcutsDialog from '../components/KeyboardShortcutsDialog.vue'

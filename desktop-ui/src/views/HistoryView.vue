@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useHistoryStore } from '@/stores/history'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import Tag from 'primevue/tag'
-import Button from 'primevue/button'
-import Card from 'primevue/card'
-import Chart from 'primevue/chart'
+import AppLayout from '../components/AppLayout.vue'
 
 const historyStore = useHistoryStore()
 
@@ -78,8 +73,8 @@ function confirmClearHistory() {
 </script>
 
 <template>
-  <div class="h-screen flex">
-    <div class="flex-1 flex flex-col">
+  <AppLayout>
+    <div class="h-full flex flex-col">
       <!-- Header -->
       <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div class="flex items-center justify-between">
@@ -109,7 +104,7 @@ function confirmClearHistory() {
             <Card>
               <template #content>
                 <div class="text-center">
-                  <div class="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                  <div class="text-3xl font-bold">
                     {{ historyStore.builds.length }}
                   </div>
                   <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Builds</div>
@@ -253,7 +248,7 @@ function confirmClearHistory() {
         </div>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <style scoped>

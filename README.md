@@ -62,9 +62,11 @@ func Greet(person Person) string {
 - 📋 [Specification](SPEC.md) - Currently supported TypeScript features
 - 📦 [Package Mappings](docs/PACKAGE_MAPPINGS.md) - npm to Go quick reference (100+ packages)
 - 📊 [Status](docs/STATUS.md) - Current implementation status
+- ⚠️ **[Known Issues](KNOWN_ISSUES.md)** - **Current limitations and workarounds**
 
 ### Advanced
 - 🗺️ **[Roadmap](docs/ROADMAP.md)** - **Complete plan for all TypeScript features + dependencies**
+- 🚀 **[Roadmap to 1.0.0](ROADMAP_TO_1.0.0.md)** - **Comprehensive 12-week plan to stable release**
 - 🎯 **[Next Phase Roadmap](docs/NEXT_PHASE_ROADMAP.md)** - **Detailed plan for upcoming implementation phases**
 - 🔧 **[Dependency Guide](docs/DEPENDENCY_GUIDE.md)** - **Implementation guide for dependency resolution**
 - 🏗️ [Architecture](docs/ARCHITECTURE.md) - Project structure and design

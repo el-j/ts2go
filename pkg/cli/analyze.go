@@ -199,6 +199,19 @@ func AnalyzeCommand(args []string) error {
 
 // findMappingsFile locates the npm-to-go mappings file
 func findMappingsFile() string {
+	// First, check if running from bundled app
+	exePath, err := os.Executable()
+	if err == nil {
+		exeDir := filepath.Dir(exePath)
+
+		// Check in same directory as executable (bundled app structure)
+		bundledPath := filepath.Join(exeDir, "mappings", "npm-to-go.yaml")
+		if _, err := os.Stat(bundledPath); err == nil {
+			return bundledPath
+		}
+	}
+
+	// Then check relative paths
 	paths := []string{
 		"mappings/npm-to-go.yaml",
 		"../../mappings/npm-to-go.yaml",

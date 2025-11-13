@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import Button from 'primevue/button'
-import Card from 'primevue/card'
-import Accordion from 'primevue/accordion'
-import AccordionTab from 'primevue/accordiontab'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import Tag from 'primevue/tag'
-import Message from 'primevue/message'
-import ProgressSpinner from 'primevue/progressspinner'
+import { open } from '@tauri-apps/plugin-dialog'
+import AppLayout from '../components/AppLayout.vue'
+
 import { useLogsStore } from '@/stores/logs'
 
 const logsStore = useLogsStore()
@@ -57,9 +51,21 @@ async function analyzeProject() {
   }
 }
 
-function selectDirectory() {
-  // TODO: Implement file picker when Tauri dialog plugin is available
-  errorMessage.value = 'File picker not yet implemented. Please type the path manually.'
+async function selectDirectory() {
+  try {
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: 'Select TypeScript Project Folder'
+    })
+    
+    if (selected) {
+      projectPath.value = selected as string
+      errorMessage.value = ''
+    }
+  } catch (error: any) {
+    errorMessage.value = `Failed to select directory: ${error}`
+  }
 }
 
 function getImportCount(imports: any): number {
@@ -78,8 +84,8 @@ function getExportCount(exports: any): number {
 </script>
 
 <template>
-  <div class="h-screen flex">
-    <div class="flex-1 flex flex-col">
+  <AppLayout>
+    <div class="h-full flex flex-col">
       <!-- Header -->
       <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div class="flex items-center justify-between">
@@ -290,7 +296,7 @@ function getExportCount(exports: any): number {
         </div>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <style scoped>
