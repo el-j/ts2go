@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"gopkg.in/yaml.v3"
 )
@@ -82,6 +83,14 @@ func LoadMappings(filePath string) (*MappingDatabase, error) {
 
 // LoadDefaultMappings loads mappings from the default location
 func LoadDefaultMappings() (*MappingDatabase, error) {
+	// Try bundled location first (for desktop app)
+	bundledPath := getBundledMappingsPath()
+	if bundledPath != "" {
+		if _, err := os.Stat(bundledPath); err == nil {
+			return LoadMappings(bundledPath)
+		}
+	}
+
 	// Try to find mappings/npm-to-go.yaml relative to the current working directory
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -105,6 +114,40 @@ func LoadDefaultMappings() (*MappingDatabase, error) {
 	}
 
 	return nil, fmt.Errorf("could not find mappings/npm-to-go.yaml in directory tree")
+}
+
+// getBundledMappingsPath returns the path to bundled mappings if running in app bundle
+func getBundledMappingsPath() string {
+	// Get the executable path
+	exePath, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+
+	// The CLI binary location tells us where to look for mappings
+	exeDir := filepath.Dir(exePath)
+
+	// Check if mappings directory exists in the same directory as the executable
+	// This works for both:
+	// 1. Bundled app: Contents/Resources/bin/ts2go-cli -> Contents/Resources/bin/mappings/
+	// 2. Development: desktop-ui/src-tauri/bin/ts2go-cli -> desktop-ui/src-tauri/bin/mappings/
+	mappingsPath := filepath.Join(exeDir, "mappings", "npm-to-go.yaml")
+	if _, err := os.Stat(mappingsPath); err == nil {
+		return mappingsPath
+	}
+
+	// Legacy check for macOS app bundle structure (in case CLI is in MacOS folder)
+	if runtime.GOOS == "darwin" {
+		if filepath.Base(exeDir) == "MacOS" {
+			contentsDir := filepath.Dir(exeDir)
+			mappingsPath := filepath.Join(contentsDir, "Resources", "bin", "mappings", "npm-to-go.yaml")
+			if _, err := os.Stat(mappingsPath); err == nil {
+				return mappingsPath
+			}
+		}
+	}
+
+	return ""
 }
 
 // GetMapping retrieves a mapping for an npm package
