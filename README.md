@@ -100,11 +100,21 @@ func Greet(person Person) string {
 ✅ `watch` - Auto-transpile on file changes  
 ✅ `ui` - Legacy web UI server  
 
-### 🔄 In Progress for Alpha 2.0.1
-🔄 **Go build integration** - Compile transpiled code into binaries  
-🔄 **Go test integration** - Run tests on transpiled code  
-🔄 **Build artifacts** - Manage compiled binaries  
-🔄 **Test results UI** - Display test pass/fail in GUI  
+### 🔄 Alpha 2.0.1 Features (In Progress → Complete!)
+✅ **Go build integration** - Compile transpiled code into binaries (CLI + GUI)
+✅ **Go test integration** - Run tests on transpiled code (CLI + GUI)
+✅ **Build artifacts** - Track and manage compiled binaries
+✅ **Test results UI** - Display test pass/fail in GUI with detailed output
+
+**New Commands:**
+- `ts2go build --source <dir> --output <binary>` - Compile Go code
+- `ts2go test --source <dir> --verbose --coverage` - Run Go tests
+
+**GUI Features:**
+- 🔨 Build button in ProjectView
+- 🧪 Test button in ProjectView
+- Build/test results display in log panel
+- Artifact tracking with localStorage persistence
 
 ❌ Frontend frameworks (React, Vue, Angular) - Out of scope  
 

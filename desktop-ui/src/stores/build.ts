@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { useArtifactsStore } from './artifacts'
 
 export interface BuildResult {
   success: boolean
@@ -46,6 +47,20 @@ export const useBuildStore = defineStore('build', () => {
         buildHistory.value = buildHistory.value.slice(0, 50)
       }
       
+      // Save artifact if build succeeded (buildFile)
+      if (buildRes.success) {
+        const artifactsStore = useArtifactsStore()
+        artifactsStore.addArtifact({
+          id: `build_file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          type: 'binary',
+          path: buildRes.binary_path,
+          size: buildRes.binary_size,
+          created_at: buildRes.timestamp,
+          project_path: outputPath,
+          metadata: {}
+        })
+      }
+      
       return buildRes
     } finally {
       isBuilding.value = false
@@ -79,6 +94,20 @@ export const useBuildStore = defineStore('build', () => {
       // Keep only last 50 builds in history
       if (buildHistory.value.length > 50) {
         buildHistory.value = buildHistory.value.slice(0, 50)
+      }
+      
+      // Save artifact if build succeeded (buildProject)
+      if (buildRes.success) {
+        const artifactsStore = useArtifactsStore()
+        artifactsStore.addArtifact({
+          id: `build_proj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          type: 'binary',
+          path: buildRes.binary_path,
+          size: buildRes.binary_size,
+          created_at: buildRes.timestamp,
+          project_path: sourceDir,
+          metadata: {}
+        })
       }
       
       return buildRes
