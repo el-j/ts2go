@@ -3,7 +3,8 @@ import { ref, computed } from 'vue'
 
 export interface FileNode {
   name: string
-  path: string
+  displayName?: string  // Relative path for display in UI
+  path: string  // Absolute path for file operations
   type: 'file' | 'folder'
   children?: FileNode[]
   content?: string
@@ -204,6 +205,81 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     activeFilePath.value = ''
   }
   
+  function loadProject(projectInfo: any) {
+    // Set project path
+    setProjectPath(projectInfo.root)
+    
+    // Convert files array to file tree structure
+    const tree: FileNode[] = []
+    const fileMap = new Map<string, FileNode>()
+    const root = projectInfo.root
+    
+    // Create nodes for all files
+    projectInfo.files.forEach((absolutePath: string) => {
+      // Get relative path from project root
+      const relativePath = absolutePath.startsWith(root) 
+        ? absolutePath.slice(root.length + 1)  // +1 to remove leading slash
+        : absolutePath
+      
+      const parts = relativePath.split('/')
+      const fileName = parts[parts.length - 1]
+      
+      const node: FileNode = {
+        name: fileName,
+        displayName: relativePath,  // Show relative path in UI
+        path: absolutePath,  // Store absolute path for file operations
+        type: 'file',
+        content: '',
+        isDirty: false
+      }
+      
+      fileMap.set(relativePath, node)
+    })
+    
+    // Build tree structure
+    projectInfo.files.forEach((absolutePath: string) => {
+      const relativePath = absolutePath.startsWith(root)
+        ? absolutePath.slice(root.length + 1)
+        : absolutePath
+      
+      const parts = relativePath.split('/')
+      const node = fileMap.get(relativePath)!
+      
+      if (parts.length === 1) {
+        // Root level file
+        tree.push(node)
+      } else {
+        // Nested file - find or create parent folders
+        let currentRelativePath = ''
+        let currentLevel: FileNode[] = tree
+        
+        for (let i = 0; i < parts.length - 1; i++) {
+          const part = parts[i]
+          currentRelativePath = currentRelativePath ? `${currentRelativePath}/${part}` : part
+          const currentAbsolutePath = `${root}/${currentRelativePath}`
+          
+          let folder = currentLevel.find(n => n.path === currentAbsolutePath && n.type === 'folder')
+          if (!folder) {
+            folder = {
+              name: part,
+              displayName: currentRelativePath,  // Show relative path for folders too
+              path: currentAbsolutePath,  // Store absolute path for folders
+              type: 'folder',
+              children: []
+            }
+            currentLevel.push(folder)
+          }
+          
+          currentLevel = folder.children!
+        }
+        
+        currentLevel.push(node)
+      }
+    })
+    
+    setFileTree(tree)
+  }
+  
   return {
     // State
     projectPath,
@@ -227,6 +303,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     createFolder,
     renameFile,
     deleteFile,
-    closeAllFiles
+    closeAllFiles,
+    loadProject
   }
 })

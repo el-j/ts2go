@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { open } from '@tauri-apps/plugin-dialog'
 import AppLayout from '../components/AppLayout.vue'
 
 import { useLogsStore } from '@/stores/logs'
@@ -50,9 +51,21 @@ async function analyzeProject() {
   }
 }
 
-function selectDirectory() {
-  // TODO: Implement file picker when Tauri dialog plugin is available
-  errorMessage.value = 'File picker not yet implemented. Please type the path manually.'
+async function selectDirectory() {
+  try {
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: 'Select TypeScript Project Folder'
+    })
+    
+    if (selected) {
+      projectPath.value = selected as string
+      errorMessage.value = ''
+    }
+  } catch (error: any) {
+    errorMessage.value = `Failed to select directory: ${error}`
+  }
 }
 
 function getImportCount(imports: any): number {

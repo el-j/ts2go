@@ -1,18 +1,34 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
 import { useProjectStore, type Project } from '@/stores/project'
+import { useWorkspaceStore } from '@/stores/workspace'
 import { useRouter } from 'vue-router'
 import Card from 'primevue/card'
 import Button from 'primevue/Button'
 
 const projectStore = useProjectStore()
+const workspace = useWorkspaceStore()
 const router = useRouter()
 
 const recentProjects = computed(() => projectStore.recentProjects)
 
-function openProject(project: Project) {
-  projectStore.setCurrentProject(project)
-  router.push('/project')
+async function openProject(project: Project) {
+  try {
+    // Load project files from backend
+    const projectInfo = await invoke('load_project_folder', { path: project.path })
+    
+    // Load project into workspace
+    workspace.loadProject(projectInfo)
+    
+    // Update project store
+    projectStore.setCurrentProject(project)
+    
+    // Navigate to project view
+    router.push('/project')
+  } catch (error) {
+    console.error('Failed to load project:', error)
+  }
 }
 
 function togglePin(project: Project) {

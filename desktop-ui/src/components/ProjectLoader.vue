@@ -68,23 +68,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useWorkspaceStore } from '../stores/workspace'
 import { useProjectStore } from '../stores/project'
+import { useTranspileStore } from '../stores/transpile'
 import { useRouter } from 'vue-router'
 
 const selectedPath = ref('')
 const loading = ref(false)
-const transpiling = ref(false)
 const projectInfo = ref<any>(null)
-const transpileResult = ref<any>(null)
 const error = ref('')
 
 const workspaceStore = useWorkspaceStore()
 const projectStore = useProjectStore()
+const transpileStore = useTranspileStore()
 const router = useRouter()
+
+const transpiling = computed(() => transpileStore.isTranspiling)
+const transpileResult = computed(() => transpileStore.currentResult)
 
 async function browseFolder() {
   try {
@@ -112,7 +115,7 @@ async function loadProject() {
   loading.value = true
   error.value = ''
   projectInfo.value = null
-  transpileResult.value = null
+  transpileStore.clearResult()
 
   try {
     const result = await invoke<any>('load_project_folder', {
@@ -137,20 +140,12 @@ async function loadProject() {
 async function autoTranspile() {
   if (!projectInfo.value) return
 
-  transpiling.value = true
   error.value = ''
-  transpileResult.value = null
 
   try {
-    const result = await invoke<any>('auto_transpile_project', {
-      path: projectInfo.value.root
-    })
-    
-    transpileResult.value = result
+    await transpileStore.transpileProject(projectInfo.value.root)
   } catch (err) {
     error.value = `Failed to transpile project: ${err}`
-  } finally {
-    transpiling.value = false
   }
 }
 

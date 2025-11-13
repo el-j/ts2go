@@ -1,6 +1,8 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
+import ToastService from 'primevue/toastservice'
+import Tooltip from 'primevue/tooltip'
 import 'primeicons/primeicons.css'
 import './assets/main.css'
 import Aura from '@primeuix/themes/aura';
@@ -15,7 +17,10 @@ import Tag from 'primevue/tag'
 import Accordion from 'primevue/accordion'
 import AccordionTab from 'primevue/accordiontab'
 
-
+import Toast from 'primevue/toast'
+import Splitter from 'primevue/splitter'
+import SplitterPanel from 'primevue/splitterpanel'
+import Popover from 'primevue/popover'
 
 import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
@@ -35,6 +40,8 @@ app.use(PrimeVue, {
     }
   
 })
+app.use(ToastService)
+app.directive('tooltip', Tooltip)
 app.component('DataTable',DataTable)
 app.component('Column',Column)
 app.component('Tag',Tag)
@@ -49,5 +56,9 @@ app.component('Accordion',Accordion)
 app.component('AccordionTab',AccordionTab)
 app.component('Message',Message)
 app.component('ProgressSpinner',ProgressSpinner)
+app.component('Toast',Toast)
+app.component('Splitter',Splitter)
+app.component('SplitterPanel',SplitterPanel)
+app.component('Popover',Popover)
 
 app.mount('#app')

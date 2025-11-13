@@ -10,7 +10,7 @@
         {{ isExpanded ? '▼' : '▶' }}
       </span>
       <span class="file-icon">{{ getFileIcon(node) }}</span>
-      <span class="node-name">{{ node.name }}</span>
+      <span class="node-name" :title="node.displayName || node.name">{{ node.name }}</span>
       <span v-if="node.isDirty" class="dirty-indicator">●</span>
     </div>
     
@@ -20,9 +20,9 @@
         :key="child.path"
         :node="child"
         :active-path="activePath"
-        @select="$emit('select', $event.path, $event.name)"
-        @rename="$emit('rename', $event)"
-        @delete="$emit('delete', $event)"
+        @select="(payload) => $emit('select', payload)"
+        @rename="(path) => $emit('rename', path)"
+        @delete="(path) => $emit('delete', path)"
       />
     </div>
     
@@ -140,6 +140,13 @@ function hideContextMenu() {
 
 .node-name {
   flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-label.folder .node-name {
+  font-weight: 500;
 }
 
 .dirty-indicator {

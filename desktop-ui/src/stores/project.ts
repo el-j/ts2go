@@ -126,6 +126,20 @@ export const useProjectStore = defineStore('project', () => {
     recentProjects.value = []
   }
 
+  // Alias for convenience (matches usage in ProjectLoader)
+  function addRecentProject(projectData: { name: string; path: string; lastOpened: number }) {
+    const project: Project = {
+      id: projectData.path, // Use path as ID
+      name: projectData.name,
+      path: projectData.path,
+      lastModified: new Date(projectData.lastOpened),
+      lastOpened: new Date(projectData.lastOpened).toISOString(),
+      isPinned: false,
+      accessCount: 1
+    }
+    addToRecentProjects(project)
+  }
+
   // Load recent projects on initialization
   loadRecentProjects()
 
@@ -136,6 +150,7 @@ export const useProjectStore = defineStore('project', () => {
     addProject,
     setCurrentProject,
     addToRecentProjects,
+    addRecentProject,
     togglePinProject,
     removeFromRecentProjects,
     clearRecentProjects
