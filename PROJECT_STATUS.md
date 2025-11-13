@@ -1,7 +1,7 @@
 # TS2Go Project Status
 
 **Current Version:** 0.7.0-beta  
-**Last Updated:** November 9, 2025  
+**Last Updated:** November 13, 2025  
 **Status:** Phase 1 & 2 Complete, Phase 3 Week 6 Complete
 
 ---
@@ -176,26 +176,26 @@
 
 ---
 
-## 🚀 Next Steps: Phase 3 Week 7
+## 🚀 Next Steps: Phase 3 Week 7-8
 
 **Goal:** Advanced editor features and multi-file support
 
-**Planned Implementation:**
+For detailed immediate priorities and tasks, see **[NEXT_STEPS.md](NEXT_STEPS.md)**.
 
-1. **Syntax Error Highlighting**
+**Summary of Upcoming Work:**
+
+1. **Syntax Error Highlighting** (Week 7)
    - Integrate TypeScript language server
-   - Real-time error detection
-   - Inline error markers
-   - Error descriptions
+   - Real-time error detection in Monaco Editor
+   - Inline error markers and hover messages
 
-2. **Multi-File Project View**
-   - File tree component
+2. **Multi-File Project Support** (Week 7-8)
+   - File tree component with navigation
    - File tabs for multiple open files
-   - File operations (create, rename, delete)
-   - File search
+   - Build and run integration
 
-**Timeline:** 1 week  
-**Target:** Progress toward v0.8.0-beta
+**Timeline:** 2 weeks  
+**Target:** v0.8.0-beta by late November
 
 ---
 
@@ -210,7 +210,7 @@
 - ✅ **CONTRIBUTING.md** - Contribution guidelines
 - ✅ **SPEC.md** - Technical specifications
 
-**All Documentation Updated:** November 9, 2025
+**All Documentation Updated:** November 13, 2025
 
 ---
 
@@ -236,10 +236,11 @@
 
 ## 🔗 Quick Links
 
-- [Full Roadmap](./ROADMAP_TO_1.0.0.md)
-- [Known Issues](./KNOWN_ISSUES.md)
-- [Changelog](./CHANGELOG.md)
-- [Contributing Guide](./CONTRIBUTING.md)
+- [Next Steps](./NEXT_STEPS.md) - Immediate priorities (next 2-4 weeks)
+- [Full Roadmap](./ROADMAP_TO_1.0.0.md) - Complete plan to v1.0.0
+- [Known Issues](./KNOWN_ISSUES.md) - Current limitations
+- [Changelog](./CHANGELOG.md) - Version history
+- [Contributing Guide](./CONTRIBUTING.md) - How to contribute
 
 ---
 
@@ -259,4 +260,4 @@
 
 ---
 
-*Last updated: November 9, 2025*
+*Last updated: November 13, 2025*

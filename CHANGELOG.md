@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **NEXT_STEPS.md** - Focused roadmap for immediate priorities (next 2-4 weeks)
 - Comprehensive GitHub Actions workflows for CI/CD
   - Feature branch workflow with cross-platform builds
   - Develop branch workflow with integration tests
@@ -23,9 +24,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **KNOWN_ISSUES.md** - Documentation of current limitations and workarounds
 
 ### Changed
+- **Documentation cleanup** - Removed 38 outdated documentation files
+  - Removed old phase completion documents (PHASE9-21)
+  - Removed old build fix documents
+  - Removed superseded roadmap and status documents
+  - Consolidated to essential, current documentation only
+- Updated README.md with corrected documentation links
+- Updated PROJECT_STATUS.md with current dates and next steps
 - Fixed `go.work` file to include `cmd/ts2go` module
 - Updated README with better documentation structure
-- Updated README to reference new roadmap and known issues documents
+
+### Removed
+- 38 outdated markdown documentation files from `/docs` folder
+- Duplicate SPEC.md from `/docs` (kept root version)
+- Old roadmap and status documents superseded by current versions
 
 ### Fixed
 - Build system now properly compiles the main CLI binary
