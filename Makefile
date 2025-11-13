@@ -56,15 +56,30 @@ build-desktop: build-cli
 	@mkdir -p $(RELEASE_DIR)/stable/$(PLATFORM)
 	@if [ "$(PLATFORM)" = "macos" ]; then \
 		rm -rf "$(RELEASE_DIR)/stable/$(PLATFORM)/TS2Go-Desktop-v$(VERSION).app"; \
-		cp -R "desktop-ui/src-tauri/target/release/bundle/macos/TS2Go Desktop.app" "$(RELEASE_DIR)/stable/$(PLATFORM)/TS2Go-Desktop-v$(VERSION).app"; \
+		if [ -d "desktop-ui/src-tauri/target/release/bundle/macos" ]; then \
+			cp -R "desktop-ui/src-tauri/target/release/bundle/macos/"*.app "$(RELEASE_DIR)/stable/$(PLATFORM)/" 2>/dev/null || true; \
+		fi; \
+		if [ -d "desktop-ui/src-tauri/target/release/bundle/dmg" ]; then \
+			cp desktop-ui/src-tauri/target/release/bundle/dmg/*.dmg "$(RELEASE_DIR)/stable/$(PLATFORM)/" 2>/dev/null || true; \
+		fi; \
 		echo "✅ Build complete!"; \
-		echo "📍 Release location: $(RELEASE_DIR)/stable/$(PLATFORM)/TS2Go-Desktop-v$(VERSION).app"; \
+		echo "📍 Release location: $(RELEASE_DIR)/stable/$(PLATFORM)/"; \
 	elif [ "$(PLATFORM)" = "windows" ]; then \
-		cp -R desktop-ui/src-tauri/target/release/bundle/msi/* "$(RELEASE_DIR)/stable/$(PLATFORM)/"; \
+		if [ -d "desktop-ui/src-tauri/target/release/bundle/msi" ]; then \
+			cp desktop-ui/src-tauri/target/release/bundle/msi/*.msi "$(RELEASE_DIR)/stable/$(PLATFORM)/" 2>/dev/null || true; \
+		fi; \
+		if [ -d "desktop-ui/src-tauri/target/release/bundle/nsis" ]; then \
+			cp desktop-ui/src-tauri/target/release/bundle/nsis/*.exe "$(RELEASE_DIR)/stable/$(PLATFORM)/" 2>/dev/null || true; \
+		fi; \
 		echo "✅ Build complete!"; \
 		echo "📍 Release location: $(RELEASE_DIR)/stable/$(PLATFORM)/"; \
 	else \
-		cp -R desktop-ui/src-tauri/target/release/bundle/appimage/* "$(RELEASE_DIR)/stable/$(PLATFORM)/"; \
+		if [ -d "desktop-ui/src-tauri/target/release/bundle/appimage" ]; then \
+			cp desktop-ui/src-tauri/target/release/bundle/appimage/*.AppImage "$(RELEASE_DIR)/stable/$(PLATFORM)/" 2>/dev/null || true; \
+		fi; \
+		if [ -d "desktop-ui/src-tauri/target/release/bundle/deb" ]; then \
+			cp desktop-ui/src-tauri/target/release/bundle/deb/*.deb "$(RELEASE_DIR)/stable/$(PLATFORM)/" 2>/dev/null || true; \
+		fi; \
 		echo "✅ Build complete!"; \
 		echo "📍 Release location: $(RELEASE_DIR)/stable/$(PLATFORM)/"; \
 	fi
@@ -127,15 +142,30 @@ build-desktop-debug: build-cli
 	@mkdir -p $(RELEASE_DIR)/debug/$(PLATFORM)
 	@if [ "$(PLATFORM)" = "macos" ]; then \
 		rm -rf "$(RELEASE_DIR)/debug/$(PLATFORM)/TS2Go-Desktop-v$(VERSION)-debug.app"; \
-		cp -R "desktop-ui/src-tauri/target/debug/bundle/macos/TS2Go Desktop.app" "$(RELEASE_DIR)/debug/$(PLATFORM)/TS2Go-Desktop-v$(VERSION)-debug.app"; \
+		if [ -d "desktop-ui/src-tauri/target/debug/bundle/macos" ]; then \
+			cp -R "desktop-ui/src-tauri/target/debug/bundle/macos/"*.app "$(RELEASE_DIR)/debug/$(PLATFORM)/" 2>/dev/null || true; \
+		fi; \
+		if [ -d "desktop-ui/src-tauri/target/debug/bundle/dmg" ]; then \
+			cp desktop-ui/src-tauri/target/debug/bundle/dmg/*.dmg "$(RELEASE_DIR)/debug/$(PLATFORM)/" 2>/dev/null || true; \
+		fi; \
 		echo "✅ Debug build complete!"; \
-		echo "📍 Debug release location: $(RELEASE_DIR)/debug/$(PLATFORM)/TS2Go-Desktop-v$(VERSION)-debug.app"; \
+		echo "📍 Debug release location: $(RELEASE_DIR)/debug/$(PLATFORM)/"; \
 	elif [ "$(PLATFORM)" = "windows" ]; then \
-		cp -R desktop-ui/src-tauri/target/debug/bundle/msi/* "$(RELEASE_DIR)/debug/$(PLATFORM)/"; \
+		if [ -d "desktop-ui/src-tauri/target/debug/bundle/msi" ]; then \
+			cp desktop-ui/src-tauri/target/debug/bundle/msi/*.msi "$(RELEASE_DIR)/debug/$(PLATFORM)/" 2>/dev/null || true; \
+		fi; \
+		if [ -d "desktop-ui/src-tauri/target/debug/bundle/nsis" ]; then \
+			cp desktop-ui/src-tauri/target/debug/bundle/nsis/*.exe "$(RELEASE_DIR)/debug/$(PLATFORM)/" 2>/dev/null || true; \
+		fi; \
 		echo "✅ Debug build complete!"; \
 		echo "📍 Debug release location: $(RELEASE_DIR)/debug/$(PLATFORM)/"; \
 	else \
-		cp -R desktop-ui/src-tauri/target/debug/bundle/appimage/* "$(RELEASE_DIR)/debug/$(PLATFORM)/"; \
+		if [ -d "desktop-ui/src-tauri/target/debug/bundle/appimage" ]; then \
+			cp desktop-ui/src-tauri/target/debug/bundle/appimage/*.AppImage "$(RELEASE_DIR)/debug/$(PLATFORM)/" 2>/dev/null || true; \
+		fi; \
+		if [ -d "desktop-ui/src-tauri/target/debug/bundle/deb" ]; then \
+			cp desktop-ui/src-tauri/target/debug/bundle/deb/*.deb "$(RELEASE_DIR)/debug/$(PLATFORM)/" 2>/dev/null || true; \
+		fi; \
 		echo "✅ Debug build complete!"; \
 		echo "📍 Debug release location: $(RELEASE_DIR)/debug/$(PLATFORM)/"; \
 	fi
@@ -187,7 +217,7 @@ build-desktop-windows-xwin: build-cli
 	@echo "📦 Copying Windows release to project root..."
 	@mkdir -p $(RELEASE_DIR)/stable/windows
 	@if [ -d "desktop-ui/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi" ]; then \
-		cp -R desktop-ui/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/* "$(RELEASE_DIR)/stable/windows/"; \
+		cp desktop-ui/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi "$(RELEASE_DIR)/stable/windows/" 2>/dev/null || true; \
 		echo "✅ Windows build complete!"; \
 		echo "📍 Release location: $(RELEASE_DIR)/stable/windows/"; \
 	else \
@@ -238,10 +268,10 @@ build-desktop-linux-cross: build-cli
 	@mkdir -p $(RELEASE_DIR)/stable/linux
 	@if [ -d "desktop-ui/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle" ]; then \
 		if [ -d "desktop-ui/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage" ]; then \
-			cp -R desktop-ui/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/* "$(RELEASE_DIR)/stable/linux/"; \
+			cp desktop-ui/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage "$(RELEASE_DIR)/stable/linux/" 2>/dev/null || true; \
 		fi; \
 		if [ -d "desktop-ui/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/deb" ]; then \
-			cp -R desktop-ui/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/deb/* "$(RELEASE_DIR)/stable/linux/"; \
+			cp desktop-ui/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/deb/*.deb "$(RELEASE_DIR)/stable/linux/" 2>/dev/null || true; \
 		fi; \
 		echo "✅ Linux build complete!"; \
 		echo "📍 Release location: $(RELEASE_DIR)/stable/linux/"; \
@@ -266,13 +296,13 @@ build-desktop-linux-native: build-cli
 	cd desktop-ui && npm run tauri:build
 	@mkdir -p $(RELEASE_DIR)/stable/linux
 	@if [ -d "desktop-ui/src-tauri/target/release/bundle/appimage" ]; then \
-		cp -R desktop-ui/src-tauri/target/release/bundle/appimage/* "$(RELEASE_DIR)/stable/linux/"; \
+		cp desktop-ui/src-tauri/target/release/bundle/appimage/*.AppImage "$(RELEASE_DIR)/stable/linux/" 2>/dev/null || true; \
 	fi
 	@if [ -d "desktop-ui/src-tauri/target/release/bundle/deb" ]; then \
-		cp -R desktop-ui/src-tauri/target/release/bundle/deb/* "$(RELEASE_DIR)/stable/linux/"; \
+		cp desktop-ui/src-tauri/target/release/bundle/deb/*.deb "$(RELEASE_DIR)/stable/linux/" 2>/dev/null || true; \
 	fi
 	@echo "✅ Linux build complete!"
-	@echo "� Release location: $(RELEASE_DIR)/stable/linux/"
+	@echo "📍 Release location: $(RELEASE_DIR)/stable/linux/"
 	@echo ""
 
 # Build for all platforms (requires appropriate toolchains)
