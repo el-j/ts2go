@@ -268,15 +268,34 @@ jobs:
         working-directory: desktop-ui
         run: npm ci
 
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
+      - name: Build Desktop App using Makefile
+        run: make build-desktop
+        env:
+          CARGO_INCREMENTAL: 0
+          MACOSX_DEPLOYMENT_TARGET: '10.13'
+
+      - name: Verify build artifacts
+        shell: bash
+        run: |
+          echo "Verifying build artifacts..."
+          if [ "${{ matrix.platform }}" == "macos-latest" ]; then
+            ls -lah release/stable/macos/ || (echo "macOS artifacts missing" && exit 1)
+          elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
+            ls -lah release/stable/windows/ || (echo "Windows artifacts missing" && exit 1)
+          else
+            ls -lah release/stable/linux/ || (echo "Linux artifacts missing" && exit 1)
+          fi
+
+      - name: Upload Desktop artifacts to release
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectPath: desktop-ui
-          tauriScript: npm run tauri:build
-          tagName: ${{ needs.create-beta-release.outputs.tag_name }}
-          args: ${{ matrix.args }}
+          tag_name: ${{ needs.create-beta-release.outputs.tag_name }}
+          files: |
+            release/stable/macos/*
+            release/stable/windows/*
+            release/stable/linux/*
 
   generate-checksums:
     name: Generate Checksums
