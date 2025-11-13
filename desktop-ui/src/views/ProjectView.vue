@@ -86,6 +86,15 @@
             ▶️ Run Project
           </button>
           <span v-if="isRunningProject" class="running-project-indicator">⏳ Running Project...</span>
+          <button 
+            v-if="transpileStore.currentResult?.output_dir && !buildStore.isBuilding"
+            @click="handleBuildProject" 
+            class="btn-action btn-build"
+            title="Build Project into Binary"
+          >
+            🔨 Build Project
+          </button>
+          <span v-if="buildStore.isBuilding" class="building-indicator">⏳ Building...</span>
         </div>
       </div>
     </div>
@@ -227,9 +236,11 @@ import MonacoEditor from '../components/MonacoEditor.vue'
 
 import { useWorkspaceStore } from '../stores/workspace'
 import { useTranspileStore } from '../stores/transpile'
+import { useBuildStore } from '../stores/build'
 
 const workspace = useWorkspaceStore()
 const transpileStore = useTranspileStore()
+const buildStore = useBuildStore()
 const toast = useToast()
 
 const projectInfoPopover = ref()
@@ -688,6 +699,69 @@ async function handleRunProject() {
     })
   } finally {
     isRunningProject.value = false
+  }
+}
+
+async function handleBuildProject() {
+  if (!transpileStore.currentResult?.output_dir) return
+  
+  try {
+    const outputDir = transpileStore.currentResult.output_dir
+    const projectName = workspace.projectPath.split('/').pop() || 'app'
+    const binaryPath = `${outputDir}/${projectName}`
+    
+    // Build the project
+    const result = await buildStore.buildProject(outputDir, binaryPath)
+    
+    // Display results in output panel
+    workspace.transpilationProgress.logs = []
+    workspace.addTranspilationLog('=== Go Project Build ===', 'info')
+    workspace.addTranspilationLog(`Source: ${outputDir}`, 'info')
+    workspace.addTranspilationLog(`Binary: ${result.binary_path}`, 'info')
+    workspace.addTranspilationLog(`Size: ${(result.binary_size / (1024 * 1024)).toFixed(2)} MB`, 'info')
+    workspace.addTranspilationLog(`Duration: ${result.duration_ms}ms`, 'info')
+    workspace.addTranspilationLog(`Exit code: ${result.exit_code}`, result.success ? 'success' : 'error')
+    
+    if (result.errors.length > 0) {
+      workspace.addTranspilationLog('--- Build Errors ---', 'error')
+      result.errors.forEach(err => {
+        workspace.addTranspilationLog(err, 'error')
+      })
+    }
+    
+    if (result.warnings.length > 0) {
+      workspace.addTranspilationLog('--- Build Warnings ---', 'warning')
+      result.warnings.forEach(warn => {
+        workspace.addTranspilationLog(warn, 'warning')
+      })
+    }
+    
+    if (result.success) {
+      workspace.addTranspilationLog(`✅ Build successful! Binary created at: ${result.binary_path}`, 'success')
+    }
+    
+    // Clear current result to show logs
+    transpileStore.currentResult = null
+    
+    // Show toast notification
+    toast.add({
+      severity: result.success ? 'success' : 'error',
+      summary: result.success ? 'Build Complete' : 'Build Failed',
+      detail: result.success 
+        ? `Binary created in ${result.duration_ms}ms (${(result.binary_size / (1024 * 1024)).toFixed(2)} MB)`
+        : `Build failed with ${result.errors.length} error(s)`,
+      life: result.success ? 4000 : 8000
+    })
+  } catch (error) {
+    workspace.addTranspilationLog(`Build error: ${error}`, 'error')
+    transpileStore.currentResult = null
+    
+    toast.add({
+      severity: 'error',
+      summary: 'Build Failed',
+      detail: String(error),
+      life: 5000
+    })
   }
 }
 </script>

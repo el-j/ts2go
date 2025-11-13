@@ -33,6 +33,11 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
+	case "build", "b":
+		if err := cli.BuildCommand(args); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 	case "ui":
 		if err := cli.UICommand(args); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -98,6 +103,9 @@ func printUsage() {
 	fmt.Println("  analyze, a     Analyze a TypeScript project's dependencies")
 	fmt.Println("                 ts2go analyze <project-dir>")
 	fmt.Println()
+	fmt.Println("  build, b       Build transpiled Go code into a binary")
+	fmt.Println("                 ts2go build --source <source-dir> --output <binary-path> [--flags <build-flags>]")
+	fmt.Println()
 	fmt.Println("  ui             Start web-based UI (legacy)")
 	fmt.Println("                 ts2go ui [--port 8080] [--open]")
 	fmt.Println("                 Note: For modern desktop app, see desktop-ui/")
@@ -114,6 +122,9 @@ func printUsage() {
 	fmt.Println()
 	fmt.Println("  # Analyze project dependencies")
 	fmt.Println("  ts2go analyze ./my-project")
+	fmt.Println()
+	fmt.Println("  # Build transpiled code")
+	fmt.Println("  ts2go build --source ./output --output ./my-app")
 	fmt.Println()
 	fmt.Println("  # Start web UI (legacy)")
 	fmt.Println("  ts2go ui --port 8080 --open")

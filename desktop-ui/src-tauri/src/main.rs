@@ -363,6 +363,178 @@ async fn run_go_project(output_dir: String) -> Result<serde_json::Value, String>
 }
 
 #[tauri::command]
+async fn build_go_file(code: String, output_path: String) -> Result<serde_json::Value, String> {
+    use std::time::{SystemTime, UNIX_EPOCH, Instant};
+    
+    // Create temporary file for Go code
+    let temp_dir = std::env::temp_dir();
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+    let temp_file = temp_dir.join(format!("ts2go_build_{}.go", timestamp));
+    
+    // Write Go code to temp file
+    fs::write(&temp_file, &code)
+        .map_err(|e| format!("Failed to write temp Go file: {}", e))?;
+    
+    let start_time = Instant::now();
+    
+    // Execute Go build
+    let output = Command::new("go")
+        .arg("build")
+        .arg("-o")
+        .arg(&output_path)
+        .arg(&temp_file)
+        .output()
+        .map_err(|e| {
+            let _ = fs::remove_file(&temp_file);
+            format!("Failed to build Go code: {}. Make sure Go is installed and in PATH.", e)
+        })?;
+    
+    let duration = start_time.elapsed();
+    
+    // Clean up temp file
+    let _ = fs::remove_file(&temp_file);
+    
+    // Parse output
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let exit_code = output.status.code().unwrap_or(-1);
+    let success = output.status.success();
+    
+    // Get binary size if build succeeded
+    let binary_size = if success {
+        fs::metadata(&output_path)
+            .map(|m| m.len())
+            .unwrap_or(0)
+    } else {
+        0
+    };
+    
+    // Parse errors and warnings from stderr
+    let mut errors = Vec::new();
+    let mut warnings = Vec::new();
+    for line in stderr.lines() {
+        if line.contains("error:") || line.contains("undefined:") {
+            errors.push(line.to_string());
+        } else if line.contains("warning:") {
+            warnings.push(line.to_string());
+        }
+    }
+    
+    Ok(serde_json::json!({
+        "success": success,
+        "binary_path": output_path,
+        "binary_size": binary_size,
+        "stdout": stdout,
+        "stderr": stderr,
+        "errors": errors,
+        "warnings": warnings,
+        "exit_code": exit_code,
+        "duration_ms": duration.as_millis() as u64
+    }))
+}
+
+#[tauri::command]
+async fn build_go_project(
+    source_dir: String,
+    output_path: String,
+    build_flags: Option<Vec<String>>
+) -> Result<serde_json::Value, String> {
+    use std::time::Instant;
+    
+    let source_path = Path::new(&source_dir);
+    
+    // Verify source directory exists
+    if !source_path.exists() {
+        return Err(format!("Source directory does not exist: {}", source_dir));
+    }
+    
+    // Find main package (look for main.go or any file with package main)
+    let mut has_main = false;
+    if let Ok(entries) = fs::read_dir(source_path) {
+        for entry in entries.flatten() {
+            if let Some(name) = entry.file_name().to_str() {
+                if name.ends_with(".go") {
+                    if let Ok(content) = fs::read_to_string(entry.path()) {
+                        if content.contains("package main") {
+                            has_main = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    if !has_main {
+        return Err("No main package found in source directory. Make sure your TypeScript project has an entry point.".to_string());
+    }
+    
+    let start_time = Instant::now();
+    
+    // Build command with flags
+    let mut cmd = Command::new("go");
+    cmd.arg("build")
+        .arg("-o")
+        .arg(&output_path);
+    
+    // Add custom build flags if provided
+    if let Some(flags) = build_flags {
+        for flag in flags {
+            cmd.arg(flag);
+        }
+    }
+    
+    // Execute Go build in the source directory
+    let output = cmd
+        .current_dir(source_path)
+        .output()
+        .map_err(|e| format!("Failed to build Go project: {}. Make sure Go is installed and in PATH.", e))?;
+    
+    let duration = start_time.elapsed();
+    
+    // Parse output
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let exit_code = output.status.code().unwrap_or(-1);
+    let success = output.status.success();
+    
+    // Get binary size if build succeeded
+    let binary_size = if success {
+        fs::metadata(&output_path)
+            .map(|m| m.len())
+            .unwrap_or(0)
+    } else {
+        0
+    };
+    
+    // Parse errors and warnings from stderr
+    let mut errors = Vec::new();
+    let mut warnings = Vec::new();
+    for line in stderr.lines() {
+        if line.contains("error:") || line.contains("undefined:") || line.contains("cannot") {
+            errors.push(line.to_string());
+        } else if line.contains("warning:") {
+            warnings.push(line.to_string());
+        }
+    }
+    
+    Ok(serde_json::json!({
+        "success": success,
+        "binary_path": output_path,
+        "binary_size": binary_size,
+        "stdout": stdout,
+        "stderr": stderr,
+        "errors": errors,
+        "warnings": warnings,
+        "exit_code": exit_code,
+        "duration_ms": duration.as_millis() as u64
+    }))
+}
+
+#[tauri::command]
 async fn transpile_code(code: String, filename: String) -> Result<String, String> {
     // Create temporary file and transpile using ts2go CLI
     let temp_dir = std::env::temp_dir();
@@ -446,7 +618,9 @@ fn main() {
             load_project_folder,
             auto_transpile_project,
             run_go_code,
-            run_go_project
+            run_go_project,
+            build_go_file,
+            build_go_project
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]
