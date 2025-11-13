@@ -35,9 +35,11 @@
 import { computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useWorkspaceStore } from '../stores/workspace'
+import { useTranspileStore } from '../stores/transpile'
 import FileTreeNode from './FileTreeNode.vue'
 
 const workspace = useWorkspaceStore()
+const transpileStore = useTranspileStore()
 
 const fileTree = computed(() => workspace.fileTree)
 const activeFilePath = computed(() => workspace.activeFilePath)
@@ -47,6 +49,18 @@ async function handleSelect({path, name}: {path: string, name: string}) {
     // Read file content from disk
     const content = await invoke<string>('read_file', { path })
     workspace.openFile(path, name, content)
+    
+    // Check if this file has been transpiled and auto-load Go output
+    const transpilation = workspace.getTranspilation(path)
+    if (transpilation && transpilation.success && transpilation.goCode) {
+      // Auto-load the Go code into output panel
+      transpileStore.currentResult = {
+        success: true,
+        message: `Showing transpiled output for ${name}`,
+        files_transpiled: 1,
+        goCode: transpilation.goCode
+      }
+    }
   } catch (error) {
     console.error('Failed to read file:', error)
     // Open with error message if read fails

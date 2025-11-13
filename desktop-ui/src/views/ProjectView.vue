@@ -77,6 +77,15 @@
           >
             👁️ Preview
           </button>
+          <button 
+            v-if="transpileStore.currentResult?.output_dir && !isRunningProject"
+            @click="handleRunProject" 
+            class="btn-action btn-success"
+            title="Run Complete Project"
+          >
+            ▶️ Run Project
+          </button>
+          <span v-if="isRunningProject" class="running-project-indicator">⏳ Running Project...</span>
         </div>
       </div>
     </div>
@@ -127,9 +136,18 @@
               <div class="panel-header">
                 <div class="header-left">
                   <h4>Output</h4>
-                  <span v-if="transpileStore.isTranspiling" class="elapsed-badge">
-                    {{ transpileStore.elapsedTime }}s
+                  <span v-if="transpileStore.isTranspiling && workspace.transpilationProgress.currentFile" class="progress-badge">
+                    {{ getProgressText() }}
                   </span>
+                  <button 
+                    v-if="transpileStore.currentResult?.goCode && !isRunning"
+                    @click="handleRunGoCode"
+                    class="run-btn"
+                    title="Run & Test Go Code"
+                  >
+                    ▶️ Run
+                  </button>
+                  <span v-if="isRunning" class="running-indicator">⏳ Running...</span>
                 </div>
                 <button 
                   v-if="transpileStore.currentResult" 
@@ -144,7 +162,6 @@
                 <div v-if="transpileStore.isTranspiling" class="output-loading">
                   <div class="spinner"></div>
                   <p>Transpiling project...</p>
-                  <p class="elapsed">{{ transpileStore.elapsedTime }}s elapsed</p>
                 </div>
                 
                 <!-- Success State with Go Code (Single File) -->
@@ -155,6 +172,27 @@
                     :readonly="true"
                     theme="vs-dark"
                   />
+                </div>
+                
+                <!-- Log Output (when no file selected and we have logs) -->
+                <div v-else-if="workspace.transpilationProgress.logs.length > 0" class="log-output">
+                  <div class="log-header">
+                    <h4>Transpilation Log</h4>
+                    <button @click="workspace.transpilationProgress.logs = []" class="clear-log-btn" title="Clear logs">
+                      Clear
+                    </button>
+                  </div>
+                  <div class="log-entries">
+                    <div 
+                      v-for="(log, index) in workspace.transpilationProgress.logs" 
+                      :key="index"
+                      :class="['log-entry', `log-${log.level}`]"
+                    >
+                      <span class="log-icon">{{ getLogIcon(log.level) }}</span>
+                      <span class="log-time">{{ formatLogTime(log.timestamp) }}</span>
+                      <span class="log-message">{{ log.message }}</span>
+                    </div>
+                  </div>
                 </div>
                 
                 <!-- Error State -->
@@ -178,7 +216,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useToast } from 'primevue/usetoast'
 import ProjectLoader from '../components/ProjectLoader.vue'
@@ -195,10 +233,54 @@ const transpileStore = useTranspileStore()
 const toast = useToast()
 
 const projectInfoPopover = ref()
+const isRunning = ref(false)
+const isRunningProject = ref(false)
 
 function toggleProjectInfo(event: Event) {
   projectInfoPopover.value.toggle(event)
 }
+
+function getProgressText(): string {
+  const progress = workspace.transpilationProgress
+  const fileName = progress.currentFile?.split('/').pop() || 'file'
+  return `Transpiling: ${fileName} (${progress.completedFiles}/${progress.totalFiles})`
+}
+
+function getLogIcon(level: string): string {
+  switch (level) {
+    case 'success': return '✓'
+    case 'error': return '✗'
+    case 'warning': return '⚠'
+    default: return 'ℹ'
+  }
+}
+
+function formatLogTime(timestamp: number): string {
+  const date = new Date(timestamp)
+  return date.toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit',
+    hour12: false
+  })
+}
+
+// Watch for active file changes and auto-load transpiled output
+watch(() => workspace.activeFilePath, async (newPath) => {
+  if (!newPath) return
+  
+  // Check if this file has been transpiled
+  const transpilation = workspace.getTranspilation(newPath)
+  if (transpilation && transpilation.success && transpilation.goCode) {
+    // Auto-load the Go code into output panel
+    transpileStore.currentResult = {
+      success: true,
+      message: `Showing transpiled output for ${activeFile.value?.name}`,
+      files_transpiled: 1,
+      goCode: transpilation.goCode
+    }
+  }
+})
 
 const activeFile = computed(() => workspace.activeFile)
 const projectPath = computed(() => workspace.projectPath)
@@ -264,7 +346,27 @@ async function handleTranspile() {
   if (!projectPath.value) return
   
   try {
+    // Count TypeScript files in the project
+    const tsFiles = countTypeScriptFiles(workspace.fileTree)
+    
+    // Initialize transpilation progress
+    workspace.startTranspilation(tsFiles)
+    
+    // Mark all TS files as pending
+    markAllTsFilesStatus('pending')
+    
+    // Start actual transpilation
     await transpileStore.transpileProject(projectPath.value)
+    
+    // After successful transpilation, load all Go files into transpilation map
+    if (transpileStore.currentResult?.success && transpileStore.currentResult?.output_dir) {
+      await loadTranspiledGoFiles(transpileStore.currentResult.output_dir)
+    }
+    
+    // Mark all files as success (we don't have per-file info from backend yet)
+    // In a future update, the backend should provide per-file results
+    markAllTsFilesStatus('success')
+    workspace.finishTranspilation()
     
     // Show success toast
     toast.add({
@@ -276,6 +378,10 @@ async function handleTranspile() {
   } catch (error) {
     console.error('Transpilation failed:', error)
     
+    // Mark files as error
+    markAllTsFilesStatus('error', String(error))
+    workspace.addTranspilationLog(`Transpilation failed: ${error}`, 'error')
+    
     // Show error toast
     toast.add({
       severity: 'error',
@@ -286,6 +392,94 @@ async function handleTranspile() {
   }
 }
 
+async function loadTranspiledGoFiles(outputDir: string) {
+  try {
+    // Get list of all Go files in output directory
+    const goFiles = await invoke<string[]>('get_go_files', { path: outputDir })
+    
+    workspace.addTranspilationLog(`Loading ${goFiles.length} transpiled Go files...`, 'info')
+    
+    // For each Go file, find corresponding TS file and populate map
+    for (const goFilePath of goFiles) {
+      try {
+        // Read the Go file content
+        const goCode = await invoke<string>('read_file', { path: goFilePath })
+        
+        // Determine corresponding TypeScript file path
+        // Extract relative path from output dir
+        const relativePath = goFilePath.replace(outputDir, '').replace(/^\//, '')
+        // Replace .go with .ts/.tsx and construct original path
+        const tsFileName = relativePath.replace(/\.go$/, '.ts')
+        const tsxFileName = relativePath.replace(/\.go$/, '.tsx')
+        
+        // Find the actual TS file in the file tree
+        const tsFilePath = findTsFileInTree(tsFileName, tsxFileName)
+        
+        if (tsFilePath) {
+          // Store in transpilation map
+          workspace.setTranspilation(tsFilePath, goFilePath, goCode, true)
+          workspace.addTranspilationLog(`✓ Loaded ${relativePath}`, 'success')
+        }
+      } catch (error) {
+        console.warn(`Failed to load Go file ${goFilePath}:`, error)
+      }
+    }
+    
+    workspace.addTranspilationLog(`Successfully loaded all transpiled files`, 'success')
+  } catch (error) {
+    console.error('Failed to load transpiled Go files:', error)
+    workspace.addTranspilationLog(`Warning: Could not load Go files: ${error}`, 'warning')
+  }
+}
+
+function findTsFileInTree(tsFileName: string, tsxFileName: string): string | null {
+  const searchInNodes = (nodes: any[], targetName: string): string | null => {
+    for (const node of nodes) {
+      if (node.type === 'file' && node.name === targetName) {
+        return node.path
+      }
+      if (node.children) {
+        const found = searchInNodes(node.children, targetName)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  
+  // Try both .ts and .tsx extensions
+  const tsName = tsFileName.split('/').pop() || ''
+  const tsxName = tsxFileName.split('/').pop() || ''
+  
+  return searchInNodes(workspace.fileTree, tsName) || searchInNodes(workspace.fileTree, tsxName)
+}
+
+function countTypeScriptFiles(nodes: any[]): number {
+  let count = 0
+  for (const node of nodes) {
+    if (node.type === 'file' && /\.tsx?$/.test(node.name)) {
+      count++
+    }
+    if (node.children) {
+      count += countTypeScriptFiles(node.children)
+    }
+  }
+  return count
+}
+
+function markAllTsFilesStatus(status: any, errorMessage?: string) {
+  const markNodes = (nodes: any[]) => {
+    for (const node of nodes) {
+      if (node.type === 'file' && /\.tsx?$/.test(node.name)) {
+        workspace.updateTranspilationStatus(node.path, status, errorMessage)
+      }
+      if (node.children) {
+        markNodes(node.children)
+      }
+    }
+  }
+  markNodes(workspace.fileTree)
+}
+
 async function handleTranspileFile() {
   if (!activeFile.value || !projectPath.value) return
   
@@ -293,11 +487,24 @@ async function handleTranspileFile() {
     transpileStore.isTranspiling = true
     transpileStore.currentResult = null
     
+    // Start single file transpilation
+    workspace.startTranspilation(1)
+    workspace.setCurrentTranspilingFile(activeFile.value.path)
+    workspace.updateTranspilationStatus(activeFile.value.path, 'transpiling')
+    
     // Transpile the current file
     const goCode = await invoke<string>('transpile_code', {
       code: activeFile.value.content,
       filename: activeFile.value.name
     })
+    
+    // Determine Go file path
+    const goFilePath = activeFile.value.path.replace(/\.tsx?$/, '.go')
+    
+    // Store transpilation info in workspace
+    workspace.setTranspilation(activeFile.value.path, goFilePath, goCode, true)
+    workspace.completeFileTranspilation(activeFile.value.path, true)
+    workspace.finishTranspilation()
     
     // Store result in transpile store for display
     transpileStore.currentResult = {
@@ -316,6 +523,12 @@ async function handleTranspileFile() {
     })
   } catch (error) {
     console.error('File transpilation failed:', error)
+    
+    // Mark as error in workspace
+    workspace.updateTranspilationStatus(activeFile.value.path, 'error', String(error))
+    workspace.completeFileTranspilation(activeFile.value.path, false, String(error))
+    workspace.finishTranspilation()
+    
     transpileStore.currentResult = {
       success: false,
       error: `Failed to transpile file: ${error}`
@@ -342,6 +555,139 @@ async function openOutputFolder() {
     })
   } catch (error) {
     console.error('Failed to open output folder:', error)
+  }
+}
+
+async function handleRunGoCode() {
+  if (!transpileStore.currentResult?.goCode) return
+  
+  isRunning.value = true
+  
+  try {
+    // Execute Go code via Tauri backend
+    const result = await invoke<{
+      success: boolean
+      stdout: string
+      stderr: string
+      exit_code: number
+      duration_ms: number
+    }>('run_go_code', {
+      code: transpileStore.currentResult.goCode
+    })
+    
+    // Display results in output panel by switching to log view
+    workspace.transpilationProgress.logs = []
+    workspace.addTranspilationLog('=== Go Code Execution ===', 'info')
+    workspace.addTranspilationLog(`Exit code: ${result.exit_code}`, result.success ? 'success' : 'error')
+    workspace.addTranspilationLog(`Duration: ${result.duration_ms}ms`, 'info')
+    
+    if (result.stdout) {
+      workspace.addTranspilationLog('--- Standard Output ---', 'info')
+      result.stdout.split('\n').forEach(line => {
+        if (line.trim()) {
+          workspace.addTranspilationLog(line, 'success')
+        }
+      })
+    }
+    
+    if (result.stderr) {
+      workspace.addTranspilationLog('--- Standard Error ---', 'warning')
+      result.stderr.split('\n').forEach(line => {
+        if (line.trim()) {
+          workspace.addTranspilationLog(line, 'error')
+        }
+      })
+    }
+    
+    // Clear current result to show logs
+    transpileStore.currentResult = null
+    
+    // Show toast notification
+    toast.add({
+      severity: result.success ? 'success' : 'error',
+      summary: result.success ? 'Execution Complete' : 'Execution Failed',
+      detail: `Finished in ${result.duration_ms}ms with exit code ${result.exit_code}`,
+      life: 4000
+    })
+  } catch (error) {
+    workspace.addTranspilationLog(`Execution error: ${error}`, 'error')
+    transpileStore.currentResult = null
+    
+    toast.add({
+      severity: 'error',
+      summary: 'Execution Failed',
+      detail: String(error),
+      life: 5000
+    })
+  } finally {
+    isRunning.value = false
+  }
+}
+
+async function handleRunProject() {
+  if (!transpileStore.currentResult?.output_dir) return
+  
+  isRunningProject.value = true
+  
+  try {
+    // Execute complete Go project via Tauri backend
+    const result = await invoke<{
+      success: boolean
+      stdout: string
+      stderr: string
+      exit_code: number
+      duration_ms: number
+    }>('run_go_project', {
+      outputDir: transpileStore.currentResult.output_dir
+    })
+    
+    // Display results in output panel
+    workspace.transpilationProgress.logs = []
+    workspace.addTranspilationLog('=== Go Project Execution ===', 'info')
+    workspace.addTranspilationLog(`Project: ${transpileStore.currentResult.output_dir}`, 'info')
+    workspace.addTranspilationLog(`Exit code: ${result.exit_code}`, result.success ? 'success' : 'error')
+    workspace.addTranspilationLog(`Duration: ${result.duration_ms}ms`, 'info')
+    
+    if (result.stdout) {
+      workspace.addTranspilationLog('--- Standard Output ---', 'info')
+      result.stdout.split('\n').forEach(line => {
+        if (line.trim()) {
+          workspace.addTranspilationLog(line, 'success')
+        }
+      })
+    }
+    
+    if (result.stderr) {
+      workspace.addTranspilationLog('--- Standard Error ---', 'warning')
+      result.stderr.split('\n').forEach(line => {
+        if (line.trim()) {
+          workspace.addTranspilationLog(line, 'error')
+        }
+      })
+    }
+    
+    // Clear current result to show logs
+    transpileStore.currentResult = null
+    
+    // Show toast notification
+    toast.add({
+      severity: result.success ? 'success' : 'error',
+      summary: result.success ? 'Project Execution Complete' : 'Project Execution Failed',
+      detail: `Finished in ${result.duration_ms}ms with exit code ${result.exit_code}`,
+      life: 4000
+    })
+  } catch (error) {
+    workspace.addTranspilationLog(`Project execution error: ${error}`, 'error')
+    transpileStore.currentResult = null
+    
+    toast.add({
+      severity: 'error',
+      summary: 'Project Execution Failed',
+      detail: String(error),
+      life: 5000
+    })
+  } finally {
+    isRunningProject.value = false
   }
 }
 </script>
@@ -512,6 +858,28 @@ async function openOutputFolder() {
   box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
 }
 
+.btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
+}
+
+.running-project-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .workspace-splitter {
   flex: 1 !important;
   height: 100% !important;
@@ -649,6 +1017,8 @@ async function openOutputFolder() {
   border-left: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 .panel-header {
@@ -688,6 +1058,55 @@ async function openOutputFolder() {
   font-size: 11px;
   font-weight: 600;
   font-family: monospace;
+}
+
+.progress-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 10px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: monospace;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.run-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.running-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: rgba(251, 191, 36, 0.1);
+  color: #f59e0b;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .clear-btn {
@@ -866,6 +1285,114 @@ async function openOutputFolder() {
   font-size: 12px;
   white-space: pre-wrap;
   overflow-x: auto;
+}
+
+.log-output {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-background-soft);
+}
+
+.log-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.clear-log-btn {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+}
+
+.clear-log-btn:hover {
+  background: var(--color-background-soft);
+  border-color: var(--color-text-secondary);
+}
+
+.log-entries {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+}
+
+.log-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.log-entry:hover {
+  background: var(--color-background-soft);
+}
+
+.log-icon {
+  font-size: 14px;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.log-time {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
+.log-message {
+  flex: 1;
+  word-break: break-word;
+}
+
+.log-info .log-icon {
+  color: #3b82f6;
+}
+
+.log-success .log-icon {
+  color: #10b981;
+}
+
+.log-error .log-icon {
+  color: #ef4444;
+}
+
+.log-warning .log-icon {
+  color: #f59e0b;
+}
+
+.log-success {
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.log-error {
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.log-warning {
+  background: rgba(245, 158, 11, 0.05);
 }
 
 /* Responsive */

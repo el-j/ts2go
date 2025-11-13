@@ -46,19 +46,29 @@
 - ✅ Real-world project testing
 - ✅ Production validation examples
 
-### Phase 21: Desktop UI (52% COMPLETE)
+### Phase 21: Desktop UI (75% COMPLETE)
 - ✅ Tauri + Vue 3 + PrimeVue setup
 - ✅ Monaco Editor integration
 - ✅ Split-pane UI with TypeScript/Go editors
-- ✅ **Tauri backend now calls actual ts2go CLI** ✅ NEW
-- ✅ **File listing with node_modules exclusion** ✅ NEW
-- ✅ **Project analysis integration** ✅ NEW
-- ✅ **Live transpilation integration** ✅ NEW
+- ✅ **Tauri backend now calls actual ts2go CLI** ✅
+- ✅ **File listing with node_modules exclusion** ✅
+- ✅ **Project analysis integration** ✅
+- ✅ **Live transpilation integration** ✅
 - ✅ Real-time transpilation UI
 - ✅ LogViewer component
-- ✅ Resizable panes
+- ✅ Resizable panes with PrimeVue Splitter
+- ✅ **Transpilation state tracking** ✅ NEW (Nov 13)
+- ✅ **Visual indicators for transpiled files** ✅ NEW (Nov 13)
+- ✅ **Per-file progress tracking** ✅ NEW (Nov 13)
+- ✅ **Transpilation log output panel** ✅ NEW (Nov 13)
+- ✅ **Auto-load Go output for transpiled files** ✅ NEW (Nov 13)
+- ✅ **Auto-load on file tree selection** ✅ NEW (Nov 13)
+- ✅ **Run single file Go code** ✅ NEW (Nov 13)
+- ✅ **Run complete Go project** ✅ NEW (Nov 13)
+- ✅ **Responsive project info with popover** ✅ NEW (Nov 13)
+- ✅ **Collapsible sidebar navigation** ✅ NEW (Nov 12)
+- ✅ **Toast notifications** ✅ NEW (Nov 12)
 - ✅ 39+ tests passing (100% store coverage)
-- ✅ Week 1 & 2 complete (80%)
 - 🔄 Weeks 3-4 in progress
 
 ### Phase 22-23: Modern JavaScript (75% COMPLETE)

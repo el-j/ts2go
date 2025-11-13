@@ -12,6 +12,13 @@
       <span class="file-icon">{{ getFileIcon(node) }}</span>
       <span class="node-name" :title="node.displayName || node.name">{{ node.name }}</span>
       <span v-if="node.isDirty" class="dirty-indicator">●</span>
+      <span 
+        v-if="node.type === 'file' && node.transpilationStatus" 
+        :class="['status-badge', `status-${node.transpilationStatus}`]"
+        :title="getStatusTitle(node.transpilationStatus)"
+      >
+        {{ getStatusIcon(node.transpilationStatus) }}
+      </span>
     </div>
     
     <div v-if="isExpanded && node.children && node.children.length > 0" class="node-children">
@@ -102,6 +109,28 @@ function showContextMenu(event: MouseEvent) {
 function hideContextMenu() {
   contextMenuVisible.value = false
 }
+
+function getStatusIcon(status: string): string {
+  switch (status) {
+    case 'pending': return '⏸'
+    case 'transpiling': return '⏳'
+    case 'success': return '✓'
+    case 'error': return '✗'
+    case 'warning': return '⚠'
+    default: return ''
+  }
+}
+
+function getStatusTitle(status: string): string {
+  switch (status) {
+    case 'pending': return 'Pending transpilation'
+    case 'transpiling': return 'Currently transpiling...'
+    case 'success': return 'Transpiled successfully'
+    case 'error': return 'Transpilation failed'
+    case 'warning': return 'Transpiled with warnings'
+    default: return ''
+  }
+}
 </script>
 
 <style scoped>
@@ -152,6 +181,57 @@ function hideContextMenu() {
 .dirty-indicator {
   color: var(--color-warning);
   margin-left: 4px;
+}
+
+.status-badge {
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 1px 5px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-pending {
+  color: #6b7280;
+  background: rgba(107, 114, 128, 0.15);
+}
+
+.status-transpiling {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.status-success {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.status-error {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.status-warning {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.transpiled-badge {
+  margin-left: 4px;
+  color: #10b981;
+  font-size: 11px;
+  font-weight: bold;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 1px 5px;
+  border-radius: 3px;
 }
 
 .node-children {

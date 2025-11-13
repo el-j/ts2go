@@ -95,6 +95,15 @@ async fn get_project_files(path: String) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+async fn get_go_files(path: String) -> Result<Vec<String>, String> {
+    // Recursively find all .go files in the directory
+    let mut files = Vec::new();
+    find_go_files(Path::new(&path), &mut files)
+        .map_err(|e| format!("Failed to list Go files: {}", e))?;
+    Ok(files)
+}
+
+#[tauri::command]
 async fn read_file(path: String) -> Result<String, String> {
     // Read file content
     fs::read_to_string(&path)
@@ -213,6 +222,113 @@ fn find_go_files(dir: &Path, files: &mut Vec<String>) -> std::io::Result<()> {
 }
 
 #[tauri::command]
+async fn run_go_code(code: String) -> Result<serde_json::Value, String> {
+    use std::time::{SystemTime, UNIX_EPOCH, Instant};
+    
+    // Create temporary file for Go code
+    let temp_dir = std::env::temp_dir();
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+    let temp_file = temp_dir.join(format!("ts2go_run_{}.go", timestamp));
+    
+    // Write Go code to temp file
+    fs::write(&temp_file, &code)
+        .map_err(|e| format!("Failed to write temp Go file: {}", e))?;
+    
+    let start_time = Instant::now();
+    
+    // Execute Go code using 'go run'
+    let output = Command::new("go")
+        .arg("run")
+        .arg(&temp_file)
+        .output()
+        .map_err(|e| {
+            let _ = fs::remove_file(&temp_file);
+            format!("Failed to execute Go code: {}. Make sure Go is installed and in PATH.", e)
+        })?;
+    
+    let duration = start_time.elapsed();
+    
+    // Clean up temp file
+    let _ = fs::remove_file(&temp_file);
+    
+    // Parse output
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let exit_code = output.status.code().unwrap_or(-1);
+    let success = output.status.success();
+    
+    Ok(serde_json::json!({
+        "success": success,
+        "stdout": stdout,
+        "stderr": stderr,
+        "exit_code": exit_code,
+        "duration_ms": duration.as_millis() as u64
+    }))
+}
+
+#[tauri::command]
+async fn run_go_project(output_dir: String) -> Result<serde_json::Value, String> {
+    use std::time::Instant;
+    
+    let output_path = Path::new(&output_dir);
+    
+    // Verify output directory exists
+    if !output_path.exists() {
+        return Err(format!("Output directory does not exist: {}", output_dir));
+    }
+    
+    // Find main package (look for main.go or any file with package main)
+    let mut has_main = false;
+    if let Ok(entries) = fs::read_dir(output_path) {
+        for entry in entries.flatten() {
+            if let Some(name) = entry.file_name().to_str() {
+                if name.ends_with(".go") {
+                    if let Ok(content) = fs::read_to_string(entry.path()) {
+                        if content.contains("package main") {
+                            has_main = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    if !has_main {
+        return Err("No main package found in transpiled output. Make sure your TypeScript project has an entry point.".to_string());
+    }
+    
+    let start_time = Instant::now();
+    
+    // Execute Go project using 'go run .'
+    let output = Command::new("go")
+        .arg("run")
+        .arg(".")
+        .current_dir(output_path)
+        .output()
+        .map_err(|e| format!("Failed to execute Go project: {}. Make sure Go is installed and in PATH.", e))?;
+    
+    let duration = start_time.elapsed();
+    
+    // Parse output
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let exit_code = output.status.code().unwrap_or(-1);
+    let success = output.status.success();
+    
+    Ok(serde_json::json!({
+        "success": success,
+        "stdout": stdout,
+        "stderr": stderr,
+        "exit_code": exit_code,
+        "duration_ms": duration.as_millis() as u64
+    }))
+}
+
+#[tauri::command]
 async fn transpile_code(code: String, filename: String) -> Result<String, String> {
     // Create temporary file and transpile using ts2go CLI
     let temp_dir = std::env::temp_dir();
@@ -289,11 +405,14 @@ fn main() {
             analyze_project,
             transpile_project,
             get_project_files,
+            get_go_files,
             transpile_code,
             read_file,
             write_file,
             load_project_folder,
-            auto_transpile_project
+            auto_transpile_project,
+            run_go_code,
+            run_go_project
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]

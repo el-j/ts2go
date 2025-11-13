@@ -9,6 +9,8 @@ export interface FileNode {
   children?: FileNode[]
   content?: string
   isDirty?: boolean
+  isTranspiled?: boolean  // Whether this TS file has been transpiled
+  transpilationStatus?: TranspilationStatus  // Current transpilation status
 }
 
 export interface OpenFile {
@@ -18,16 +20,49 @@ export interface OpenFile {
   isDirty: boolean
 }
 
+export type TranspilationStatus = 'pending' | 'transpiling' | 'success' | 'error' | 'warning'
+
+export interface TranspilationInfo {
+  tsFilePath: string
+  goFilePath: string
+  goCode?: string
+  timestamp: number
+  success: boolean
+  status: TranspilationStatus
+  errorMessage?: string
+  warningMessage?: string
+  logs?: string[]
+}
+
+export interface TranspilationProgress {
+  currentFile: string | null
+  totalFiles: number
+  completedFiles: number
+  logs: Array<{ timestamp: number; message: string; level: 'info' | 'error' | 'warning' | 'success' }>
+}
+
 export const useWorkspaceStore = defineStore('workspace', () => {
   // State
   const projectPath = ref<string>('')
   const fileTree = ref<FileNode[]>([])
   const openFiles = ref<OpenFile[]>([])
   const activeFilePath = ref<string>('')
+  const transpilationMap = ref<Map<string, TranspilationInfo>>(new Map())
+  const transpilationProgress = ref<TranspilationProgress>({
+    currentFile: null,
+    totalFiles: 0,
+    completedFiles: 0,
+    logs: []
+  })
   
   // Computed
   const activeFile = computed(() => {
     return openFiles.value.find(f => f.path === activeFilePath.value)
+  })
+  
+  const activeFileTranspilation = computed(() => {
+    if (!activeFilePath.value) return null
+    return transpilationMap.value.get(activeFilePath.value) || null
   })
   
   const hasUnsavedChanges = computed(() => {
@@ -280,15 +315,131 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     setFileTree(tree)
   }
   
+  function setTranspilation(tsFilePath: string, goFilePath: string, goCode: string, success: boolean = true, errorMessage?: string, warningMessage?: string) {
+    const status: TranspilationStatus = errorMessage ? 'error' : warningMessage ? 'warning' : success ? 'success' : 'pending'
+    
+    transpilationMap.value.set(tsFilePath, {
+      tsFilePath,
+      goFilePath,
+      goCode,
+      timestamp: Date.now(),
+      success,
+      status,
+      errorMessage,
+      warningMessage,
+      logs: []
+    })
+    
+    // Mark file as transpiled in tree with status
+    updateFileTranspiledStatus(tsFilePath, success, status)
+  }
+  
+  function updateTranspilationStatus(tsFilePath: string, status: TranspilationStatus, errorMessage?: string, warningMessage?: string) {
+    const existing = transpilationMap.value.get(tsFilePath)
+    if (existing) {
+      existing.status = status
+      existing.errorMessage = errorMessage
+      existing.warningMessage = warningMessage
+      transpilationMap.value.set(tsFilePath, existing)
+    } else {
+      // Create new entry if doesn't exist
+      transpilationMap.value.set(tsFilePath, {
+        tsFilePath,
+        goFilePath: tsFilePath.replace(/\.tsx?$/, '.go'),
+        timestamp: Date.now(),
+        success: status === 'success',
+        status,
+        errorMessage,
+        warningMessage,
+        logs: []
+      })
+    }
+    
+    updateFileTranspiledStatus(tsFilePath, status === 'success', status)
+  }
+  
+  function addTranspilationLog(message: string, level: 'info' | 'error' | 'warning' | 'success' = 'info') {
+    transpilationProgress.value.logs.push({
+      timestamp: Date.now(),
+      message,
+      level
+    })
+  }
+  
+  function startTranspilation(totalFiles: number) {
+    transpilationProgress.value = {
+      currentFile: null,
+      totalFiles,
+      completedFiles: 0,
+      logs: []
+    }
+    addTranspilationLog(`Starting transpilation of ${totalFiles} file(s)...`, 'info')
+  }
+  
+  function setCurrentTranspilingFile(filePath: string) {
+    transpilationProgress.value.currentFile = filePath
+    const fileName = filePath.split('/').pop() || filePath
+    addTranspilationLog(`Transpiling ${fileName}...`, 'info')
+  }
+  
+  function completeFileTranspilation(filePath: string, success: boolean, message?: string) {
+    transpilationProgress.value.completedFiles++
+    const fileName = filePath.split('/').pop() || filePath
+    
+    if (success) {
+      addTranspilationLog(`✓ ${fileName} transpiled successfully`, 'success')
+    } else {
+      addTranspilationLog(`✗ ${fileName} failed: ${message}`, 'error')
+    }
+  }
+  
+  function finishTranspilation() {
+    const { totalFiles, completedFiles } = transpilationProgress.value
+    transpilationProgress.value.currentFile = null
+    addTranspilationLog(`Transpilation complete: ${completedFiles}/${totalFiles} files processed`, 'info')
+  }
+  
+  function getTranspilation(tsFilePath: string): TranspilationInfo | undefined {
+    return transpilationMap.value.get(tsFilePath)
+  }
+  
+  function clearTranspilation(tsFilePath: string) {
+    transpilationMap.value.delete(tsFilePath)
+    updateFileTranspiledStatus(tsFilePath, false)
+  }
+  
+  function updateFileTranspiledStatus(filePath: string, isTranspiled: boolean, status?: TranspilationStatus) {
+    const updateNode = (nodes: FileNode[]): boolean => {
+      for (const node of nodes) {
+        if (node.path === filePath && node.type === 'file') {
+          node.isTranspiled = isTranspiled
+          if (status) {
+            (node as any).transpilationStatus = status
+          }
+          return true
+        }
+        if (node.children && updateNode(node.children)) {
+          return true
+        }
+      }
+      return false
+    }
+    
+    updateNode(fileTree.value)
+  }
+  
   return {
     // State
     projectPath,
     fileTree,
     openFiles,
     activeFilePath,
+    transpilationMap,
+    transpilationProgress,
     
     // Computed
     activeFile,
+    activeFileTranspilation,
     hasUnsavedChanges,
     
     // Actions
@@ -304,6 +455,15 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     renameFile,
     deleteFile,
     closeAllFiles,
-    loadProject
+    loadProject,
+    setTranspilation,
+    getTranspilation,
+    clearTranspilation,
+    updateTranspilationStatus,
+    addTranspilationLog,
+    startTranspilation,
+    setCurrentTranspilingFile,
+    completeFileTranspilation,
+    finishTranspilation
   }
 })
