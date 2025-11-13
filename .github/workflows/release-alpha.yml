@@ -152,12 +152,32 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          clean: true
+
+      - name: Clean workspace and caches
+        shell: bash
+        run: |
+          echo "Cleaning workspace to prevent file conflicts..."
+          rm -rf release/ dist/ build/
+          rm -rf desktop-ui/dist desktop-ui/src-tauri/target
+          rm -rf desktop-ui/src-tauri/bin
+          rm -rf ~/go/pkg/mod/golang.org/toolchain* || true
+          rm -rf ~/go/pkg/mod/cache/download/golang.org/toolchain* || true
+          rm -rf ~/.cargo/registry || true
+          rm -rf ~/.cargo/git || true
+          echo "✓ Workspace cleaned"
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.22.5'
           cache: true
+          cache-dependency-path: |
+            go.mod
+            go.sum
+            cmd/ts2go/go.mod
+            cmd/ts2go/go.sum
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -171,10 +191,19 @@ jobs:
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
+      - name: Add macOS universal targets (explicit)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+          echo "✓ macOS universal targets installed"
+
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './desktop-ui/src-tauri -> target'
+          cache-on-failure: false
+          key: ${{ matrix.platform }}-rust-${{ hashFiles('desktop-ui/src-tauri/Cargo.lock') }}
 
       - name: Install dependencies (Ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
@@ -193,6 +222,18 @@ jobs:
           go build -ldflags "-s -w" -o ts2go-cli ./cmd/ts2go
           mkdir -p desktop-ui/src-tauri/bin
           mv ts2go-cli desktop-ui/src-tauri/bin/
+        env:
+          CARGO_INCREMENTAL: 0
+
+      - name: Copy bundled resources
+        shell: bash
+        run: |
+          echo "Copying parser and mappings..."
+          mkdir -p desktop-ui/src-tauri/bin/parser
+          cp -R internal/transpiler/parser/* desktop-ui/src-tauri/bin/parser/
+          mkdir -p desktop-ui/src-tauri/bin/mappings
+          cp -R mappings/* desktop-ui/src-tauri/bin/mappings/
+          echo "✓ Resources bundled"
 
       - name: Install frontend dependencies
         working-directory: desktop-ui
