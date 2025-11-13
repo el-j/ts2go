@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import AppLayout from '../components/AppLayout.vue'
 import RecentProjects from '../components/RecentProjects.vue'
-import Button from 'primevue/Button'
+import Button from 'primevue/button'
 
 const router = useRouter()
 const projectStore = useProjectStore()

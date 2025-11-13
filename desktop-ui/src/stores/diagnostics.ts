@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { DiagnosticMessage, EditorDiagnostics } from '../utils/diagnostics';
+import type { DiagnosticMessage } from '../utils/diagnostics';
 
 export const useDiagnosticsStore = defineStore('diagnostics', () => {
   // State

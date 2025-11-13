@@ -8,7 +8,7 @@ import './assets/main.css'
 import Aura from '@primeuix/themes/aura';
 import App from './App.vue'
 import router from './router'
-import Button from 'primevue/Button'
+import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'

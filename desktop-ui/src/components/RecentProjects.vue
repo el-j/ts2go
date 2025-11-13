@@ -5,7 +5,7 @@ import { useProjectStore, type Project } from '@/stores/project'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { useRouter } from 'vue-router'
 import Card from 'primevue/card'
-import Button from 'primevue/Button'
+import Button from 'primevue/button'
 
 const projectStore = useProjectStore()
 const workspace = useWorkspaceStore()

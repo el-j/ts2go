@@ -4,6 +4,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+#[cfg(debug_assertions)]
 use tauri::Manager;
 
 // Helper function to get the path to the bundled CLI binary
@@ -19,11 +21,43 @@ fn get_cli_binary_path() -> PathBuf {
         return PathBuf::from("ts2go");
     }
     
-    // In release, use the bundled binary
+    // In release, use the bundled binary from Resources
     #[cfg(not(debug_assertions))]
     {
-        // The binary is bundled as a resource
-        // Tauri places it in the resource directory
+        use std::env;
+        
+        // Get the path to the executable
+        if let Ok(exe_path) = env::current_exe() {
+            // Navigate from MacOS/exe to Resources/bin/ts2go-cli
+            // Structure: .app/Contents/MacOS/exe -> .app/Contents/Resources/bin/ts2go-cli
+            if let Some(contents_dir) = exe_path.parent().and_then(|p| p.parent()) {
+                #[cfg(target_os = "macos")]
+                {
+                    let cli_path = contents_dir.join("Resources").join("bin").join("ts2go-cli");
+                    if cli_path.exists() {
+                        return cli_path;
+                    }
+                }
+                
+                #[cfg(target_os = "windows")]
+                {
+                    let cli_path = contents_dir.join("bin").join("ts2go-cli.exe");
+                    if cli_path.exists() {
+                        return cli_path;
+                    }
+                }
+                
+                #[cfg(target_os = "linux")]
+                {
+                    let cli_path = contents_dir.join("bin").join("ts2go-cli");
+                    if cli_path.exists() {
+                        return cli_path;
+                    }
+                }
+            }
+        }
+        
+        // Fallback to relative path
         #[cfg(target_os = "windows")]
         {
             PathBuf::from("ts2go-cli.exe")
@@ -414,10 +448,10 @@ fn main() {
             run_go_code,
             run_go_project
         ])
-        .setup(|app| {
+        .setup(|_app| {
             #[cfg(debug_assertions)]
             {
-                let window = app.get_webview_window("main").unwrap();
+                let window = _app.get_webview_window("main").unwrap();
                 window.open_devtools();
             }
             Ok(())
