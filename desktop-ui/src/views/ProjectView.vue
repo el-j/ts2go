@@ -95,6 +95,15 @@
             🔨 Build Project
           </button>
           <span v-if="buildStore.isBuilding" class="building-indicator">⏳ Building...</span>
+          <button 
+            v-if="transpileStore.currentResult?.output_dir && !testStore.isTesting"
+            @click="handleTestProject" 
+            class="btn-action btn-test"
+            title="Run Tests on Project"
+          >
+            🧪 Test Project
+          </button>
+          <span v-if="testStore.isTesting" class="testing-indicator">⏳ Testing...</span>
         </div>
       </div>
     </div>
@@ -237,10 +246,12 @@ import MonacoEditor from '../components/MonacoEditor.vue'
 import { useWorkspaceStore } from '../stores/workspace'
 import { useTranspileStore } from '../stores/transpile'
 import { useBuildStore } from '../stores/build'
+import { useTestStore } from '../stores/test'
 
 const workspace = useWorkspaceStore()
 const transpileStore = useTranspileStore()
 const buildStore = useBuildStore()
+const testStore = useTestStore()
 const toast = useToast()
 
 const projectInfoPopover = ref()
@@ -759,6 +770,83 @@ async function handleBuildProject() {
     toast.add({
       severity: 'error',
       summary: 'Build Failed',
+      detail: String(error),
+      life: 5000
+    })
+  }
+}
+
+async function handleTestProject() {
+  if (!transpileStore.currentResult?.output_dir) return
+  
+  try {
+    const outputDir = transpileStore.currentResult.output_dir
+    
+    // Run tests
+    const result = await testStore.testProject(outputDir)
+    
+    // Display results in output panel
+    workspace.transpilationProgress.logs = []
+    workspace.addTranspilationLog('=== Go Project Tests ===', 'info')
+    workspace.addTranspilationLog(`Source: ${outputDir}`, 'info')
+    workspace.addTranspilationLog(`Duration: ${result.duration_ms}ms`, 'info')
+    workspace.addTranspilationLog(`Exit code: ${result.exit_code}`, result.success ? 'success' : 'error')
+    workspace.addTranspilationLog('', 'info')
+    
+    // Display test summary
+    const testResults = result.test_results
+    workspace.addTranspilationLog(`📊 Test Summary:`, 'info')
+    workspace.addTranspilationLog(`   Total: ${testResults.total}`, 'info')
+    workspace.addTranspilationLog(`   ✅ Passed: ${testResults.passed}`, 'success')
+    workspace.addTranspilationLog(`   ❌ Failed: ${testResults.failed}`, testResults.failed > 0 ? 'error' : 'info')
+    workspace.addTranspilationLog(`   ⏭️  Skipped: ${testResults.skipped}`, 'warning')
+    workspace.addTranspilationLog('', 'info')
+    
+    // Display individual test results
+    if (testResults.tests && testResults.tests.length > 0) {
+      workspace.addTranspilationLog('📝 Test Results:', 'info')
+      for (const test of testResults.tests) {
+        const icon = test.Action === 'pass' ? '✅' : test.Action === 'fail' ? '❌' : '⏭️'
+        const level = test.Action === 'pass' ? 'success' : test.Action === 'fail' ? 'error' : 'warning'
+        workspace.addTranspilationLog(
+          `${icon} ${test.Test} (${test.Elapsed.toFixed(3)}s)`,
+          level
+        )
+        if (test.Output && test.Action === 'fail') {
+          workspace.addTranspilationLog(`   ${test.Output}`, 'error')
+        }
+      }
+    }
+    
+    if (result.stderr && result.stderr.trim()) {
+      workspace.addTranspilationLog('', 'info')
+      workspace.addTranspilationLog('--- Additional Output ---', 'warning')
+      result.stderr.split('\n').forEach(line => {
+        if (line.trim()) {
+          workspace.addTranspilationLog(line, 'warning')
+        }
+      })
+    }
+    
+    // Clear current result to show logs
+    transpileStore.currentResult = null
+    
+    // Show toast notification
+    toast.add({
+      severity: result.success ? 'success' : 'error',
+      summary: result.success ? 'Tests Passed' : 'Tests Failed',
+      detail: result.success
+        ? `All ${testResults.passed} tests passed in ${result.duration_ms}ms`
+        : `${testResults.failed} test(s) failed out of ${testResults.total}`,
+      life: result.success ? 4000 : 8000
+    })
+  } catch (error) {
+    workspace.addTranspilationLog(`Test error: ${error}`, 'error')
+    transpileStore.currentResult = null
+    
+    toast.add({
+      severity: 'error',
+      summary: 'Tests Failed',
       detail: String(error),
       life: 5000
     })

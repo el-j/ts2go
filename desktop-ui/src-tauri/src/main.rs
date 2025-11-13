@@ -535,6 +535,148 @@ async fn build_go_project(
 }
 
 #[tauri::command]
+async fn test_go_file(file_path: String) -> Result<serde_json::Value, String> {
+    use std::time::Instant;
+    
+    let file_path_buf = Path::new(&file_path);
+    
+    // Verify file exists
+    if !file_path_buf.exists() {
+        return Err(format!("Go file does not exist: {}", file_path));
+    }
+    
+    let start_time = Instant::now();
+    
+    // Execute go test
+    let output = Command::new("go")
+        .arg("test")
+        .arg("-v")
+        .arg("-json")
+        .arg(&file_path)
+        .output()
+        .map_err(|e| format!("Failed to run tests: {}. Make sure Go is installed and in PATH.", e))?;
+    
+    let duration = start_time.elapsed();
+    
+    // Parse output
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let exit_code = output.status.code().unwrap_or(-1);
+    let success = output.status.success();
+    
+    // Parse test results from JSON output
+    let test_results = parse_test_results(&stdout);
+    
+    Ok(serde_json::json!({
+        "success": success,
+        "stdout": stdout,
+        "stderr": stderr,
+        "exit_code": exit_code,
+        "duration_ms": duration.as_millis() as u64,
+        "test_results": test_results
+    }))
+}
+
+#[tauri::command]
+async fn test_go_project(
+    source_dir: String,
+    test_flags: Option<Vec<String>>
+) -> Result<serde_json::Value, String> {
+    use std::time::Instant;
+    
+    let source_path = Path::new(&source_dir);
+    
+    // Verify source directory exists
+    if !source_path.exists() {
+        return Err(format!("Source directory does not exist: {}", source_dir));
+    }
+    
+    let start_time = Instant::now();
+    
+    // Build command with flags
+    let mut cmd = Command::new("go");
+    cmd.arg("test")
+        .arg("-v")
+        .arg("-json");
+    
+    // Add custom test flags if provided
+    if let Some(flags) = test_flags {
+        for flag in flags {
+            cmd.arg(flag);
+        }
+    }
+    
+    cmd.arg("./...");
+    
+    // Execute go test in the source directory
+    let output = cmd
+        .current_dir(source_path)
+        .output()
+        .map_err(|e| format!("Failed to run tests: {}. Make sure Go is installed and in PATH.", e))?;
+    
+    let duration = start_time.elapsed();
+    
+    // Parse output
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let exit_code = output.status.code().unwrap_or(-1);
+    let success = output.status.success();
+    
+    // Parse test results from JSON output
+    let test_results = parse_test_results(&stdout);
+    
+    Ok(serde_json::json!({
+        "success": success,
+        "stdout": stdout,
+        "stderr": stderr,
+        "exit_code": exit_code,
+        "duration_ms": duration.as_millis() as u64,
+        "test_results": test_results
+    }))
+}
+
+// Helper function to parse go test JSON output
+fn parse_test_results(json_output: &str) -> serde_json::Value {
+    use serde_json::Value;
+    
+    let mut passed = 0;
+    let mut failed = 0;
+    let mut skipped = 0;
+    let mut tests: Vec<Value> = Vec::new();
+    
+    for line in json_output.lines() {
+        if let Ok(json) = serde_json::from_str::<Value>(line) {
+            if let Some(action) = json.get("Action").and_then(|v| v.as_str()) {
+                if action == "pass" {
+                    if json.get("Test").is_some() {
+                        passed += 1;
+                        tests.push(json.clone());
+                    }
+                } else if action == "fail" {
+                    if json.get("Test").is_some() {
+                        failed += 1;
+                        tests.push(json.clone());
+                    }
+                } else if action == "skip" {
+                    if json.get("Test").is_some() {
+                        skipped += 1;
+                        tests.push(json.clone());
+                    }
+                }
+            }
+        }
+    }
+    
+    serde_json::json!({
+        "passed": passed,
+        "failed": failed,
+        "skipped": skipped,
+        "total": passed + failed + skipped,
+        "tests": tests
+    })
+}
+
+#[tauri::command]
 async fn transpile_code(code: String, filename: String) -> Result<String, String> {
     // Create temporary file and transpile using ts2go CLI
     let temp_dir = std::env::temp_dir();
@@ -620,7 +762,9 @@ fn main() {
             run_go_code,
             run_go_project,
             build_go_file,
-            build_go_project
+            build_go_project,
+            test_go_file,
+            test_go_project
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]
