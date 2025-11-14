@@ -58,9 +58,10 @@ build-desktop: build-cli
 		echo "  ⚠️  Warning: Node.js not found in PATH. App will require system Node.js."; \
 	fi
 	@echo "Building Tauri desktop application..."
-	cd desktop-ui && npm ci && npm run tauri:build
+	@echo "Note: DMG creation may fail (bundle_dmg.sh issue), but we'll create it manually if needed."
+	cd desktop-ui && npm ci && (npm run tauri:build || echo "⚠️  Tauri build had errors, checking if .app was created...")
 	@echo ""
-	@echo "� Verifying build artifacts..."
+	@echo "🔍 Verifying build artifacts..."
 	@if [ "$(PLATFORM)" = "macos" ]; then \
 		APP_PATH="desktop-ui/src-tauri/target/release/bundle/macos/TS2Go Desktop.app"; \
 		if [ ! -d "$$APP_PATH" ]; then \
