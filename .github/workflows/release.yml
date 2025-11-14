@@ -244,29 +244,6 @@ jobs:
           cd internal/transpiler/parser
           npm ci
 
-      - name: Build CLI for bundling
-        run: |
-          VERSION=${{ needs.create-release.outputs.version }}
-          go build -ldflags "-s -w -X main.version=${VERSION}" -o ts2go-cli ./cmd/ts2go
-          mkdir -p desktop-ui/src-tauri/bin
-          mv ts2go-cli desktop-ui/src-tauri/bin/
-        env:
-          CARGO_INCREMENTAL: 0
-
-      - name: Copy bundled resources
-        shell: bash
-        run: |
-          echo "Copying parser and mappings..."
-          mkdir -p desktop-ui/src-tauri/bin/parser
-          cp -R internal/transpiler/parser/* desktop-ui/src-tauri/bin/parser/
-          mkdir -p desktop-ui/src-tauri/bin/mappings
-          cp -R mappings/* desktop-ui/src-tauri/bin/mappings/
-          echo "✓ Resources bundled"
-
-      - name: Install frontend dependencies
-        working-directory: desktop-ui
-        run: npm ci
-
       - name: Build Desktop App using Makefile
         run: make build-desktop
         env:
@@ -278,6 +255,18 @@ jobs:
       - name: Verify build artifacts
         shell: bash
         run: |
+          echo "Verifying build artifacts..."
+          if [ "${{ matrix.platform }}" == "macos-latest" ]; then
+            ls -lah release/stable/macos/ || (echo "macOS artifacts missing" && exit 1)
+            echo "Checking for Node.js runtime:"
+            if [ -d "desktop-ui/src-tauri/bin" ]; then
+              ls -lh desktop-ui/src-tauri/bin/node* 2>/dev/null || echo "⚠️  Node.js not found in bin/"
+            fi
+          elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
+            ls -lah release/stable/windows/ || (echo "Windows artifacts missing" && exit 1)
+          else
+            ls -lah release/stable/linux/ || (echo "Linux artifacts missing" && exit 1)
+          fi
           echo "Verifying build artifacts..."
           if [ "${{ matrix.platform }}" == "macos-latest" ]; then
             ls -lah release/stable/macos/ || (echo "macOS artifacts missing" && exit 1)
