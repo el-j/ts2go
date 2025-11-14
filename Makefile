@@ -32,8 +32,10 @@ build-cli:
 
 # Build desktop app
 build-desktop: build-cli
-	@echo "Copying CLI binary to desktop-ui/src-tauri/bin..."
+	@echo "🧹 Cleaning and preparing bundling directory..."
+	@rm -rf desktop-ui/src-tauri/bin
 	@mkdir -p desktop-ui/src-tauri/bin
+	@echo "Copying CLI binary to desktop-ui/src-tauri/bin..."
 	@cp $(BINARY_NAME) desktop-ui/src-tauri/bin/ts2go-cli$(if $(findstring .exe,$(BINARY_NAME)),.exe,)
 	@echo "Copying parser dependencies to desktop-ui/src-tauri/bin/parser..."
 	@mkdir -p desktop-ui/src-tauri/bin/parser
@@ -41,16 +43,54 @@ build-desktop: build-cli
 	@echo "Copying package mappings to desktop-ui/src-tauri/bin/mappings..."
 	@mkdir -p desktop-ui/src-tauri/bin/mappings
 	@cp -R mappings/* desktop-ui/src-tauri/bin/mappings/
-	@echo "Bundling Node.js runtime..."
+	@echo "Bundling Node.js runtime for $(PLATFORM)..."
 	@if command -v node >/dev/null 2>&1; then \
-		cp "$$(command -v node)" desktop-ui/src-tauri/bin/node; \
-		chmod +x desktop-ui/src-tauri/bin/node; \
-		echo "  ✓ Node.js runtime bundled ($$(node --version))"; \
+		if [ "$(PLATFORM)" = "windows" ]; then \
+			cp "$$(command -v node)" desktop-ui/src-tauri/bin/node.exe; \
+			chmod +x desktop-ui/src-tauri/bin/node.exe; \
+			echo "  ✓ Node.js runtime bundled for Windows ($$(node --version))"; \
+		else \
+			cp "$$(command -v node)" desktop-ui/src-tauri/bin/node; \
+			chmod +x desktop-ui/src-tauri/bin/node; \
+			echo "  ✓ Node.js runtime bundled for $(PLATFORM) ($$(node --version))"; \
+		fi; \
 	else \
 		echo "  ⚠️  Warning: Node.js not found in PATH. App will require system Node.js."; \
 	fi
 	@echo "Building Tauri desktop application..."
 	cd desktop-ui && npm ci && npm run tauri:build
+	@echo ""
+	@echo "� Verifying build artifacts..."
+	@if [ "$(PLATFORM)" = "macos" ]; then \
+		APP_PATH="desktop-ui/src-tauri/target/release/bundle/macos/TS2Go Desktop.app"; \
+		if [ ! -d "$$APP_PATH" ]; then \
+			echo "❌ ERROR: .app bundle not found"; \
+			exit 1; \
+		fi; \
+		APP_SIZE=$$(du -sm "$$APP_PATH" | cut -f1); \
+		echo "�📦 .app size: $${APP_SIZE}MB"; \
+		if [ $$APP_SIZE -lt 100 ]; then \
+			echo "❌ ERROR: .app too small ($${APP_SIZE}MB, expected >100MB)"; \
+			exit 1; \
+		fi; \
+		if [ $$APP_SIZE -gt 180 ]; then \
+			echo "⚠️  WARNING: .app larger than expected ($${APP_SIZE}MB, expected ~125-150MB)"; \
+			echo "  This might indicate duplicate binaries."; \
+		fi; \
+		if [ ! -f "$$APP_PATH/Contents/Resources/bin/ts2go-cli" ]; then \
+			echo "❌ ERROR: ts2go-cli missing from .app"; \
+			exit 1; \
+		fi; \
+		NODE_COUNT=$$(find "$$APP_PATH/Contents/Resources/bin" -name "node*" -type f 2>/dev/null | grep -v node_modules | wc -l | tr -d ' '); \
+		if [ $$NODE_COUNT -eq 0 ]; then \
+			echo "❌ ERROR: Node.js runtime missing from .app"; \
+			exit 1; \
+		elif [ $$NODE_COUNT -gt 1 ]; then \
+			echo "⚠️  WARNING: Multiple Node.js binaries found ($$NODE_COUNT)"; \
+			find "$$APP_PATH/Contents/Resources/bin" -name "node*" -type f 2>/dev/null | grep -v node_modules; \
+		fi; \
+		echo "✅ .app bundle verified"; \
+	fi
 	@echo ""
 	@echo "📦 Copying release to project root..."
 	@mkdir -p $(RELEASE_DIR)/stable/$(PLATFORM)
@@ -60,7 +100,33 @@ build-desktop: build-cli
 			cp -R "desktop-ui/src-tauri/target/release/bundle/macos/"*.app "$(RELEASE_DIR)/stable/$(PLATFORM)/" 2>/dev/null || true; \
 		fi; \
 		if [ -d "desktop-ui/src-tauri/target/release/bundle/dmg" ]; then \
-			cp desktop-ui/src-tauri/target/release/bundle/dmg/*.dmg "$(RELEASE_DIR)/stable/$(PLATFORM)/" 2>/dev/null || true; \
+			DMG_FILE=$$(find "desktop-ui/src-tauri/target/release/bundle/dmg" -name "*.dmg" -size +10M 2>/dev/null | head -1); \
+			if [ -n "$$DMG_FILE" ]; then \
+				cp "$$DMG_FILE" "$(RELEASE_DIR)/stable/$(PLATFORM)/" 2>/dev/null || true; \
+				echo "✅ DMG copied from Tauri build"; \
+			else \
+				echo "⚠️  No valid DMG from Tauri, creating manually with hdiutil..."; \
+				APP_TO_PACKAGE=$$(find "$(RELEASE_DIR)/stable/$(PLATFORM)" -name "*.app" | head -1); \
+				if [ -n "$$APP_TO_PACKAGE" ]; then \
+					hdiutil create -volname "TS2Go Desktop" \
+						-srcfolder "$$APP_TO_PACKAGE" \
+						-ov -format UDZO "$(RELEASE_DIR)/stable/$(PLATFORM)/TS2Go-Desktop-v$(VERSION).dmg" || echo "⚠️  hdiutil failed, DMG not created"; \
+					if [ -f "$(RELEASE_DIR)/stable/$(PLATFORM)/TS2Go-Desktop-v$(VERSION).dmg" ]; then \
+						echo "✅ DMG created manually with hdiutil"; \
+					fi; \
+				fi; \
+			fi; \
+		else \
+			echo "⚠️  DMG directory not found, creating manually..."; \
+			APP_TO_PACKAGE=$$(find "$(RELEASE_DIR)/stable/$(PLATFORM)" -name "*.app" | head -1); \
+			if [ -n "$$APP_TO_PACKAGE" ]; then \
+				hdiutil create -volname "TS2Go Desktop" \
+					-srcfolder "$$APP_TO_PACKAGE" \
+					-ov -format UDZO "$(RELEASE_DIR)/stable/$(PLATFORM)/TS2Go-Desktop-v$(VERSION).dmg" || echo "⚠️  hdiutil failed, DMG not created"; \
+				if [ -f "$(RELEASE_DIR)/stable/$(PLATFORM)/TS2Go-Desktop-v$(VERSION).dmg" ]; then \
+					echo "✅ DMG created manually with hdiutil"; \
+				fi; \
+			fi; \
 		fi; \
 		echo "✅ Build complete!"; \
 		echo "📍 Release location: $(RELEASE_DIR)/stable/$(PLATFORM)/"; \

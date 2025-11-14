@@ -257,15 +257,63 @@ jobs:
         run: |
           echo "Verifying build artifacts..."
           if [ "${{ matrix.platform }}" == "macos-latest" ]; then
-            ls -lah release/stable/macos/ || (echo "macOS artifacts missing" && exit 1)
-            echo "Checking for Node.js runtime:"
-            if [ -d "desktop-ui/src-tauri/bin" ]; then
-              ls -lh desktop-ui/src-tauri/bin/node* 2>/dev/null || echo "⚠️  Node.js not found in bin/"
+            # Check .app bundle
+            APP_PATH="desktop-ui/src-tauri/target/release/bundle/macos/TS2Go Desktop.app"
+            if [ ! -d "$APP_PATH" ]; then
+              echo "❌ ERROR: .app bundle not found"
+              exit 1
             fi
+            
+            APP_SIZE=$(du -sm "$APP_PATH" | cut -f1)
+            echo "📦 .app size: ${APP_SIZE}MB"
+            
+            if [ $APP_SIZE -lt 100 ]; then
+              echo "❌ ERROR: .app too small (${APP_SIZE}MB, expected >100MB)"
+              exit 1
+            fi
+            
+            if [ $APP_SIZE -gt 180 ]; then
+              echo "⚠️  WARNING: .app unusually large (${APP_SIZE}MB, expected ~125-150MB)"
+              echo "  This might indicate duplicate binaries."
+            fi
+            
+            # Check for Node.js
+            if [ ! -f "$APP_PATH/Contents/Resources/bin/node" ]; then
+              echo "❌ ERROR: Node.js runtime missing from .app"
+              exit 1
+            fi
+            
+            # Check for duplicate Node.js binaries
+            NODE_COUNT=$(find "$APP_PATH/Contents/Resources/bin" -name "node*" -type f 2>/dev/null | grep -v node_modules | wc -l | tr -d ' ')
+            echo "📊 Node.js binaries found: $NODE_COUNT"
+            if [ $NODE_COUNT -gt 1 ]; then
+              echo "⚠️  WARNING: Multiple Node.js binaries detected:"
+              find "$APP_PATH/Contents/Resources/bin" -name "node*" -type f 2>/dev/null | grep -v node_modules
+            fi
+            
+            # Check release artifacts
+            ls -lah release/stable/macos/ || (echo "❌ macOS artifacts missing" && exit 1)
+            
+            # Check DMG if exists
+            if [ -d "release/stable/macos" ]; then
+              DMG_PATH=$(find release/stable/macos -name "*.dmg" 2>/dev/null | head -1)
+              if [ -n "$DMG_PATH" ]; then
+                DMG_SIZE=$(du -sm "$DMG_PATH" | cut -f1)
+                echo "💿 DMG size: ${DMG_SIZE}MB"
+                
+                if [ $DMG_SIZE -lt 80 ]; then
+                  echo "❌ ERROR: DMG too small (${DMG_SIZE}MB, expected >80MB)"
+                  exit 1
+                fi
+              else
+                echo "⚠️  No DMG found in release directory"
+              fi
+            fi
+            
           elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
-            ls -lah release/stable/windows/ || (echo "Windows artifacts missing" && exit 1)
+            ls -lah release/stable/windows/ || (echo "❌ Windows artifacts missing" && exit 1)
           else
-            ls -lah release/stable/linux/ || (echo "Linux artifacts missing" && exit 1)
+            ls -lah release/stable/linux/ || (echo "❌ Linux artifacts missing" && exit 1)
           fi
           echo "Verifying build artifacts..."
           if [ "${{ matrix.platform }}" == "macos-latest" ]; then
