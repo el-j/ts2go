@@ -50,7 +50,7 @@ build-desktop: build-cli
 		echo "  ⚠️  Warning: Node.js not found in PATH. App will require system Node.js."; \
 	fi
 	@echo "Building Tauri desktop application..."
-	cd desktop-ui && npm run tauri:build
+	cd desktop-ui && npm ci && npm run tauri:build
 	@echo ""
 	@echo "📦 Copying release to project root..."
 	@mkdir -p $(RELEASE_DIR)/stable/$(PLATFORM)
