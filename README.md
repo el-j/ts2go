@@ -11,17 +11,37 @@ A TypeScript-to-Go transpiler that converts a subset of TypeScript into idiomati
 ## Quick Start
 
 ```bash
-# Install dependencies
-cd internal/transpiler/parser && npm install && cd ../../..
+# Build the CLI
+make build-go
 
-# Build
-make build
+# Run CLI
+./bin/ts2go transpile <project-dir> --out output
 
-# Use CLI
-./ts2go convert --in app.ts --out app.go      # Single file conversion
-./ts2go transpile <project-dir> --out output  # Full project transpilation
-./ts2go analyze <project-dir>                  # Analyze dependencies
-./ts2go ui --port 8080 --open                 # Web UI (legacy, for quick testing)
+# Or use Makefile targets
+make help           # See all available commands
+make build          # Build everything
+make test           # Run all tests
+make dev-desktop    # Run desktop app in dev mode
+```
+
+## Project Structure
+
+```
+ts2go/
+├── go/              # 🔵 Go CLI & Core Engine
+│   ├── core/        # Hexagonal architecture (domain, ports, services)
+│   ├── adapters/    # Infrastructure adapters
+│   ├── cmd/         # CLI binaries
+│   ├── runtime/     # Go runtime library
+│   └── go.mod       # Single Go module
+│
+├── desktop/         # 🟢 Desktop Application
+│   ├── ui/          # Vue.js + TypeScript frontend
+│   └── tauri/       # Rust + Tauri backend
+│
+├── docs/            # 📚 Documentation
+├── bin/             # 🔨 Compiled binaries
+└── Makefile         # 🎯 Main build orchestration
 ```
 
 ## Example
@@ -52,22 +72,16 @@ func Greet(person Person) string {
 
 ## Documentation
 
-### Project Status & Planning
-- 📊 **[Current State](CURRENT_STATE.md)** - **Actual implementation status (from source code)**
-- 🎯 **[Roadmap to Alpha 2.0.1](ROADMAP_TO_ALPHA_2.0.1.md)** - **Plan to add build & test features**
-- ⚠️ [Known Issues](KNOWN_ISSUES.md) - Current limitations and workarounds
+**Main Documentation:** See [docs/README.md](docs/README.md) for complete documentation index.
 
-### Getting Started
-- 🚀 [Getting Started](docs/GETTING_STARTED_v2.md) - Installation and basic usage
-- 🖥️ [Desktop UI Guide](desktop-ui/USER_GUIDE.md) - Desktop application user guide
-- 📚 [Migration Guide](docs/MIGRATION_GUIDE.md) - Complete guide to migrating projects
-- 💡 [Examples](docs/EXAMPLES.md) - Before/after transpilation examples
-
-### Reference
-- 📋 [Specification](SPEC.md) - Currently supported TypeScript features
-- 📦 [Package Mappings](docs/PACKAGE_MAPPINGS.md) - npm to Go quick reference (100+ packages)
-- 🏗️ [Architecture](docs/ARCHITECTURE.md) - Project structure and design
-- 🔧 [Dependency Guide](docs/DEPENDENCY_GUIDE.md) - Implementation guide for dependency resolution
+### Quick Links
+- 📊 [Current State](docs/CURRENT_STATE.md) - Implementation status
+- 🚀 [Getting Started](docs/GETTING_STARTED_v2.md) - Installation and usage
+- 📋 [Specification](docs/SPEC.md) - Supported TypeScript features
+- 🖥️ [Desktop Guide](desktop/ui/USER_GUIDE.md) - Desktop app user guide
+- 📦 [Package Mappings](docs/PACKAGE_MAPPINGS.md) - NPM to Go mappings
+- 🏗️ [Architecture](docs/ARCHITECTURE.md) - System design
+- ⚠️ [Known Issues](docs/KNOWN_ISSUES.md) - Limitations and workarounds
 
 ## Features
 
