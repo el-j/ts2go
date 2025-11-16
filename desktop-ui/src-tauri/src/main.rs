@@ -8,6 +8,99 @@ use std::process::Command;
 #[cfg(debug_assertions)]
 use tauri::Manager;
 
+// Result structure for Go code formatting
+#[derive(Debug, Clone)]
+struct FormatResult {
+    files_formatted: usize,
+    warnings: Vec<String>,
+}
+
+// Helper function to format Go files using go fmt
+fn format_go_files(output_dir: &str) -> Result<FormatResult, String> {
+    // Use get_go_binary_path() to find Go
+    let go_path = get_go_binary_path(None)?;
+    
+    let output = Command::new(&go_path)
+        .arg("fmt")
+        .arg("./...")
+        .current_dir(output_dir)
+        .output()
+        .map_err(|e| format!("Failed to execute go fmt: {}. Make sure Go is installed and in PATH.", e))?;
+    
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // go fmt prints formatted file paths to stdout
+    let formatted_files: Vec<&str> = stdout.lines()
+        .filter(|l| !l.is_empty())
+        .collect();
+    
+    let mut warnings = Vec::new();
+    if !stderr.is_empty() {
+        warnings.push(stderr.to_string());
+    }
+    
+    Ok(FormatResult {
+        files_formatted: formatted_files.len(),
+        warnings,
+    })
+}
+
+// Helper function to get the path to the Go binary
+// Returns the appropriate Go binary based on configuration:
+// 1. Custom path from settings (if provided)
+// 2. Bundled Go (Phase 3 - future)
+// 3. System Go (fallback)
+fn get_go_binary_path(custom_path: Option<String>) -> Result<PathBuf, String> {
+    // Check for custom path from settings
+    if let Some(path) = custom_path {
+        let go_path = PathBuf::from(path);
+        if go_path.exists() {
+            return Ok(go_path);
+        }
+        return Err(format!("Custom Go path not found: {}", go_path.display()));
+    }
+    
+    // In release, try bundled Go first (Phase 3 - future)
+    #[cfg(not(debug_assertions))]
+    {
+        use std::env;
+        if let Ok(exe_path) = env::current_exe() {
+            if let Some(contents_dir) = exe_path.parent().and_then(|p| p.parent()) {
+                #[cfg(target_os = "macos")]
+                {
+                    let go_path = contents_dir.join("Resources/bin/go/bin/go");
+                    if go_path.exists() {
+                        return Ok(go_path);
+                    }
+                }
+                
+                #[cfg(target_os = "windows")]
+                {
+                    let go_path = contents_dir.join("bin/go/bin/go.exe");
+                    if go_path.exists() {
+                        return Ok(go_path);
+                    }
+                }
+                
+                #[cfg(target_os = "linux")]
+                {
+                    let go_path = contents_dir.join("bin/go/bin/go");
+                    if go_path.exists() {
+                        return Ok(go_path);
+                    }
+                }
+            }
+        }
+    }
+    
+    // Fallback to system Go
+    #[cfg(target_os = "windows")]
+    { Ok(PathBuf::from("go.exe")) }
+    #[cfg(not(target_os = "windows"))]
+    { Ok(PathBuf::from("go")) }
+}
+
 // Helper function to get the path to the bundled CLI binary
 fn get_cli_binary_path() -> PathBuf {
     // In development, use the binary from the bin directory
@@ -193,11 +286,27 @@ async fn auto_transpile_project(path: String) -> Result<serde_json::Value, Strin
         find_go_files(Path::new(&output_dir), &mut go_files)
             .map_err(|e| format!("Failed to count output files: {}", e))?;
         
+        // Format all Go files with go fmt
+        let format_result = match format_go_files(&output_dir) {
+            Ok(res) => res,
+            Err(e) => {
+                // Don't fail transpilation on format errors - just warn
+                eprintln!("Warning: Failed to format Go code: {}", e);
+                FormatResult {
+                    files_formatted: 0,
+                    warnings: vec![e],
+                }
+            }
+        };
+        
         Ok(serde_json::json!({
             "success": true,
             "output_dir": output_dir,
             "files_transpiled": go_files.len(),
-            "message": format!("Successfully transpiled {} files to {}", go_files.len(), output_dir)
+            "files_formatted": format_result.files_formatted,
+            "format_warnings": format_result.warnings,
+            "message": format!("Successfully transpiled {} files to {} ({} formatted)", 
+                go_files.len(), output_dir, format_result.files_formatted)
         }))
     } else {
         let error = String::from_utf8_lossy(&result.stderr);
@@ -273,8 +382,14 @@ async fn run_go_code(code: String) -> Result<serde_json::Value, String> {
     
     let start_time = Instant::now();
     
+    // Get Go binary path
+    let go_path = get_go_binary_path(None).map_err(|e| {
+        let _ = fs::remove_file(&temp_file);
+        format!("Failed to locate Go binary: {}. Make sure Go is installed and in PATH.", e)
+    })?;
+    
     // Execute Go code using 'go run'
-    let output = Command::new("go")
+    let output = Command::new(&go_path)
         .arg("run")
         .arg(&temp_file)
         .output()
@@ -337,8 +452,12 @@ async fn run_go_project(output_dir: String) -> Result<serde_json::Value, String>
     
     let start_time = Instant::now();
     
+    // Get Go binary path
+    let go_path = get_go_binary_path(None)
+        .map_err(|e| format!("Failed to locate Go binary: {}. Make sure Go is installed and in PATH.", e))?;
+    
     // Execute Go project using 'go run .'
-    let output = Command::new("go")
+    let output = Command::new(&go_path)
         .arg("run")
         .arg(".")
         .current_dir(output_path)
@@ -380,8 +499,14 @@ async fn build_go_file(code: String, output_path: String) -> Result<serde_json::
     
     let start_time = Instant::now();
     
+    // Get Go binary path
+    let go_path = get_go_binary_path(None).map_err(|e| {
+        let _ = fs::remove_file(&temp_file);
+        format!("Failed to locate Go binary: {}. Make sure Go is installed and in PATH.", e)
+    })?;
+    
     // Execute Go build
-    let output = Command::new("go")
+    let output = Command::new(&go_path)
         .arg("build")
         .arg("-o")
         .arg(&output_path)
@@ -474,8 +599,12 @@ async fn build_go_project(
     
     let start_time = Instant::now();
     
+    // Get Go binary path
+    let go_path = get_go_binary_path(None)
+        .map_err(|e| format!("Failed to locate Go binary: {}. Make sure Go is installed and in PATH.", e))?;
+    
     // Build command with flags
-    let mut cmd = Command::new("go");
+    let mut cmd = Command::new(&go_path);
     cmd.arg("build")
         .arg("-o")
         .arg(&output_path);
@@ -547,8 +676,12 @@ async fn test_go_file(file_path: String) -> Result<serde_json::Value, String> {
     
     let start_time = Instant::now();
     
+    // Get Go binary path
+    let go_path = get_go_binary_path(None)
+        .map_err(|e| format!("Failed to locate Go binary: {}. Make sure Go is installed and in PATH.", e))?;
+    
     // Execute go test
-    let output = Command::new("go")
+    let output = Command::new(&go_path)
         .arg("test")
         .arg("-v")
         .arg("-json")
@@ -593,8 +726,12 @@ async fn test_go_project(
     
     let start_time = Instant::now();
     
+    // Get Go binary path
+    let go_path = get_go_binary_path(None)
+        .map_err(|e| format!("Failed to locate Go binary: {}. Make sure Go is installed and in PATH.", e))?;
+    
     // Build command with flags
-    let mut cmd = Command::new("go");
+    let mut cmd = Command::new(&go_path);
     cmd.arg("test")
         .arg("-v")
         .arg("-json");
@@ -674,6 +811,62 @@ fn parse_test_results(json_output: &str) -> serde_json::Value {
         "total": passed + failed + skipped,
         "tests": tests
     })
+}
+
+// New Tauri commands for Phase 1 & 2 implementation
+
+#[tauri::command]
+async fn detect_go_installation(custom_path: Option<String>) -> Result<serde_json::Value, String> {
+    let go_path = match get_go_binary_path(custom_path.clone()) {
+        Ok(path) => path,
+        Err(e) => {
+            return Ok(serde_json::json!({
+                "found": false,
+                "valid": false,
+                "error": e
+            }));
+        }
+    };
+    
+    let output = match Command::new(&go_path)
+        .arg("version")
+        .output()
+    {
+        Ok(out) => out,
+        Err(e) => {
+            return Ok(serde_json::json!({
+                "found": false,
+                "valid": false,
+                "error": format!("Failed to execute Go: {}. Make sure Go is installed.", e),
+                "path": go_path.to_string_lossy()
+            }));
+        }
+    };
+    
+    if output.status.success() {
+        let version_str = String::from_utf8_lossy(&output.stdout);
+        Ok(serde_json::json!({
+            "found": true,
+            "version": version_str.trim(),
+            "path": go_path.to_string_lossy(),
+            "valid": true
+        }))
+    } else {
+        Ok(serde_json::json!({
+            "found": true,
+            "valid": false,
+            "error": "Go binary found but version check failed",
+            "path": go_path.to_string_lossy()
+        }))
+    }
+}
+
+#[tauri::command]
+async fn check_directory_exists(path: String) -> Result<serde_json::Value, String> {
+    let dir_path = Path::new(&path);
+    Ok(serde_json::json!({
+        "exists": dir_path.exists() && dir_path.is_dir()
+    }))
 }
 
 #[tauri::command]
@@ -764,7 +957,9 @@ fn main() {
             build_go_file,
             build_go_project,
             test_go_file,
-            test_go_project
+            test_go_project,
+            detect_go_installation,
+            check_directory_exists
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]

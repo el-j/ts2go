@@ -1,23 +1,77 @@
 # TS2Go Current Implementation State
 
-**Last Updated:** November 13, 2025  
-**Assessment Method:** Source code inspection  
-**Version:** 0.7.0-beta
+**Last Updated:** November 2025  
+**Assessment Method:** Source code inspection + Implementation verification  
+**Version:** 0.1.1 (Phase 1 & 2 Complete)
 
 ---
 
 ## Overview
 
-This document reflects the **actual implemented state** of ts2go based on source code inspection, not documentation claims. All features listed here are verified to exist in the codebase.
+This document reflects the **actual implemented state** of ts2go based on source code inspection and verification. All features listed here are verified to exist in the codebase and have been tested.
+
+**Recent Major Updates:**
+- ✅ Phase 0: Automatic Go formatting implemented
+- ✅ Phase 1: Transpilation state persistence with localStorage
+- ✅ Phase 2: Go configuration system with smart detection
+- ✅ 8 of 10 critical infrastructure tasks complete
+- ✅ Clean Rust build (no warnings)
+- ✅ All 6 go commands use smart Go detection
 
 ---
 
-## Desktop UI - Implementation Status: ~85-90%
+## Desktop UI - Implementation Status: ~90-95%
 
 **Location:** `desktop-ui/`  
 **Tech Stack:** Tauri 2.0 + Vue 3 + TypeScript + PrimeVue + Monaco Editor
 
 ### ✅ Fully Implemented Features
+
+#### Go Configuration & Detection (NEW - Phase 2)
+- **Smart Go Binary Detection** (`main.rs` lines ~53-118)
+  - 3-tier priority: custom path → bundled go → system go
+  - `get_go_binary_path()` helper function
+  - Descriptive error messages
+  - All 6 go commands updated to use detection
+
+- **Go Configuration UI** (`SettingsView.vue` Project tab)
+  - Go Binary Source dropdown (system/custom)
+  - Custom path input with file picker
+  - "Detect Go Installation" button with instant feedback
+  - Visual result display (version, path, status)
+  - Auto-detection on mount
+
+- **Tauri Commands for Go** (`main.rs`)
+  - `detect_go_installation` - Returns JSON with go version, path, found status
+  - `check_directory_exists` - Verifies directories for state validation
+  - Registered in invoke_handler
+
+#### State Persistence (NEW - Phase 1)
+- **Transpilation State Management** (`transpile.ts` lines ~17-112)
+  - `TranspilationState` interface (projectPath, outputDir, filesTranspiled, timestamp, success)
+  - `transpilationStates` Map for tracking all projects
+  - `loadTranspilationStates()` - Loads from localStorage on init
+  - `saveTranspilationStates()` - Persists to localStorage
+  - `saveTranspilationState()` - Auto-saves after successful transpilation
+  - `getTranspilationState()` - Retrieves saved state
+  - `clearTranspilationState()` - Removes single project state
+  - `clearAllTranspilationStates()` - Clears all states
+  - `verifyTranspilationState()` - Checks if output_dir still exists
+
+- **State Restoration UI** (`ProjectView.vue`)
+  - "Previous Transpilation Restored" banner with timestamp and file count
+  - Auto-restore on mount and project switch
+  - Clear State button
+  - Build/Test/Run buttons enabled with valid state
+  - Visual loading state during restoration
+
+#### Go Formatting (Phase 0)
+- **Automatic Format After Transpile** (`main.rs` lines ~18-51)
+  - `FormatResult` struct
+  - `format_go_files()` function
+  - Uses smart Go detection
+  - Format warnings shown in UI
+  - Success count in toast notifications
 
 #### File & Project Management
 - **FileTree Component** (`FileTree.vue`, `FileTreeNode.vue`) - Complete file browser

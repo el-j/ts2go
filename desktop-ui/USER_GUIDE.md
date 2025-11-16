@@ -1,7 +1,7 @@
 # TS2Go Desktop - User Guide
 
-**Version:** 0.1.0  
-**Last Updated:** November 4, 2025
+**Version:** 0.1.1  
+**Last Updated:** November 14, 2025
 
 ## Table of Contents
 
@@ -85,11 +85,55 @@ The split-pane editor provides:
 
 ### 2. Project Management
 
-**Coming in Week 3**
-- Open TypeScript projects
-- Browse project files
-- Multi-file transpilation
-- Project settings
+Transpile entire TypeScript projects with full Go module support:
+
+**Features:**
+- Open TypeScript projects from your file system
+- Browse and select individual files
+- Multi-file transpilation with dependency tracking
+- **Automatic Go code formatting** with `go fmt`
+- Project-wide build, test, and run operations
+
+**Workflow:**
+1. Navigate to **Projects** tab
+2. Click **Open Project** and select your TypeScript project folder
+3. Review the file tree and select files to transpile
+4. Click **Transpile All** to convert the entire project
+5. Generated Go code is automatically formatted for readability
+6. Use **Build**, **Test**, or **Run** buttons to work with the output
+
+**State Persistence** ⭐ NEW in v0.1.1
+
+TS2Go now remembers your transpilation state! When you return to a project, you'll see:
+
+- 📦 **"Previous Transpilation Restored"** banner
+- ⏱️ Timestamp of last transpilation
+- 📊 Number of files transpiled
+- ✅ Build/Test/Run buttons remain enabled
+
+**How It Works:**
+- State is automatically saved after successful transpilation
+- Persists across app restarts
+- Verified before restoration (checks if output directory still exists)
+- Click **"Clear State"** to manually reset
+
+**Benefits:**
+- No need to re-transpile just to use Build/Test/Run
+- Resume work immediately after reopening the app
+- State is project-specific (each project tracked separately)
+
+**Go Code Formatting:**
+
+All transpiled Go code is automatically formatted using `go fmt` to ensure:
+- ✅ Consistent style following Go conventions
+- ✅ Professional, readable code output
+- ✅ Standard indentation and spacing
+- ✅ Clean diffs for version control
+
+**Phase 0a (Current):** Requires Go installed on your system  
+**Phase 0b (Future):** Will use bundled Go compiler (no installation needed)
+
+If formatting fails (e.g., Go not installed), you'll see a warning but transpilation will still complete successfully. The code will be functional but unformatted.
 
 ### 3. Example Gallery
 
@@ -173,6 +217,41 @@ Access settings by clicking **Settings** in the sidebar or pressing `Ctrl+,`.
 **Include Patterns**
 - Comma-separated glob patterns for files to include
 - Default: `**/*.ts, **/*.tsx`
+
+**Go Compiler Configuration** ⭐ NEW in v0.1.1
+
+Configure which Go compiler TS2Go should use for Build, Test, Run, and Format operations:
+
+**Go Binary Source:**
+- **System Go (from PATH)** - Default. Uses Go installed on your system
+- **Custom Path** - Specify a custom Go binary location
+
+**Features:**
+- 🔍 **Auto-detection** - Instantly checks if Go is available
+- ✅ **Version display** - Shows detected Go version and path
+- 📁 **File picker** - Browse to select custom Go binary
+- ⚠️ **Clear errors** - Helpful messages if Go not found
+
+**How to Configure:**
+
+1. Open **Settings** → **Project** tab
+2. Locate **Go Compiler Configuration** section
+3. Select your preferred source:
+   - Choose **"System Go"** if you have Go in your PATH
+   - Choose **"Custom Path"** to specify a different Go installation
+4. Click **"Detect Go Installation"** to verify
+5. You should see: ✅ **Go Compiler Detected** with version info
+
+**If Go Is Not Detected:**
+
+See the [Go Installation Guide](../../docs/GO_INSTALLATION_GUIDE.md) for step-by-step instructions to install Go on your system.
+
+**Quick Install:**
+- **macOS:** `brew install go`
+- **Windows:** Download from https://go.dev/dl/
+- **Linux:** `sudo apt install golang-go`
+
+After installing, return to Settings and click "Detect Go Installation" again.
 
 ### Editor Settings
 
@@ -332,6 +411,74 @@ Learn transpilation of if/else, loops, and switch statements.
 - Verify shortcuts in the help dialog (Ctrl+/)
 - Check for conflicting system shortcuts
 
+#### 5. Go Compiler Not Found
+
+**Symptoms:**
+- Error: "Go Compiler Not Found"
+- Build, Test, or Run buttons fail
+- Message: "Configure Go in Settings to use Build, Test, and Run features"
+
+**Solutions:**
+
+1. **Check if Go is installed:**
+   ```bash
+   go version
+   ```
+   If this command fails, Go is not installed.
+
+2. **Install Go:**
+   - See the detailed [Go Installation Guide](../../docs/GO_INSTALLATION_GUIDE.md)
+   - **macOS:** `brew install go`
+   - **Windows:** Download from https://go.dev/dl/
+   - **Linux:** `sudo apt install golang-go`
+
+3. **Configure Go in TS2Go:**
+   - Open **Settings** → **Project** tab
+   - Locate **Go Compiler Configuration**
+   - Select **"System Go (from PATH)"**
+   - Click **"Detect Go Installation"**
+   - Verify detection succeeds with green ✅
+
+4. **Use Custom Go Path** (if installed in non-standard location):
+   - Settings → Project → Go Compiler Configuration
+   - Select **"Custom Path"**
+   - Click folder icon 📁
+   - Browse to your Go binary (e.g., `/usr/local/go/bin/go`)
+   - Click **"Detect Go Installation"**
+
+5. **Verify Go is in PATH** (for System Go):
+   - **macOS/Linux**: Run `which go` in terminal
+   - **Windows**: Run `where go` in Command Prompt
+   - If not found, add Go to your system PATH
+
+**Still Having Issues?**
+- Check the Output panel logs for detailed error messages
+- Verify Go version is 1.18+ (required for generics): `go version`
+- Ensure Go binary has execute permissions (macOS/Linux): `chmod +x /path/to/go`
+
+#### 6. Go Code Formatting Warnings
+
+**Symptoms:**
+- Warning message: "Failed to format Go code"
+- Transpilation succeeds but code looks unformatted
+
+**Solutions:**
+- This is the same issue as #5 - Go not found
+- Follow steps above to install and configure Go
+- Formatting uses the same Go detection system
+- After configuring Go, transpile again to see formatted output
+
+3. **Restart the application** after installing Go
+
+4. **Check Go installation**:
+   - Navigate to Settings (once Go config UI is available in Phase 2)
+   - Click "Detect" to verify Go installation
+   - Should show Go version and path
+
+**Note:** Even if formatting fails, your transpiled Go code will still work correctly. Formatting is for readability and style consistency, not functionality.
+
+**Future Enhancement:** Phase 3 will bundle Go compiler with the app, eliminating the need for separate Go installation.
+
 ### Getting Help
 
 If you encounter issues not covered here:
@@ -365,7 +512,8 @@ If you encounter issues not covered here:
 - [TS2Go Main Documentation](../README.md)
 - [API Reference](../docs/API_REFERENCE.md)
 - [Architecture Overview](../docs/ARCHITECTURE.md)
-- [Phase 21 Plan](../docs/PHASE21_COMPREHENSIVE_PLAN.md)
+- [Go Installation Guide](../docs/GO_INSTALLATION_GUIDE.md) ⭐ NEW
+- [Testing Guide](../TESTING_GUIDE_PHASE1_AND_2.md) ⭐ NEW
 
 ### Examples
 - [Example Projects](../examples/)
@@ -380,7 +528,39 @@ If you encounter issues not covered here:
 
 ## Version History
 
-### v0.1.0 (Current)
+### v0.1.1 (Current - November 15, 2025)
+
+**Phase 0: Go Formatting**
+- ✨ Automatic Go code formatting with `go fmt`
+- ✅ All transpiled Go code follows standard Go formatting conventions
+- ⚠️ Graceful error handling for formatting failures
+- 📊 UI feedback showing formatted file counts
+
+**Phase 1: State Persistence**
+- ✨ **NEW:** Transpilation state persistence with localStorage
+- 📦 "Previous Transpilation Restored" banner in ProjectView
+- ⏱️ Shows timestamp and file count of last transpilation
+- ✅ Build/Test/Run buttons remain enabled after app restart
+- 🔄 Per-project state tracking
+- 🧹 Manual "Clear State" button
+
+**Phase 2: Go Configuration**
+- ✨ **NEW:** Go Compiler Configuration UI in Settings
+- 🔍 Smart Go detection with 3-tier priority (custom → bundled → system)
+- ⚙️ Go Binary Source dropdown (System/Custom)
+- 📁 File picker for custom Go path selection
+- ✅ Instant Go detection with version/path display
+- 🎯 Auto-detection on Settings page load
+- ⚠️ Clear error messages for Go not found
+
+**Infrastructure Improvements**
+- 🛠️ All 6 go commands (Build, Test, Run) use smart Go detection
+- 🚫 No more silent failures when Go not in PATH
+- 📝 Improved error handling with actionable messages
+- 🔧 2 new Tauri commands: detect_go_installation, check_directory_exists
+- 📚 Comprehensive [Go Installation Guide](../docs/GO_INSTALLATION_GUIDE.md)
+
+### v0.1.0 (November 2025)
 - Initial release of Desktop UI
 - Basic transpilation support
 - Settings panel with theme customization

@@ -1,8 +1,8 @@
 # TS2Go Project Status
 
-**Current Version:** 0.7.0-beta  
-**Last Updated:** November 9, 2025  
-**Status:** Phase 1 & 2 Complete, Phase 3 Week 6 Complete
+**Current Version:** 0.1.1 (Phase 1 & 2 Complete)  
+**Last Updated:** November 2025  
+**Status:** Go Configuration & State Persistence Implemented
 
 ---
 
@@ -10,16 +10,67 @@
 
 | Phase | Status | Completion | Version |
 |-------|--------|------------|---------|
-| Phase 1: Critical Bug Fixes | ✅ Complete | 100% | v0.6.0-beta |
-| Phase 2: Modern JS Features | ✅ Complete | 100% | v0.7.0-beta |
-| Phase 3 Week 6: Core UI | ✅ Complete | 100% | v0.7.0-beta |
-| Phase 3 Week 7-8 | 🔄 In Progress | 0% | v0.8.0-beta (planned) |
-| Phase 4: Polish | 📋 Planned | 0% | v0.9.0-rc (planned) |
-| Phase 5: Release | 📋 Planned | 0% | v1.0.0 (target) |
+| Phase 0: Go Formatting | ✅ Complete | 100% | v0.1.1 |
+| Phase 1: State Persistence | ✅ Complete | 100% | v0.1.1 |
+| Phase 2: Go Configuration | ✅ Complete | 100% | v0.1.1 |
+| Phase 3: Bundle Go | 📋 Ready | 0% | v0.2.0 (planned) |
+| Testing & Polish | 🔄 In Progress | 20% | v0.1.1 |
+
+**Recent Achievements:**
+- ✅ Fixed all hardcoded "go" commands
+- ✅ Implemented localStorage state persistence
+- ✅ Added Go Configuration UI in Settings
+- ✅ Added state restoration in ProjectView
+- ✅ Clean Rust build (no warnings)
+- ✅ 8 of 10 critical tasks complete
+
+See [PHASE1_AND_2_IMPLEMENTATION_COMPLETE.md](./PHASE1_AND_2_IMPLEMENTATION_COMPLETE.md) for full details.
 
 ---
 
-## ✅ Completed Features
+## ✅ Recently Completed Features
+
+### Phase 0: Go Formatting (100% COMPLETE)
+
+**Goal:** Automatically format transpiled Go code with `go fmt`
+
+**Implemented:**
+1. **FormatResult struct** in main.rs
+2. **format_go_files()** function using smart Go detection
+3. **Updated transpileProject** to auto-format after success
+4. **Format warnings** shown in UI toast notifications
+5. **Documentation** updated in USER_GUIDE.md
+
+### Phase 1: Transpilation State Persistence (100% COMPLETE)
+
+**Goal:** Remember transpilation state across app restarts
+
+**Implemented:**
+1. **TranspilationState interface** with projectPath, outputDir, filesTranspiled, timestamp
+2. **localStorage save/load functions** (8 new functions)
+3. **Auto-save** after successful transpilation
+4. **verifyTranspilationState()** checks if output directories still exist
+5. **State restoration** in ProjectView with visual banner
+
+**Impact:** Build/Test/Run buttons remain enabled after restarting app!
+
+### Phase 2: Go Configuration System (100% COMPLETE)
+
+**Goal:** Allow users to configure Go binary source
+
+**Implemented:**
+1. **get_go_binary_path() helper** with 3-tier detection (custom → bundled → system)
+2. **detect_go_installation** Tauri command with JSON result
+3. **check_directory_exists** Tauri command for state verification
+4. **Go Configuration UI** in SettingsView with dropdown, file picker, detect button
+5. **Settings data model** with goBinarySource and customGoBinaryPath fields
+6. **All 6 go commands updated** to use smart Go detection
+
+**Impact:** No more silent failures! Users get instant feedback on Go status.
+
+---
+
+## 🔄 Completed in Previous Phases
 
 ### Phase 1: Critical Bug Fixes (100% COMPLETE)
 

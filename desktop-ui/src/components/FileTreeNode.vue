@@ -9,7 +9,7 @@
       <span class="expand-icon" v-if="node.type === 'folder'" @click.stop="toggleExpanded">
         {{ isExpanded ? '▼' : '▶' }}
       </span>
-      <span class="file-icon">{{ getFileIcon(node) }}</span>
+      <span class="file-icon">{{ getNodeIcon(node) }}</span>
       <span class="node-name" :title="node.displayName || node.name">{{ node.name }}</span>
       <span v-if="node.isDirty" class="dirty-indicator">●</span>
       <span 
@@ -49,6 +49,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { FileNode } from '../stores/workspace'
+import { getFileIcon } from '@/utils/fileUtils'
 
 interface Props {
   node: FileNode
@@ -80,19 +81,9 @@ function toggleExpanded() {
   isExpanded.value = !isExpanded.value
 }
 
-function getFileIcon(node: FileNode): string {
+function getNodeIcon(node: FileNode): string {
   if (node.type === 'folder') return '📁'
-  
-  const ext = node.name.split('.').pop()?.toLowerCase()
-  switch (ext) {
-    case 'ts': return '🔷'
-    case 'js': return '🟨'
-    case 'json': return '📋'
-    case 'md': return '📝'
-    case 'go': return '🔵'
-    case 'vue': return '💚'
-    default: return '📄'
-  }
+  return getFileIcon(node.name)
 }
 
 function showContextMenu(event: MouseEvent) {

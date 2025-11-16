@@ -60,6 +60,7 @@
             @click="handleTranspile" 
             class="btn-action btn-primary"
             :disabled="transpileStore.isTranspiling"
+            v-tooltip.bottom="'Transpile all TypeScript files to Go (Ctrl+Shift+T)'"
           >
             {{ transpileStore.isTranspiling ? '⏳ Transpiling...' : '🚀 Transpile All' }}
           </button>
@@ -67,6 +68,7 @@
             @click="handleTranspileFile" 
             class="btn-action btn-secondary"
             :disabled="!activeFile || transpileStore.isTranspiling"
+            v-tooltip.bottom="'Transpile current file only (Ctrl+T)'"
           >
             📄 Transpile File
           </button>
@@ -74,6 +76,7 @@
             v-if="transpileStore.currentResult?.output_dir"
             @click="openOutputFolder" 
             class="btn-action btn-secondary"
+            v-tooltip.bottom="'Open output folder in file explorer'"
           >
             👁️ Preview
           </button>
@@ -81,7 +84,7 @@
             v-if="transpileStore.currentResult?.output_dir && !isRunningProject"
             @click="handleRunProject" 
             class="btn-action btn-success"
-            title="Run Complete Project"
+            v-tooltip.bottom="'Run the complete Go project'"
           >
             ▶️ Run Project
           </button>
@@ -90,7 +93,7 @@
             v-if="transpileStore.currentResult?.output_dir && !buildStore.isBuilding"
             @click="handleBuildProject" 
             class="btn-action btn-build"
-            title="Build Project into Binary"
+            v-tooltip.bottom="'Build project into executable binary'"
           >
             🔨 Build Project
           </button>
@@ -99,11 +102,20 @@
             v-if="transpileStore.currentResult?.output_dir && !testStore.isTesting"
             @click="handleTestProject" 
             class="btn-action btn-test"
-            title="Run Tests on Project"
+            v-tooltip.bottom="'Run tests on the Go project'"
           >
             🧪 Test Project
           </button>
           <span v-if="testStore.isTesting" class="testing-indicator">⏳ Testing...</span>
+          
+          <!-- Help Button -->
+          <button 
+            @click="showShortcutsDialog = true"
+            class="btn-action btn-help"
+            v-tooltip.bottom="'View keyboard shortcuts (?)'"
+          >
+            <i class="pi pi-question-circle"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -176,8 +188,40 @@
                 </button>
               </div>
               <div class="panel-content">
+                <!-- State Restoration Banner -->
+                <div 
+                  v-if="hasValidTranspilationState && !transpileStore.isTranspiling && !transpileStore.currentResult?.goCode" 
+                  class="state-restoration-banner"
+                >
+                  <div class="banner-content">
+                    <div class="banner-icon">📦</div>
+                    <div class="banner-info">
+                      <h4>Previous Transpilation Restored</h4>
+                      <p class="banner-details">
+                        {{ lastTranspilationFiles }} files transpiled on {{ lastTranspilationTime }}
+                      </p>
+                      <p class="banner-hint">
+                        Build, Test, and Run commands are available. Transpile again to update.
+                      </p>
+                    </div>
+                    <button 
+                      @click="clearTranspilationState"
+                      class="banner-clear-btn"
+                      title="Clear saved state"
+                    >
+                      Clear State
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Restoring State -->
+                <div v-if="restoringState" class="output-loading">
+                  <div class="spinner"></div>
+                  <p>Restoring previous transpilation state...</p>
+                </div>
+
                 <!-- Loading State -->
-                <div v-if="transpileStore.isTranspiling" class="output-loading">
+                <div v-else-if="transpileStore.isTranspiling" class="output-loading">
                   <div class="spinner"></div>
                   <p>Transpiling project...</p>
                 </div>
@@ -230,11 +274,22 @@
         </Splitter>
       </div>
     </div>
+    
+    <!-- Unsaved Changes Dialog -->
+    <UnsavedChangesDialog 
+      v-model="showUnsavedDialog"
+      @save="handleSaveAll"
+      @discard="handleDiscardChanges"
+      @cancel="handleCancelClose"
+    />
+    
+    <!-- Keyboard Shortcuts Dialog -->
+    <KeyboardShortcuts v-model="showShortcutsDialog" />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useToast } from 'primevue/usetoast'
 import ProjectLoader from '../components/ProjectLoader.vue'
@@ -242,11 +297,19 @@ import AppLayout from '../components/AppLayout.vue'
 import FileTree from '../components/FileTree.vue'
 import FileTabs from '../components/FileTabs.vue'
 import MonacoEditor from '../components/MonacoEditor.vue'
+import Popover from 'primevue/popover'
+import Splitter from 'primevue/splitter'
+import SplitterPanel from 'primevue/splitterpanel'
+import UnsavedChangesDialog from '@/components/UnsavedChangesDialog.vue'
+import KeyboardShortcuts from '@/components/KeyboardShortcuts.vue'
 
 import { useWorkspaceStore } from '../stores/workspace'
 import { useTranspileStore } from '../stores/transpile'
 import { useBuildStore } from '../stores/build'
 import { useTestStore } from '../stores/test'
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
+import { useAutoSave } from '@/composables/useAutoSave'
+import { useSaveFile } from '@/composables/useSaveFile'
 
 const workspace = useWorkspaceStore()
 const transpileStore = useTranspileStore()
@@ -254,9 +317,58 @@ const buildStore = useBuildStore()
 const testStore = useTestStore()
 const toast = useToast()
 
+// Initialize keyboard shortcuts and auto-save
+useKeyboardShortcuts()
+const { scheduleSave } = useAutoSave()
+const { saveAll } = useSaveFile()
+
+// Dialog states
+const showUnsavedDialog = ref(false)
+const showShortcutsDialog = ref(false)
+
 const projectInfoPopover = ref()
 const isRunning = ref(false)
 const isRunningProject = ref(false)
+
+// State restoration
+const hasValidTranspilationState = ref(false)
+const lastTranspilationTime = ref<string | null>(null)
+const lastTranspilationFiles = ref(0)
+const restoringState = ref(false)
+
+// Handler functions for dialogs
+async function handleSaveAll() {
+  await saveAll()
+  showUnsavedDialog.value = false
+}
+
+function handleDiscardChanges() {
+  showUnsavedDialog.value = false
+  // Continue with close operation
+}
+
+function handleCancelClose() {
+  showUnsavedDialog.value = false
+  // Cancel close operation
+}
+
+// Before unload handler to prevent data loss
+function handleBeforeUnload(e: BeforeUnloadEvent) {
+  if (workspace.hasUnsavedChanges) {
+    e.preventDefault()
+    e.returnValue = ''
+    showUnsavedDialog.value = true
+  }
+}
+
+// Add beforeunload listener on mount
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+}
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
 
 function toggleProjectInfo(event: Event) {
   projectInfoPopover.value.toggle(event)
@@ -361,6 +473,9 @@ function getEditorLanguage(filename: string): string {
 function handleMonacoChange(content: string) {
   if (activeFile.value) {
     workspace.updateFileContent(activeFile.value.path, content)
+    
+    // Schedule auto-save after content change
+    scheduleSave(activeFile.value)
   }
 }
 
@@ -390,13 +505,28 @@ async function handleTranspile() {
     markAllTsFilesStatus('success')
     workspace.finishTranspilation()
     
-    // Show success toast
+    // Show success toast with format info
+    let detail = `Transpiled ${transpileStore.currentResult?.files_transpiled} files successfully`
+    if (transpileStore.currentResult?.files_formatted !== undefined) {
+      detail += ` (${transpileStore.currentResult.files_formatted} formatted)`
+    }
     toast.add({
       severity: 'success',
       summary: 'Transpilation Complete!',
-      detail: `Transpiled ${transpileStore.currentResult?.files_transpiled} files successfully`,
+      detail: detail,
       life: 4000
     })
+    
+    // Show format warnings if any
+    if (transpileStore.currentResult?.format_warnings && 
+        transpileStore.currentResult.format_warnings.length > 0) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Formatting Warnings',
+        detail: transpileStore.currentResult.format_warnings.join(', '),
+        life: 5000
+      })
+    }
   } catch (error) {
     console.error('Transpilation failed:', error)
     
@@ -635,12 +765,30 @@ async function handleRunGoCode() {
     workspace.addTranspilationLog(`Execution error: ${error}`, 'error')
     transpileStore.currentResult = null
     
-    toast.add({
-      severity: 'error',
-      summary: 'Execution Failed',
-      detail: String(error),
-      life: 5000
-    })
+    // Check if error is Go-related
+    const errorStr = String(error).toLowerCase()
+    const isGoError = errorStr.includes('go not found') || 
+                      errorStr.includes('go binary') || 
+                      errorStr.includes('install go') ||
+                      errorStr.includes('configure in settings')
+    
+    if (isGoError) {
+      toast.add({
+        severity: 'error',
+        summary: 'Go Compiler Not Found',
+        detail: 'Configure Go in Settings to use Build, Test, and Run features',
+        life: 8000,
+        group: 'go-error',
+        closable: true
+      })
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Execution Failed',
+        detail: String(error),
+        life: 5000
+      })
+    }
   } finally {
     isRunning.value = false
   }
@@ -702,12 +850,30 @@ async function handleRunProject() {
     workspace.addTranspilationLog(`Project execution error: ${error}`, 'error')
     transpileStore.currentResult = null
     
-    toast.add({
-      severity: 'error',
-      summary: 'Project Execution Failed',
-      detail: String(error),
-      life: 5000
-    })
+    // Check if error is Go-related
+    const errorStr = String(error).toLowerCase()
+    const isGoError = errorStr.includes('go not found') || 
+                      errorStr.includes('go binary') || 
+                      errorStr.includes('install go') ||
+                      errorStr.includes('configure in settings')
+    
+    if (isGoError) {
+      toast.add({
+        severity: 'error',
+        summary: 'Go Compiler Not Found',
+        detail: 'Configure Go in Settings to use Build, Test, and Run features',
+        life: 8000,
+        group: 'go-error',
+        closable: true
+      })
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Project Execution Failed',
+        detail: String(error),
+        life: 5000
+      })
+    }
   } finally {
     isRunningProject.value = false
   }
@@ -767,12 +933,30 @@ async function handleBuildProject() {
     workspace.addTranspilationLog(`Build error: ${error}`, 'error')
     transpileStore.currentResult = null
     
-    toast.add({
-      severity: 'error',
-      summary: 'Build Failed',
-      detail: String(error),
-      life: 5000
-    })
+    // Check if error is Go-related
+    const errorStr = String(error).toLowerCase()
+    const isGoError = errorStr.includes('go not found') || 
+                      errorStr.includes('go binary') || 
+                      errorStr.includes('install go') ||
+                      errorStr.includes('configure in settings')
+    
+    if (isGoError) {
+      toast.add({
+        severity: 'error',
+        summary: 'Go Compiler Not Found',
+        detail: 'Configure Go in Settings to use Build, Test, and Run features',
+        life: 8000,
+        group: 'go-error',
+        closable: true
+      })
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Build Failed',
+        detail: String(error),
+        life: 5000
+      })
+    }
   }
 }
 
@@ -844,14 +1028,115 @@ async function handleTestProject() {
     workspace.addTranspilationLog(`Test error: ${error}`, 'error')
     transpileStore.currentResult = null
     
-    toast.add({
-      severity: 'error',
-      summary: 'Tests Failed',
-      detail: String(error),
-      life: 5000
-    })
+    // Check if error is Go-related
+    const errorStr = String(error).toLowerCase()
+    const isGoError = errorStr.includes('go not found') || 
+                      errorStr.includes('go binary') || 
+                      errorStr.includes('install go') ||
+                      errorStr.includes('configure in settings')
+    
+    if (isGoError) {
+      toast.add({
+        severity: 'error',
+        summary: 'Go Compiler Not Found',
+        detail: 'Configure Go in Settings to use Build, Test, and Run features',
+        life: 8000,
+        group: 'go-error',
+        closable: true
+      })
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Tests Failed',
+        detail: String(error),
+        life: 5000
+      })
+    }
   }
 }
+
+// State restoration
+async function restoreTranspilationState() {
+  if (!projectPath.value) return
+  
+  restoringState.value = true
+  hasValidTranspilationState.value = false
+  
+  try {
+    // Check if there's a saved transpilation state for this project
+    const state = transpileStore.getTranspilationState(projectPath.value)
+    
+    if (!state) {
+      restoringState.value = false
+      return
+    }
+    
+    // Verify the output directory still exists
+    const isValid = await transpileStore.verifyTranspilationState(projectPath.value)
+    
+    if (!isValid) {
+      // State is stale, clear it
+      workspace.addTranspilationLog('Previous transpilation output not found, state cleared', 'warning')
+      transpileStore.clearTranspilationState(projectPath.value)
+      restoringState.value = false
+      return
+    }
+    
+    // Restore state
+    hasValidTranspilationState.value = true
+    lastTranspilationTime.value = new Date(state.timestamp).toLocaleString()
+    lastTranspilationFiles.value = state.filesTranspiled
+    
+    // Restore the currentResult so Build/Test/Run buttons are enabled
+    transpileStore.currentResult = {
+      success: true,
+      output_dir: state.outputDir,
+      files_transpiled: state.filesTranspiled,
+      message: 'Previous transpilation state restored'
+    }
+    
+    workspace.addTranspilationLog(`Restored previous transpilation from ${lastTranspilationTime.value}`, 'success')
+    workspace.addTranspilationLog(`Output directory: ${state.outputDir}`, 'info')
+  } catch (error) {
+    console.error('Failed to restore transpilation state:', error)
+    workspace.addTranspilationLog(`Failed to restore state: ${error}`, 'error')
+  } finally {
+    restoringState.value = false
+  }
+}
+
+function clearTranspilationState() {
+  if (!projectPath.value) return
+  
+  transpileStore.clearTranspilationState(projectPath.value)
+  hasValidTranspilationState.value = false
+  lastTranspilationTime.value = null
+  lastTranspilationFiles.value = 0
+  transpileStore.currentResult = null
+  
+  workspace.addTranspilationLog('Transpilation state cleared', 'info')
+  
+  toast.add({
+    severity: 'info',
+    summary: 'State Cleared',
+    detail: 'Previous transpilation state has been cleared',
+    life: 3000
+  })
+}
+
+// Auto-restore state when project is loaded
+watch(projectPath, async (newPath) => {
+  if (newPath) {
+    await restoreTranspilationState()
+  }
+}, { immediate: true })
+
+onMounted(async () => {
+  // Restore state on mount if project is already loaded
+  if (projectPath.value) {
+    await restoreTranspilationState()
+  }
+})
 </script>
 
 <style scoped>
@@ -1028,6 +1313,17 @@ async function handleTestProject() {
 .btn-success:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
+}
+
+.btn-action.btn-help {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  color: #333;
+  padding: 0.5rem 0.75rem;
+}
+
+.btn-action.btn-help:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(168, 237, 234, 0.4);
 }
 
 .running-project-indicator {
@@ -1310,6 +1606,70 @@ async function handleTestProject() {
   align-items: center;
   gap: 12px;
   padding: 16px 0;
+}
+
+/* State Restoration Banner */
+.state-restoration-banner {
+  padding: 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+.banner-content {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+}
+
+.banner-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.banner-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.banner-info h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.banner-details {
+  margin: 0 0 4px 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.banner-hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.banner-clear-btn {
+  padding: 6px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.banner-clear-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
 }
 
 .spinner {

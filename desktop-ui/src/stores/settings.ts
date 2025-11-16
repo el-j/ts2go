@@ -6,6 +6,9 @@ export interface AppSettings {
   theme: 'light' | 'dark' | 'system'
   fontSize: number
   autoSave: boolean
+  autoSaveDelay: number // in milliseconds
+  enableBackups: boolean
+  backupLocation: string
   defaultOutputDir: string
   
   // Project settings
@@ -19,6 +22,10 @@ export interface AppSettings {
   lineNumbers: boolean
   minimap: boolean
   autoFormatOnSave: boolean
+  
+  // Go Configuration (Phase 2)
+  goBinarySource: 'bundled' | 'system' | 'custom'
+  customGoBinaryPath: string
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -26,6 +33,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
   fontSize: 14,
   autoSave: true,
+  autoSaveDelay: 3000, // 3 seconds
+  enableBackups: true,
+  backupLocation: './.backups',
   defaultOutputDir: './output',
   
   // Project settings
@@ -38,7 +48,11 @@ const DEFAULT_SETTINGS: AppSettings = {
   wordWrap: true,
   lineNumbers: true,
   minimap: true,
-  autoFormatOnSave: true
+  autoFormatOnSave: true,
+  
+  // Go Configuration (Phase 2)
+  goBinarySource: 'system',  // Default to system Go
+  customGoBinaryPath: ''
 }
 
 export const useSettingsStore = defineStore('settings', () => {
