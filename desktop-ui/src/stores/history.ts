@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useBackendState } from '../composables/useBackendState'
 
 export interface BuildRecord {
   id: string
@@ -16,6 +17,8 @@ export interface BuildRecord {
 export const useHistoryStore = defineStore('history', () => {
   const builds = ref<BuildRecord[]>([])
   const maxHistorySize = ref(50) // Keep last 50 builds
+  const backend = useBackendState<BuildRecord[]>('build-history', [])
+  let isLoading = true
 
   const successfulBuilds = computed(() => 
     builds.value.filter(b => b.status === 'success')
@@ -50,46 +53,47 @@ export const useHistoryStore = defineStore('history', () => {
       builds.value = builds.value.slice(0, maxHistorySize.value)
     }
 
-    // Persist to localStorage
-    saveToLocalStorage()
+    // Persist to backend
+    saveToBackend()
   }
 
   function removeBuild(buildId: string) {
     builds.value = builds.value.filter(b => b.id !== buildId)
-    saveToLocalStorage()
+    saveToBackend()
   }
 
   function clearHistory() {
     builds.value = []
-    saveToLocalStorage()
+    saveToBackend()
   }
 
-  function saveToLocalStorage() {
+  async function saveToBackend() {
+    if (isLoading) return
+    
     try {
-      localStorage.setItem('ts2go-build-history', JSON.stringify(builds.value))
+      await backend.save(builds.value)
     } catch (e) {
-      console.error('Failed to save build history:', e)
+      console.error('Failed to save build history to backend:', e)
     }
   }
 
-  function loadFromLocalStorage() {
+  async function loadFromBackend() {
     try {
-      const stored = localStorage.getItem('ts2go-build-history')
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        // Convert timestamp strings back to Date objects
-        builds.value = parsed.map((b: any) => ({
-          ...b,
-          timestamp: new Date(b.timestamp)
-        }))
-      }
+      const stored = await backend.load()
+      // Convert timestamp strings back to Date objects
+      builds.value = stored.map((b: any) => ({
+        ...b,
+        timestamp: new Date(b.timestamp)
+      }))
     } catch (e) {
-      console.error('Failed to load build history:', e)
+      console.error('Failed to load build history from backend:', e)
+    } finally {
+      isLoading = false
     }
   }
 
   // Load on init
-  loadFromLocalStorage()
+  loadFromBackend()
 
   return {
     builds,

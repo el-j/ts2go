@@ -869,6 +869,86 @@ async fn check_directory_exists(path: String) -> Result<serde_json::Value, Strin
     }))
 }
 
+// State persistence commands using the hexagonal architecture backend
+
+#[tauri::command]
+async fn get_app_state(key: String) -> Result<String, String> {
+    // Call CLI to get state using the backend StateRepository
+    let cli_path = get_cli_binary_path();
+    let output = Command::new(&cli_path)
+        .arg("state")
+        .arg("get")
+        .arg(&key)
+        .output()
+        .map_err(|e| format!("Failed to execute ts2go state get: {}. CLI path: {:?}", e, cli_path))?;
+
+    if output.status.success() {
+        String::from_utf8(output.stdout)
+            .map_err(|e| format!("Failed to parse state output: {}", e))
+    } else {
+        // Return empty JSON object if state doesn't exist
+        Ok("{}".to_string())
+    }
+}
+
+#[tauri::command]
+async fn save_app_state(key: String, data: String) -> Result<(), String> {
+    // Call CLI to save state using the backend StateRepository
+    let cli_path = get_cli_binary_path();
+    let output = Command::new(&cli_path)
+        .arg("state")
+        .arg("set")
+        .arg(&key)
+        .arg(&data)
+        .output()
+        .map_err(|e| format!("Failed to execute ts2go state set: {}. CLI path: {:?}", e, cli_path))?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        let error = String::from_utf8_lossy(&output.stderr);
+        Err(format!("Failed to save state: {}", error))
+    }
+}
+
+#[tauri::command]
+async fn get_app_settings() -> Result<String, String> {
+    // Call CLI to get settings using the backend SettingsRepository
+    let cli_path = get_cli_binary_path();
+    let output = Command::new(&cli_path)
+        .arg("settings")
+        .arg("get")
+        .output()
+        .map_err(|e| format!("Failed to execute ts2go settings get: {}. CLI path: {:?}", e, cli_path))?;
+
+    if output.status.success() {
+        String::from_utf8(output.stdout)
+            .map_err(|e| format!("Failed to parse settings output: {}", e))
+    } else {
+        // Return empty JSON object if settings don't exist
+        Ok("{}".to_string())
+    }
+}
+
+#[tauri::command]
+async fn save_app_settings(data: String) -> Result<(), String> {
+    // Call CLI to save settings using the backend SettingsRepository
+    let cli_path = get_cli_binary_path();
+    let output = Command::new(&cli_path)
+        .arg("settings")
+        .arg("set")
+        .arg(&data)
+        .output()
+        .map_err(|e| format!("Failed to execute ts2go settings set: {}. CLI path: {:?}", e, cli_path))?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        let error = String::from_utf8_lossy(&output.stderr);
+        Err(format!("Failed to save settings: {}", error))
+    }
+}
+
 #[tauri::command]
 async fn transpile_code(code: String, filename: String) -> Result<String, String> {
     // Create temporary file and transpile using ts2go CLI
@@ -959,7 +1039,11 @@ fn main() {
             test_go_file,
             test_go_project,
             detect_go_installation,
-            check_directory_exists
+            check_directory_exists,
+            get_app_state,
+            save_app_state,
+            get_app_settings,
+            save_app_settings
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]

@@ -5,10 +5,18 @@ import (
 	"os"
 
 	"github.com/el-j/ts2go/internal/transpiler"
-	"github.com/el-j/ts2go/pkg/cli"
+	"github.com/el-j/ts2go/pkg/adapters/driving/cli"
+	legacycli "github.com/el-j/ts2go/pkg/cli"
 )
 
 func main() {
+	// Initialize the application with dependency injection
+	app, err := cli.NewApplication()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize application: %v\n", err)
+		os.Exit(1)
+	}
+
 	if len(os.Args) < 2 {
 		printUsage()
 		os.Exit(1)
@@ -19,32 +27,50 @@ func main() {
 
 	switch command {
 	case "convert", "c":
+		// Legacy command - uses old direct implementation
 		if err := convertCommand(args); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 	case "transpile", "t":
-		if err := cli.TranspileCommand(args); err != nil {
+		// Use new hexagonal architecture
+		if err := app.TranspileCommand(args); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 	case "analyze", "a":
-		if err := cli.AnalyzeCommand(args); err != nil {
+		// Use new hexagonal architecture
+		if err := app.AnalyzeCommand(args); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 	case "build", "b":
-		if err := cli.BuildCommand(args); err != nil {
+		// Use new hexagonal architecture
+		if err := app.BuildCommand(args); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 	case "test":
-		if err := cli.TestCommand(args); err != nil {
+		// Use new hexagonal architecture
+		if err := app.TestCommand(args); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	case "state":
+		// State management using hexagonal architecture
+		if err := app.StateCommand(args); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	case "settings":
+		// Settings management using hexagonal architecture
+		if err := app.SettingsCommand(args); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 	case "ui":
-		if err := cli.UICommand(args); err != nil {
+		// Legacy command - keep old implementation
+		if err := legacycli.UICommand(args); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}

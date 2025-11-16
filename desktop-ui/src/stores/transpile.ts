@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { useBackendState } from '../composables/useBackendState'
 
 export interface TranspileResult {
   success: boolean
@@ -29,32 +30,35 @@ export const useTranspileStore = defineStore('transpile', () => {
   const startTime = ref<number>(0)
   const elapsedTime = ref<number>(0)
   const transpilationStates = ref<Map<string, TranspilationState>>(new Map())
+  const backend = useBackendState<Array<[string, TranspilationState]>>('transpilation-states', [])
+  let isLoading = true
   
   let timerInterval: number | null = null
   
   const hasError = computed(() => currentResult.value && !currentResult.value.success)
   const hasSuccess = computed(() => currentResult.value && currentResult.value.success)
   
-  // Load transpilation states from localStorage
-  function loadTranspilationStates() {
+  // Load transpilation states from backend
+  async function loadTranspilationStates() {
     try {
-      const stored = localStorage.getItem('ts2go-transpilation-states')
-      if (stored) {
-        const parsed: Array<[string, TranspilationState]> = JSON.parse(stored)
-        transpilationStates.value = new Map(parsed)
-      }
+      const stored = await backend.load()
+      transpilationStates.value = new Map(stored)
     } catch (e) {
-      console.error('Failed to load transpilation states:', e)
+      console.error('Failed to load transpilation states from backend:', e)
+    } finally {
+      isLoading = false
     }
   }
   
-  // Save transpilation states to localStorage
-  function saveTranspilationStates() {
+  // Save transpilation states to backend
+  async function saveTranspilationStates() {
+    if (isLoading) return
+    
     try {
       const states = Array.from(transpilationStates.value.entries())
-      localStorage.setItem('ts2go-transpilation-states', JSON.stringify(states))
+      await backend.save(states)
     } catch (e) {
-      console.error('Failed to save transpilation states:', e)
+      console.error('Failed to save transpilation states to backend:', e)
     }
   }
   

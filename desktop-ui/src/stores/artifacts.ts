@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useBackendState } from '../composables/useBackendState'
 
 export interface Artifact {
   id: string
@@ -24,26 +25,29 @@ export interface Artifact {
 export const useArtifactsStore = defineStore('artifacts', () => {
   // State
   const artifacts = ref<Artifact[]>([])
+  const backend = useBackendState<Artifact[]>('artifacts', [])
+  let isLoading = true
   
-  // Load from localStorage on init
-  const loadArtifacts = () => {
-    const stored = localStorage.getItem('ts2go_artifacts')
-    if (stored) {
-      try {
-        artifacts.value = JSON.parse(stored)
-      } catch (e) {
-        console.error('Failed to load artifacts:', e)
-        artifacts.value = []
-      }
+  // Load from backend on init
+  const loadArtifacts = async () => {
+    try {
+      artifacts.value = await backend.load()
+    } catch (e) {
+      console.error('Failed to load artifacts from backend:', e)
+      artifacts.value = []
+    } finally {
+      isLoading = false
     }
   }
   
-  // Save to localStorage
-  const saveArtifacts = () => {
+  // Save to backend
+  const saveArtifacts = async () => {
+    if (isLoading) return
+    
     try {
-      localStorage.setItem('ts2go_artifacts', JSON.stringify(artifacts.value))
+      await backend.save(artifacts.value)
     } catch (e) {
-      console.error('Failed to save artifacts:', e)
+      console.error('Failed to save artifacts to backend:', e)
     }
   }
   

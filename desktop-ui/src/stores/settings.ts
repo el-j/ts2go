@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import { useBackendSettings } from '../composables/useBackendState'
 
 export interface AppSettings {
   // Application settings
@@ -57,30 +58,34 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS })
+  const backend = useBackendSettings<AppSettings>(DEFAULT_SETTINGS)
+  let isLoading = true
 
-  // Load settings from localStorage on init
-  const loadSettings = () => {
-    const stored = localStorage.getItem('ts2go-settings')
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        settings.value = { ...DEFAULT_SETTINGS, ...parsed }
-      } catch (e) {
-        console.error('Failed to load settings:', e)
-      }
-    }
-  }
-
-  // Save settings to localStorage
-  const saveSettings = () => {
+  // Load settings from backend on init
+  const loadSettings = async () => {
     try {
-      localStorage.setItem('ts2go-settings', JSON.stringify(settings.value))
+      const stored = await backend.load()
+      settings.value = { ...DEFAULT_SETTINGS, ...stored }
     } catch (e) {
-      console.error('Failed to save settings:', e)
+      console.error('Failed to load settings from backend:', e)
+      settings.value = { ...DEFAULT_SETTINGS }
+    } finally {
+      isLoading = false
     }
   }
 
-  // Watch for changes and auto-save
+  // Save settings to backend
+  const saveSettings = async () => {
+    if (isLoading) return // Don't save during initial load
+    
+    try {
+      await backend.save(settings.value)
+    } catch (e) {
+      console.error('Failed to save settings to backend:', e)
+    }
+  }
+
+  // Watch for changes and auto-save to backend
   watch(settings, () => {
     saveSettings()
   }, { deep: true })

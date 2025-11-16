@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import { useBackendState } from '../composables/useBackendState'
 
 export interface Project {
   id: string
@@ -12,40 +13,42 @@ export interface Project {
 }
 
 const MAX_RECENT_PROJECTS = 20
-const STORAGE_KEY = 'ts2go-recent-projects'
 
 export const useProjectStore = defineStore('project', () => {
   const projects = ref<Project[]>([])
   const currentProject = ref<Project | null>(null)
   const recentProjects = ref<Project[]>([])
+  const backend = useBackendState<Project[]>('recent-projects', [])
+  let isLoading = true
 
-  // Load recent projects from localStorage
-  const loadRecentProjects = () => {
+  // Load recent projects from backend
+  const loadRecentProjects = async () => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        recentProjects.value = parsed.map((p: any) => ({
-          ...p,
-          lastModified: new Date(p.lastModified),
-          lastOpened: p.lastOpened
-        }))
-      }
+      const stored = await backend.load()
+      recentProjects.value = stored.map((p: any) => ({
+        ...p,
+        lastModified: new Date(p.lastModified),
+        lastOpened: p.lastOpened
+      }))
     } catch (e) {
-      console.error('Failed to load recent projects:', e)
+      console.error('Failed to load recent projects from backend:', e)
+    } finally {
+      isLoading = false
     }
   }
 
-  // Save recent projects to localStorage
-  const saveRecentProjects = () => {
+  // Save recent projects to backend
+  const saveRecentProjects = async () => {
+    if (isLoading) return
+    
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(recentProjects.value))
+      await backend.save(recentProjects.value)
     } catch (e) {
-      console.error('Failed to save recent projects:', e)
+      console.error('Failed to save recent projects to backend:', e)
     }
   }
 
-  // Watch for changes and auto-save
+  // Watch for changes and auto-save to backend
   watch(recentProjects, () => {
     saveRecentProjects()
   }, { deep: true })
