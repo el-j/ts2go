@@ -18,4 +18,3 @@ func TestNewBuildResult(t *testing.T) {
 		t.Error("Expected empty output initially")
 	}
 }
-

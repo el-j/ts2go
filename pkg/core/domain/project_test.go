@@ -104,7 +104,7 @@ func TestProjectTypeScriptFileCount(t *testing.T) {
 func TestProjectValidate(t *testing.T) {
 	// Test basic project creation - models are simple POCOs without validation
 	project := domain.NewProject("/valid/path", "validname", "github.com/user/repo")
-	
+
 	if project.Path != "/valid/path" {
 		t.Error("Project path not set correctly")
 	}

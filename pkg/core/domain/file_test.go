@@ -113,5 +113,3 @@ func TestFileExtension(t *testing.T) {
 		})
 	}
 }
-
-
