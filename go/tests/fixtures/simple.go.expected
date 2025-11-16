@@ -1,0 +1,19 @@
+package main
+
+import "fmt"
+
+type Person struct {
+	Name string `json:"name"`
+	Age float64 `json:"age"`
+}
+
+type ID = string
+
+func Greet(person Person) string {
+	return "Hello, " + person.Name
+}
+
+func main() {
+	message := "Test"
+	fmt.Println(message)
+}

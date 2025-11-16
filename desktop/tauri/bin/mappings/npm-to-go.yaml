@@ -1,0 +1,509 @@
+# NPM to Go Package Mappings
+# Version: 1.0
+# This file defines how npm packages map to Go packages
+
+version: "1.0"
+
+mappings:
+  # ===================================
+  # Node.js Built-in Modules
+  # ===================================
+  
+  - npm: "fs"
+    go: "github.com/yourusername/ts2go/runtime/fs"
+    type: "runtime"
+    status: "supported"
+    complexity: "simple"
+    description: "File system operations"
+    
+  - npm: "path"
+    go: "github.com/yourusername/ts2go/runtime/path"
+    type: "runtime"
+    status: "supported"
+    complexity: "simple"
+    description: "Path manipulation utilities"
+    
+  - npm: "console"
+    go: "github.com/yourusername/ts2go/runtime/console"
+    type: "runtime"
+    status: "supported"
+    complexity: "simple"
+    description: "Console logging utilities"
+    api_mappings:
+      "console.log": "console.Log"
+      "console.error": "console.Error"
+      "console.warn": "console.Warn"
+      "console.info": "console.Info"
+      "console.debug": "console.Debug"
+    
+  - npm: "process"
+    go: "github.com/yourusername/ts2go/runtime/process"
+    type: "runtime"
+    status: "supported"
+    complexity: "simple"
+    description: "Process information and control"
+    api_mappings:
+      "process.env": "process.Env()"
+      "process.argv": "process.Argv()"
+      "process.cwd": "process.Cwd"
+      "process.chdir": "process.Chdir"
+      "process.exit": "process.Exit"
+      "process.platform": "process.Platform()"
+      "process.arch": "process.Arch()"
+    
+  - npm: "os"
+    go: "github.com/yourusername/ts2go/runtime/os"
+    type: "runtime"
+    status: "supported"
+    complexity: "simple"
+    description: "Operating system utilities"
+    api_mappings:
+      "os.hostname": "os.Hostname"
+      "os.tmpdir": "os.Tmpdir"
+      "os.homedir": "os.Homedir"
+      "os.platform": "os.Platform"
+      "os.arch": "os.Arch"
+      "os.cpus": "os.Cpus"
+      "os.totalmem": "os.Totalmem"
+      "os.freemem": "os.Freemem"
+    
+  - npm: "http"
+    go: "github.com/yourusername/ts2go/runtime/http"
+    type: "runtime"
+    status: "supported"
+    complexity: "medium"
+    description: "HTTP server and client"
+    api_mappings:
+      "http.createServer": "http.CreateServer"
+      "http.get": "http.Get"
+      "http.post": "http.Post"
+      "http.request": "http.MakeRequest"
+    notes: "Runtime wrapper provides Node.js-compatible API"
+    
+  - npm: "https"
+    go: "github.com/yourusername/ts2go/runtime/http"
+    type: "runtime"
+    status: "supported"
+    complexity: "medium"
+    description: "HTTPS server and client"
+    notes: "Uses same runtime wrapper as http"
+    
+  - npm: "crypto"
+    go: "crypto"
+    type: "stdlib"
+    status: "supported"
+    complexity: "medium"
+    description: "Cryptographic functionality"
+    
+  - npm: "url"
+    go: "github.com/yourusername/ts2go/runtime/url"
+    type: "runtime"
+    status: "supported"
+    complexity: "simple"
+    description: "URL parsing and formatting"
+    api_mappings:
+      "url.parse": "url.Parse"
+      "url.format": "url.Format"
+      "url.resolve": "url.Resolve"
+    
+  - npm: "querystring"
+    go: "github.com/yourusername/ts2go/runtime/url"
+    type: "runtime"
+    status: "supported"
+    complexity: "simple"
+    description: "Query string utilities"
+    api_mappings:
+      "querystring.parse": "url.ParseQuery"
+      "querystring.stringify": "url.StringifyQuery"
+      "querystring.escape": "url.Escape"
+      "querystring.unescape": "url.Unescape"
+    
+  - npm: "buffer"
+    go: "github.com/yourusername/ts2go/runtime/buffer"
+    type: "runtime"
+    status: "supported"
+    complexity: "simple"
+    description: "Binary data manipulation"
+    api_mappings:
+      "Buffer.from": "buffer.From"
+      "Buffer.alloc": "buffer.Alloc"
+      "Buffer.concat": "buffer.Concat"
+      "Buffer.isBuffer": "buffer.IsBuffer"
+    
+  - npm: "stream"
+    go: "io"
+    type: "stdlib"
+    status: "partial"
+    complexity: "high"
+    description: "Stream abstractions"
+    notes: "Go's io.Reader/Writer model differs from Node.js streams"
+    
+  - npm: "events"
+    go: "github.com/yourusername/ts2go/runtime/events"
+    type: "runtime"
+    status: "supported"
+    complexity: "medium"
+    description: "Event emitter pattern"
+    
+  - npm: "util"
+    go: "fmt"
+    type: "stdlib"
+    status: "partial"
+    complexity: "simple"
+    description: "Utility functions"
+    api_mappings:
+      "util.format": "fmt.Sprintf"
+      "util.inspect": "fmt.Printf"
+    
+  - npm: "child_process"
+    go: "os/exec"
+    type: "stdlib"
+    status: "partial"
+    complexity: "high"
+    description: "Spawn child processes"
+    api_mappings:
+      "child_process.exec": "exec.Command"
+      "child_process.spawn": "exec.Command"
+    
+  - npm: "zlib"
+    go: "compress/gzip"
+    type: "stdlib"
+    status: "partial"
+    complexity: "medium"
+    description: "Compression utilities"
+    
+  # ===================================
+  # HTTP & Web Frameworks
+  # ===================================
+  
+  - npm: "axios"
+    go: "github.com/go-resty/resty/v2"
+    type: "equivalent"
+    status: "supported"
+    complexity: "medium"
+    description: "Promise based HTTP client"
+    api_mappings:
+      "axios.get": "resty.R().Get"
+      "axios.post": "resty.R().Post"
+      "axios.put": "resty.R().Put"
+      "axios.delete": "resty.R().Delete"
+      "axios.patch": "resty.R().Patch"
+    example: |
+      // TypeScript
+      const res = await axios.get('https://api.com/users');
+      // Go
+      res, err := resty.New().R().Get("https://api.com/users")
+      
+  - npm: "node-fetch"
+    go: "net/http"
+    type: "stdlib"
+    status: "supported"
+    complexity: "simple"
+    description: "Fetch API for Node.js"
+    api_mappings:
+      "fetch": "http.Get"
+      
+  - npm: "express"
+    go: "github.com/gin-gonic/gin"
+    type: "framework"
+    status: "partial"
+    complexity: "high"
+    description: "Fast, unopinionated web framework"
+    api_mappings:
+      "express()": "gin.Default()"
+      "app.get": "router.GET"
+      "app.post": "router.POST"
+      "app.put": "router.PUT"
+      "app.delete": "router.DELETE"
+      "app.listen": "router.Run"
+    notes: "Middleware model differs; manual conversion needed for complex middleware"
+    
+  - npm: "koa"
+    go: "github.com/gin-gonic/gin"
+    type: "framework"
+    status: "partial"
+    complexity: "high"
+    description: "Next generation web framework for Node.js"
+    
+  - npm: "fastify"
+    go: "github.com/gofiber/fiber/v2"
+    type: "framework"
+    status: "partial"
+    complexity: "high"
+    description: "Fast and low overhead web framework"
+    
+  # ===================================
+  # Utilities & Data Manipulation
+  # ===================================
+  
+  - npm: "lodash"
+    go: "github.com/samber/lo"
+    type: "equivalent"
+    status: "supported"
+    complexity: "simple"
+    description: "Modern JavaScript utility library"
+    api_mappings:
+      "_.map": "lo.Map"
+      "_.filter": "lo.Filter"
+      "_.find": "lo.Find"
+      "_.reduce": "lo.Reduce"
+      "_.forEach": "lo.ForEach"
+      "_.sortBy": "lo.SortBy"
+      "_.groupBy": "lo.GroupBy"
+      "_.uniq": "lo.Uniq"
+      "_.chunk": "lo.Chunk"
+      "_.flatten": "lo.Flatten"
+    
+  - npm: "underscore"
+    go: "github.com/samber/lo"
+    type: "equivalent"
+    status: "supported"
+    complexity: "simple"
+    description: "JavaScript's utility belt"
+    
+  - npm: "ramda"
+    go: "github.com/samber/lo"
+    type: "equivalent"
+    status: "partial"
+    complexity: "medium"
+    description: "Practical functional library for JavaScript"
+    notes: "Some functional programming patterns differ in Go"
+    
+  # ===================================
+  # Date & Time
+  # ===================================
+  
+  - npm: "moment"
+    go: "time"
+    type: "stdlib"
+    status: "supported"
+    complexity: "medium"
+    description: "Parse, validate, manipulate dates"
+    api_mappings:
+      "moment()": "time.Now()"
+      "moment.format": "time.Format"
+      "moment.add": "time.Add"
+      "moment.subtract": "time.Add (negative duration)"
+    notes: "Go's time package is more explicit but equally powerful"
+    
+  - npm: "date-fns"
+    go: "time"
+    type: "stdlib"
+    status: "supported"
+    complexity: "medium"
+    description: "Modern JavaScript date utility library"
+    
+  - npm: "dayjs"
+    go: "time"
+    type: "stdlib"
+    status: "supported"
+    complexity: "simple"
+    description: "Fast 2kB alternative to Moment.js"
+    
+  # ===================================
+  # Validation & Parsing
+  # ===================================
+  
+  - npm: "validator"
+    go: "github.com/go-playground/validator/v10"
+    type: "equivalent"
+    status: "supported"
+    complexity: "simple"
+    description: "String validators and sanitizers"
+    
+  - npm: "joi"
+    go: "github.com/go-playground/validator/v10"
+    type: "equivalent"
+    status: "partial"
+    complexity: "medium"
+    description: "Schema description language and data validator"
+    
+  - npm: "yup"
+    go: "github.com/go-playground/validator/v10"
+    type: "equivalent"
+    status: "partial"
+    complexity: "medium"
+    description: "Schema builder for runtime value parsing"
+    
+  - npm: "ajv"
+    go: "github.com/xeipuuv/gojsonschema"
+    type: "equivalent"
+    status: "supported"
+    complexity: "medium"
+    description: "JSON schema validator"
+    
+  # ===================================
+  # UUID & ID Generation
+  # ===================================
+  
+  - npm: "uuid"
+    go: "github.com/google/uuid"
+    type: "equivalent"
+    status: "supported"
+    complexity: "simple"
+    description: "RFC4122 UUIDs"
+    api_mappings:
+      "uuid.v4": "uuid.New"
+      "uuid.v1": "uuid.NewUUID"
+      "uuid.parse": "uuid.Parse"
+    
+  - npm: "nanoid"
+    go: "github.com/matoous/go-nanoid/v2"
+    type: "equivalent"
+    status: "supported"
+    complexity: "simple"
+    description: "Tiny, secure URL-friendly unique string ID generator"
+    
+  # ===================================
+  # Cryptography & Security
+  # ===================================
+  
+  - npm: "bcrypt"
+    go: "golang.org/x/crypto/bcrypt"
+    type: "stdlib"
+    status: "supported"
+    complexity: "simple"
+    description: "Library to hash passwords"
+    api_mappings:
+      "bcrypt.hash": "bcrypt.GenerateFromPassword"
+      "bcrypt.compare": "bcrypt.CompareHashAndPassword"
+    
+  - npm: "jsonwebtoken"
+    go: "github.com/golang-jwt/jwt/v5"
+    type: "equivalent"
+    status: "supported"
+    complexity: "medium"
+    description: "JSON Web Token implementation"
+    api_mappings:
+      "jwt.sign": "jwt.NewWithClaims + SignedString"
+      "jwt.verify": "jwt.Parse + Valid"
+    
+  - npm: "crypto-js"
+    go: "crypto"
+    type: "stdlib"
+    status: "supported"
+    complexity: "medium"
+    description: "JavaScript library of crypto standards"
+    
+  # ===================================
+  # CLI & Terminal
+  # ===================================
+  
+  - npm: "commander"
+    go: "github.com/spf13/cobra"
+    type: "equivalent"
+    status: "supported"
+    complexity: "medium"
+    description: "Complete solution for node.js command-line interfaces"
+    
+  - npm: "yargs"
+    go: "github.com/spf13/cobra"
+    type: "equivalent"
+    status: "supported"
+    complexity: "medium"
+    description: "Command-line parser that automatically generates help"
+    
+  - npm: "chalk"
+    go: "github.com/fatih/color"
+    type: "equivalent"
+    status: "supported"
+    complexity: "simple"
+    description: "Terminal string styling"
+    api_mappings:
+      "chalk.red": "color.Red"
+      "chalk.green": "color.Green"
+      "chalk.blue": "color.Blue"
+      "chalk.bold": "color.Bold"
+    
+  - npm: "inquirer"
+    go: "github.com/AlecAivazis/survey/v2"
+    type: "equivalent"
+    status: "supported"
+    complexity: "medium"
+    description: "Collection of common interactive CLI user interfaces"
+    
+  # ===================================
+  # Configuration & Environment
+  # ===================================
+  
+  - npm: "dotenv"
+    go: "github.com/joho/godotenv"
+    type: "equivalent"
+    status: "supported"
+    complexity: "simple"
+    description: "Loads environment variables from .env file"
+    api_mappings:
+      "dotenv.config": "godotenv.Load"
+    
+  - npm: "config"
+    go: "github.com/spf13/viper"
+    type: "equivalent"
+    status: "supported"
+    complexity: "medium"
+    description: "Node.js application configuration"
+    
+  # ===================================
+  # Database Drivers
+  # ===================================
+  
+  - npm: "pg"
+    go: "github.com/lib/pq"
+    type: "equivalent"
+    status: "supported"
+    complexity: "high"
+    description: "PostgreSQL client for Node.js"
+    
+  - npm: "mysql2"
+    go: "github.com/go-sql-driver/mysql"
+    type: "equivalent"
+    status: "supported"
+    complexity: "high"
+    description: "MySQL client for Node.js"
+    
+  - npm: "mongodb"
+    go: "go.mongodb.org/mongo-driver/mongo"
+    type: "equivalent"
+    status: "supported"
+    complexity: "high"
+    description: "Official MongoDB driver for Node.js"
+    
+  - npm: "redis"
+    go: "github.com/redis/go-redis/v9"
+    type: "equivalent"
+    status: "supported"
+    complexity: "medium"
+    description: "Redis client for Node.js"
+    
+  # ===================================
+  # Unsupported (Frontend/Browser Only)
+  # ===================================
+  
+  - npm: "react"
+    type: "unsupported"
+    status: "unsupported"
+    reason: "Frontend framework, not applicable to Go"
+    suggestion: "Use templ, Go templates, or HTMX for server-side rendering"
+    
+  - npm: "vue"
+    type: "unsupported"
+    status: "unsupported"
+    reason: "Frontend framework"
+    suggestion: "Use Go templates or server-side rendering solutions"
+    
+  - npm: "angular"
+    type: "unsupported"
+    status: "unsupported"
+    reason: "Frontend framework"
+    suggestion: "Use Go templates or server-side rendering solutions"
+    
+  - npm: "webpack"
+    type: "unsupported"
+    status: "unsupported"
+    reason: "Build tool for frontend assets"
+    suggestion: "Go compiles natively, no bundler needed"
+    
+  - npm: "babel"
+    type: "unsupported"
+    status: "unsupported"
+    reason: "JavaScript transpiler"
+    suggestion: "Not needed - Go is compiled"

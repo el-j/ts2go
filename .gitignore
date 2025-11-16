@@ -1,4 +1,5 @@
-# Binaries (in root only)
+# Binaries
+/bin/
 /ts2go
 /ts2go-web
 *.exe
@@ -18,8 +19,8 @@ go.work.sum
 # Node modules
 node_modules/
 package-lock.json
-!internal/transpiler/parser/package-lock.json
-!desktop-ui/package-lock.json
+!go/internal/transpiler/parser/package-lock.json
+!desktop/package-lock.json
 
 # IDE
 .vscode/
@@ -36,7 +37,8 @@ Thumbs.db
 dist/
 build/
 release/
+desktop/tauri/target/
 
 # Generated files
-tests/fixtures/*.go
-!tests/fixtures/*.go.expected
+go/tests/fixtures/*.go
+!go/tests/fixtures/*.go.expected
