@@ -318,7 +318,7 @@ const testStore = useTestStore()
 const toast = useToast()
 
 // Initialize keyboard shortcuts and auto-save
-useKeyboardShortcuts()
+useKeyboardShortcuts([])  // Fixed: passing empty array
 const { scheduleSave } = useAutoSave()
 const { saveAll } = useSaveFile()
 

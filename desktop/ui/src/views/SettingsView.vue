@@ -211,7 +211,8 @@ onMounted(() => {
                       Time to wait before auto-saving (milliseconds)
                     </p>
                     <InputText 
-                      v-model.number="settingsStore.settings.autoSaveDelay" 
+                      :model-value="String(settingsStore.settings.autoSaveDelay)"
+                      @update:model-value="settingsStore.settings.autoSaveDelay = Number($event)"
                       type="number"
                       :min="1000"
                       :max="10000"
