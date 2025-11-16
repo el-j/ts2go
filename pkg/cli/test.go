@@ -55,20 +55,20 @@ func TestCommand(args []string) error {
 
 	// Build test command
 	cmdArgs := []string{"test"}
-	
+
 	if verbose {
 		cmdArgs = append(cmdArgs, "-v")
 	}
-	
+
 	if coverage {
 		cmdArgs = append(cmdArgs, "-cover", "-coverprofile=coverage.out")
 	}
-	
+
 	cmdArgs = append(cmdArgs, testFlags...)
 	cmdArgs = append(cmdArgs, "./...")
 
 	startTime := time.Now()
-	
+
 	cmd := exec.Command("go", cmdArgs...)
 	cmd.Dir = sourceDir
 	cmd.Stdout = os.Stdout

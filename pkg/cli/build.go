@@ -71,11 +71,11 @@ func BuildCommand(args []string) error {
 
 	// Build the project
 	startTime := time.Now()
-	
+
 	// Construct build command
 	cmdArgs := []string{"build", "-o", outputPath}
 	cmdArgs = append(cmdArgs, buildFlags...)
-	
+
 	cmd := exec.Command("go", cmdArgs...)
 	cmd.Dir = sourceDir
 	cmd.Stdout = os.Stdout

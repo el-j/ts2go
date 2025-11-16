@@ -11,6 +11,7 @@ use (
 	./internal/project
 	./internal/tests
 	./internal/transpiler
+	./pkg
 	./pkg/cli
 	./pkg/optimizer
 	./runtime
