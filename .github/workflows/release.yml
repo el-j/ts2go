@@ -1,15 +1,9 @@
-name: Release Stable (Main Branch)
+name: Release
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.github/workflows/ci-*.yml'
   workflow_dispatch:
     inputs:
       version:
@@ -17,8 +11,14 @@ on:
         required: true
         type: string
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   # Step 1: Create the GitHub release with version tag and release notes

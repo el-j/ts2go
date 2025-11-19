@@ -11,6 +11,10 @@ on:
   # Note: push triggers removed - releases handled by release-*.yml workflows
   # This prevents duplicate runs on push events
 
+concurrency:
+  group: desktop-ui-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

@@ -1,0 +1,89 @@
+name: Deploy Web App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/ui-shared/**'
+      - 'saas/frontend/**'
+      - '.github/workflows/deploy-web.yml'
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version tag for the deployment'
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag for the deployment'
+        required: false
+        type: string
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build Web App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: packages/ui-shared/package-lock.json
+
+      - name: Install dependencies
+        working-directory: packages/ui-shared
+        run: npm ci
+
+      - name: Type check
+        working-directory: packages/ui-shared
+        run: npm run type-check
+
+      - name: Build for web
+        working-directory: packages/ui-shared
+        run: npm run build:web
+        env:
+          VITE_API_BASE_URL: https://api.ts2go.dev
+
+      - name: Create GitHub Pages artifact structure
+        run: |
+          mkdir -p _site
+          cp -r packages/ui-shared/dist-web/* _site/
+          
+          # Create 404.html for SPA routing
+          cp _site/index.html _site/404.html
+          
+          # Add version info
+          VERSION="${{ inputs.version || github.sha }}"
+          echo "{\"version\": \"${VERSION}\", \"commit\": \"${{ github.sha }}\", \"built\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > _site/version.json
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

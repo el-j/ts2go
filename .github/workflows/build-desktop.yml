@@ -1,13 +1,22 @@
 name: Build Desktop App (All Platforms)
 
 on:
-  push:
-    branches: [main, develop]
-    tags:
-      - 'v*'
-  pull_request:
-    branches: [main]
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version tag for the build'
+        required: true
+        type: string
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag for the build'
+        required: false
+        type: string
+
+concurrency:
+  group: build-desktop-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:

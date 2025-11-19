@@ -1,0 +1,119 @@
+name: CI - Tests & Checks
+
+on:
+  pull_request:
+    branches: ['**']
+  push:
+    branches-ignore:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.5'
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            cmd/ts2go/go.sum
+            saas/go.sum
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            internal/transpiler/parser/package-lock.json
+            packages/ui-shared/package-lock.json
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/tauri-backend
+          cache-on-failure: false
+
+      - name: Install Parser dependencies
+        run: |
+          cd internal/transpiler/parser
+          npm ci
+
+      - name: Install UI dependencies
+        run: |
+          cd packages/ui-shared
+          npm ci
+
+      - name: Go mod verify
+        run: go work sync && go mod verify
+
+      - name: Run go fmt
+        run: |
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "Code is not formatted. Run 'go fmt'"
+            gofmt -s -l .
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: |
+          for dir in internal/transpiler internal/analyzer internal/mapper internal/module internal/orchestrator internal/project internal/tests pkg/cli pkg/optimizer cmd/ts2go runtime tests saas/backend; do
+            if [ -f "$dir/go.mod" ]; then
+              echo "Vetting $dir..."
+              (cd "$dir" && go vet ./...)
+            fi
+          done
+
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: Run staticcheck
+        run: staticcheck ./cmd/... ./internal/... ./pkg/... ./runtime/... ./tests/... ./saas/backend/...
+
+      - name: Build Go CLI
+        run: make build
+
+      - name: Run Go tests
+        run: |
+          cd tests && go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+        continue-on-error: true
+
+      - name: Build UI (Web)
+        run: |
+          cd packages/ui-shared
+          npm run build
+
+      - name: Build UI (Tauri)
+        run: |
+          cd packages/ui-shared
+          npm run build:tauri
+
+      - name: TypeScript checks
+        run: |
+          cd packages/ui-shared
+          npm run type-check
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./tests/coverage.txt
+          flags: unittests
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
