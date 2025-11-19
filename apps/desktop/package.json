@@ -1,0 +1,15 @@
+{
+  "name": "@ts2go/desktop-app",
+  "version": "0.5.0",
+  "description": "TS2Go Desktop Application",
+  "type": "module",
+  "scripts": {
+    "dev": "cd ../../packages/ui-shared && npm run dev:tauri",
+    "build": "cd ../../packages/ui-shared && npm run build:tauri",
+    "tauri:dev": "cd ../../desktop/tauri-backend && cargo tauri dev",
+    "tauri:build": "cd ../../desktop/tauri-backend && cargo tauri build"
+  },
+  "dependencies": {
+    "@ts2go/ui-shared": "workspace:*"
+  }
+}

@@ -145,3 +145,8 @@ func (c *Client) SAdd(ctx context.Context, key string, members ...interface{}) *
 func (c *Client) SMembers(ctx context.Context, key string) *redis.StringSliceCmd {
 	return c.Client.SMembers(ctx, key)
 }
+
+// Delete deletes a key
+func (c *Client) Delete(ctx context.Context, key string) error {
+	return c.Del(ctx, key).Err()
+}

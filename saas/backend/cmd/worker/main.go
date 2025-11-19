@@ -10,6 +10,7 @@ import (
 
 	"github.com/el-j/ts2go/saas/backend/config"
 	"github.com/el-j/ts2go/saas/backend/db"
+	"github.com/el-j/ts2go/saas/backend/email"
 	"github.com/el-j/ts2go/saas/backend/logger"
 	"github.com/el-j/ts2go/saas/backend/queue"
 	"github.com/el-j/ts2go/saas/backend/redis"
@@ -74,8 +75,18 @@ func main() {
 	jobQueue := queue.NewQueue(redisClient)
 	storageRepo := storage.NewRepository(database.DB)
 
+	// Initialize email service
+	emailService := email.NewService(email.Config{
+		Host:     getEnv("SMTP_HOST", ""),
+		Port:     getEnv("SMTP_PORT", "587"),
+		Username: getEnv("SMTP_USERNAME", ""),
+		Password: getEnv("SMTP_PASSWORD", ""),
+		From:     getEnv("SMTP_FROM", "noreply@ts2go.dev"),
+	})
+	logger.Log.Info().Msg("✅ Email service initialized")
+
 	// Create worker
-	w := worker.NewWorker(jobQueue, storageClient, storageRepo, worker.Config{
+	w := worker.NewWorker(jobQueue, storageClient, storageRepo, emailService, database.DB, worker.Config{
 		MaxConcurrent: getEnvInt("WORKER_MAX_CONCURRENT", 5),
 		WorkDir:       getEnv("WORKER_WORK_DIR", "/tmp/ts2go-worker"),
 	})

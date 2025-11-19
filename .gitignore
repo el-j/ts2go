@@ -34,6 +34,7 @@ package-lock.json
 Thumbs.db
 
 # Build artifacts
+dist-web/
 dist/
 build/
 release/

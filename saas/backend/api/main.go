@@ -93,17 +93,17 @@ func main() {
 	jobQueue := queue.NewQueue(redisClient)
 
 	// Initialize cache
-	cacheService := cache.NewCache(redisClient)
+	_ = cache.NewCache(redisClient) // Available for future use
 	log.Println("✅ Cache service initialized")
 
 	// Initialize email service
-	emailService := email.NewService(email.Config{
+	_ = email.NewService(email.Config{
 		Host:     os.Getenv("SMTP_HOST"),
 		Port:     os.Getenv("SMTP_PORT"),
 		Username: os.Getenv("SMTP_USERNAME"),
 		Password: os.Getenv("SMTP_PASSWORD"),
 		From:     os.Getenv("SMTP_FROM"),
-	})
+	}) // Initialized, used by worker
 	log.Println("✅ Email service initialized")
 
 	// Initialize background job scheduler

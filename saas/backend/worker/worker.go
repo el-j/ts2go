@@ -2,13 +2,16 @@ package worker
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
 
+	"github.com/el-j/ts2go/saas/backend/email"
 	"github.com/el-j/ts2go/saas/backend/logger"
+	"github.com/el-j/ts2go/saas/backend/metrics"
 	"github.com/el-j/ts2go/saas/backend/queue"
 	"github.com/el-j/ts2go/saas/backend/storage"
 	"github.com/google/uuid"
@@ -20,6 +23,8 @@ type Worker struct {
 	queue         *queue.Queue
 	storage       *storage.Client
 	storageRepo   *storage.Repository
+	emailService  *email.Service
+	db            *sql.DB
 	maxConcurrent int
 	workDir       string
 	stopChan      chan struct{}
@@ -33,7 +38,7 @@ type Config struct {
 }
 
 // NewWorker creates a new worker instance
-func NewWorker(queue *queue.Queue, storage *storage.Client, storageRepo *storage.Repository, cfg Config) *Worker {
+func NewWorker(queue *queue.Queue, storage *storage.Client, storageRepo *storage.Repository, emailService *email.Service, db *sql.DB, cfg Config) *Worker {
 	if cfg.MaxConcurrent == 0 {
 		cfg.MaxConcurrent = 5
 	}
@@ -52,6 +57,8 @@ func NewWorker(queue *queue.Queue, storage *storage.Client, storageRepo *storage
 		queue:         queue,
 		storage:       storage,
 		storageRepo:   storageRepo,
+		emailService:  emailService,
+		db:            db,
 		maxConcurrent: cfg.MaxConcurrent,
 		workDir:       cfg.WorkDir,
 		stopChan:      make(chan struct{}),
@@ -65,6 +72,9 @@ func (w *Worker) Start(ctx context.Context) error {
 		Int("max_concurrent", w.maxConcurrent).
 		Str("work_dir", w.workDir).
 		Msg("Worker starting")
+
+	metrics.WorkerActive.Inc()
+	defer metrics.WorkerActive.Dec()
 
 	sem := make(chan struct{}, w.maxConcurrent)
 	ticker := time.NewTicker(2 * time.Second)
@@ -99,18 +109,21 @@ func (w *Worker) Start(ctx context.Context) error {
 						return
 					}
 
-					logger.Log.Info().
-						Str("worker_id", w.id).
-						Str("job_id", job.ID.String()).
-						Str("user_id", job.UserID.String()).
-						Msg("Processing job")
+				logger.Log.Info().
+					Str("worker_id", w.id).
+					Str("job_id", job.ID.String()).
+					Str("user_id", job.UserID.String()).
+					Msg("Processing job")
 
-					if err := w.processJob(ctx, job); err != nil {
-						logger.Log.Error().
-							Err(err).
-							Str("job_id", job.ID.String()).
-							Msg("Job processing failed")
-					}
+				metrics.WorkerJobsProcessing.Inc()
+				defer metrics.WorkerJobsProcessing.Dec()
+
+				if err := w.processJob(ctx, job); err != nil {
+					logger.Log.Error().
+						Err(err).
+						Str("job_id", job.ID.String()).
+						Msg("Job processing failed")
+				}
 				}()
 			default:
 				// All workers busy, skip this tick
@@ -212,7 +225,13 @@ func (w *Worker) processJob(ctx context.Context, job *queue.TranspilationJob) er
 		Msg("Running transpilation")
 
 	if err := w.runTranspilation(ctx, localInputFiles, outputDir, job.Settings); err != nil {
-		w.queue.FailJob(ctx, job.ID, fmt.Sprintf("Transpilation failed: %v", err))
+		errorMsg := fmt.Sprintf("Transpilation failed: %v", err)
+		w.queue.FailJob(ctx, job.ID, errorMsg)
+		metrics.RecordJobProcessed("failed", time.Since(startTime).Seconds())
+		
+		// Send failure email
+		w.sendFailureEmail(ctx, job, errorMsg)
+		
 		return err
 	}
 
@@ -234,6 +253,11 @@ func (w *Worker) processJob(ctx context.Context, job *queue.TranspilationJob) er
 	}
 
 	processingTime := time.Since(startTime)
+	metrics.RecordJobProcessed("completed", processingTime.Seconds())
+	
+	// Send success email
+	w.sendSuccessEmail(ctx, job, outputFiles)
+	
 	logger.Log.Info().
 		Str("job_id", job.ID.String()).
 		Dur("processing_time", processingTime).
@@ -348,3 +372,68 @@ func (w *Worker) uploadOutputFiles(ctx context.Context, outputDir string, projec
 
 	return outputFiles, nil
 }
+
+// sendSuccessEmail sends job completion email
+func (w *Worker) sendSuccessEmail(ctx context.Context, job *queue.TranspilationJob, outputFiles []queue.FileMetadata) {
+	if w.emailService == nil {
+		return
+	}
+
+	// Get user email
+	var email string
+	err := w.db.QueryRowContext(ctx, `SELECT email FROM users WHERE id = $1`, job.UserID).Scan(&email)
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("Failed to get user email")
+		return
+	}
+
+	// Get project name
+	var projectName string
+	if job.ProjectID != nil {
+		w.db.QueryRowContext(ctx, `SELECT name FROM projects WHERE id = $1`, job.ProjectID).Scan(&projectName)
+	}
+	if projectName == "" {
+		projectName = "Untitled Project"
+	}
+
+	// Send email (non-blocking)
+	go func() {
+		err := w.emailService.SendJobComplete(email, job.ID.String(), projectName, len(outputFiles))
+		if err != nil {
+			logger.Log.Warn().Err(err).Msg("Failed to send completion email")
+		}
+	}()
+}
+
+// sendFailureEmail sends job failure email
+func (w *Worker) sendFailureEmail(ctx context.Context, job *queue.TranspilationJob, errorMsg string) {
+	if w.emailService == nil {
+		return
+	}
+
+	// Get user email
+	var email string
+	err := w.db.QueryRowContext(ctx, `SELECT email FROM users WHERE id = $1`, job.UserID).Scan(&email)
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("Failed to get user email")
+		return
+	}
+
+	// Get project name
+	var projectName string
+	if job.ProjectID != nil {
+		w.db.QueryRowContext(ctx, `SELECT name FROM projects WHERE id = $1`, job.ProjectID).Scan(&projectName)
+	}
+	if projectName == "" {
+		projectName = "Untitled Project"
+	}
+
+	// Send email (non-blocking)
+	go func() {
+		err := w.emailService.SendJobFailed(email, job.ID.String(), projectName, errorMsg)
+		if err != nil {
+			logger.Log.Warn().Err(err).Msg("Failed to send failure email")
+		}
+	}()
+}
+

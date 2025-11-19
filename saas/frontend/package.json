@@ -1,0 +1,14 @@
+{
+  "name": "@ts2go/saas-frontend",
+  "version": "0.5.0",
+  "description": "TS2Go SaaS Web Frontend",
+  "type": "module",
+  "scripts": {
+    "dev": "cd ../../packages/ui-shared && npm run dev",
+    "build": "cd ../../packages/ui-shared && npm run build",
+    "preview": "cd ../../packages/ui-shared && npm run preview"
+  },
+  "dependencies": {
+    "@ts2go/ui-shared": "workspace:*"
+  }
+}
