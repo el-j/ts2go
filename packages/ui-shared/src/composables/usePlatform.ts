@@ -1,4 +1,4 @@
-export type Platform = 'tauri' | 'web'
+import type { Platform } from '../types'
 
 export function usePlatform() {
   const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI__

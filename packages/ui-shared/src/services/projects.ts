@@ -1,23 +1,5 @@
 import { apiClient } from './api'
-
-export interface Project {
-  id: string
-  name: string
-  description?: string
-  user_id: string
-  created_at: string
-  updated_at: string
-}
-
-export interface CreateProjectRequest {
-  name: string
-  description?: string
-}
-
-export interface UpdateProjectRequest {
-  name?: string
-  description?: string
-}
+import type { ApiProject as Project, CreateProjectRequest, UpdateProjectRequest } from '../types'
 
 export class ProjectService {
   async listProjects(): Promise<Project[]> {

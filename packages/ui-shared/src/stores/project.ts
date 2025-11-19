@@ -1,16 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { useBackendState } from '../composables/useBackendState'
+import type { LocalProject as Project } from '../types'
 
-export interface Project {
-  id: string
-  name: string
-  path: string
-  lastModified: Date
-  lastOpened?: string
-  isPinned?: boolean
-  accessCount?: number
-}
+export type { LocalProject as Project } from '../types'
 
 const MAX_RECENT_PROJECTS = 20
 

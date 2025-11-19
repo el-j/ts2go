@@ -2,26 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useBackendState } from '../composables/useBackendState'
-
-export interface TranspileResult {
-  success: boolean
-  output_dir?: string
-  files_transpiled?: number
-  files_formatted?: number       // NEW: Number of files formatted with go fmt
-  format_warnings?: string[]     // NEW: Warnings from go fmt (if any)
-  message?: string
-  error?: string
-  duration?: number
-  goCode?: string  // For single file transpilation
-}
-
-export interface TranspilationState {
-  projectPath: string
-  outputDir: string
-  filesTranspiled: number
-  timestamp: string  // ISO string for serialization
-  success: boolean
-}
+import type { TranspileResult, TranspilationState } from '../types'
 
 export const useTranspileStore = defineStore('transpile', () => {
   const isTranspiling = ref(false)

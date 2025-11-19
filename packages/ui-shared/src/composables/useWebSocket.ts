@@ -1,11 +1,7 @@
 import { ref, onUnmounted } from 'vue'
 import { usePlatform } from './usePlatform'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-
-export interface WebSocketMessage {
-  type: string
-  data: any
-}
+import type { WebSocketMessage } from '../types'
 
 export function useWebSocket(url?: string) {
   const { isTauri, isWeb } = usePlatform()

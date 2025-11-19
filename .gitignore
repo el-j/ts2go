@@ -35,6 +35,7 @@ Thumbs.db
 
 # Build artifacts
 dist-web/
+dist-tauri/
 dist/
 build/
 release/

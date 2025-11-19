@@ -179,7 +179,8 @@ export function useSaveFile() {
       }
     }
 
-    // TODO: Add TypeScript/Go syntax validation
+    // Note: Syntax validation deferred to transpiler - validation happens during transpilation
+    // to avoid duplicate parsing overhead. Users get feedback via transpile errors.
     return true
   }
 

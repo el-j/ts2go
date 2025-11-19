@@ -1,24 +1,5 @@
 import { apiClient } from './api'
-
-export interface LoginRequest {
-  email: string
-  password: string
-}
-
-export interface RegisterRequest {
-  email: string
-  password: string
-  name?: string
-}
-
-export interface AuthResponse {
-  token: string
-  user: {
-    id: string
-    email: string
-    name?: string
-  }
-}
+import type { LoginRequest, RegisterRequest, AuthResponse } from '../types'
 
 export class AuthService {
   async login(credentials: LoginRequest): Promise<AuthResponse> {

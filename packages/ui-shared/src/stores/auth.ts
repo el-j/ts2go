@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { authService, type LoginRequest, type RegisterRequest } from '../services/auth'
+import { authService } from '../services/auth'
 import { usePlatform } from '../composables/usePlatform'
+import type { LoginRequest, RegisterRequest } from '../types'
 
 export const useAuthStore = defineStore('auth', () => {
   const { isWeb } = usePlatform()
