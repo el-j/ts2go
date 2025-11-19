@@ -109,21 +109,21 @@ func (w *Worker) Start(ctx context.Context) error {
 						return
 					}
 
-				logger.Log.Info().
-					Str("worker_id", w.id).
-					Str("job_id", job.ID.String()).
-					Str("user_id", job.UserID.String()).
-					Msg("Processing job")
-
-				metrics.WorkerJobsProcessing.Inc()
-				defer metrics.WorkerJobsProcessing.Dec()
-
-				if err := w.processJob(ctx, job); err != nil {
-					logger.Log.Error().
-						Err(err).
+					logger.Log.Info().
+						Str("worker_id", w.id).
 						Str("job_id", job.ID.String()).
-						Msg("Job processing failed")
-				}
+						Str("user_id", job.UserID.String()).
+						Msg("Processing job")
+
+					metrics.WorkerJobsProcessing.Inc()
+					defer metrics.WorkerJobsProcessing.Dec()
+
+					if err := w.processJob(ctx, job); err != nil {
+						logger.Log.Error().
+							Err(err).
+							Str("job_id", job.ID.String()).
+							Msg("Job processing failed")
+					}
 				}()
 			default:
 				// All workers busy, skip this tick
@@ -228,10 +228,10 @@ func (w *Worker) processJob(ctx context.Context, job *queue.TranspilationJob) er
 		errorMsg := fmt.Sprintf("Transpilation failed: %v", err)
 		w.queue.FailJob(ctx, job.ID, errorMsg)
 		metrics.RecordJobProcessed("failed", time.Since(startTime).Seconds())
-		
+
 		// Send failure email
 		w.sendFailureEmail(ctx, job, errorMsg)
-		
+
 		return err
 	}
 
@@ -254,10 +254,10 @@ func (w *Worker) processJob(ctx context.Context, job *queue.TranspilationJob) er
 
 	processingTime := time.Since(startTime)
 	metrics.RecordJobProcessed("completed", processingTime.Seconds())
-	
+
 	// Send success email
 	w.sendSuccessEmail(ctx, job, outputFiles)
-	
+
 	logger.Log.Info().
 		Str("job_id", job.ID.String()).
 		Dur("processing_time", processingTime).
@@ -436,4 +436,3 @@ func (w *Worker) sendFailureEmail(ctx context.Context, job *queue.TranspilationJ
 		}
 	}()
 }
-
