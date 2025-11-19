@@ -4,6 +4,7 @@
 set -e
 
 API_URL="${API_URL:-http://localhost:8080}"
+TEST_PASSWORD="${TEST_PASSWORD:-SecurePass123!}"
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -22,7 +23,7 @@ REGISTER_RESPONSE=$(curl -s -X POST "$API_URL/api/v1/auth/register" \
   -d "{
     \"email\": \"week2test${TIMESTAMP}@example.com\",
     \"username\": \"week2user${TIMESTAMP}\",
-    \"password\": \"SecurePass123!\",
+    \"password\": \"$TEST_PASSWORD\",
     \"full_name\": \"Week 2 Test User\"
   }")
 
@@ -198,7 +199,7 @@ OTHER_USER=$(curl -s -X POST "$API_URL/api/v1/auth/register" \
   -d "{
     \"email\": \"other${TIMESTAMP}@example.com\",
     \"username\": \"other${TIMESTAMP}\",
-    \"password\": \"SecurePass123!\"
+    \"password\": \"$TEST_PASSWORD\"
   }")
 
 OTHER_TOKEN=$(echo "$OTHER_USER" | jq -r '.access_token')

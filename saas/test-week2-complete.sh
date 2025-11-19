@@ -7,6 +7,7 @@ set -e
 
 API_URL="http://localhost:8080"
 BASE_URL="$API_URL/api/v1"
+TEST_PASSWORD="${TEST_PASSWORD:-Test123!@#}"
 
 # Colors
 GREEN='\033[0;32m'
@@ -44,11 +45,11 @@ echo ""
 echo "Test 2: User Registration"
 REGISTER_RESPONSE=$(curl -s -X POST "$BASE_URL/auth/register" \
     -H "Content-Type: application/json" \
-    -d '{
-        "email": "week2test@example.com",
-        "username": "week2test",
-        "password": "Test123!@#"
-    }')
+    -d "{
+        \"email\": \"week2test@example.com\",
+        \"username\": \"week2test\",
+        \"password\": \"$TEST_PASSWORD\"
+    }")
 
 if echo "$REGISTER_RESPONSE" | grep -q "token"; then
     TOKEN=$(echo "$REGISTER_RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
@@ -58,10 +59,10 @@ else
     echo "User exists, logging in..."
     LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/auth/login" \
         -H "Content-Type: application/json" \
-        -d '{
-            "email": "week2test@example.com",
-            "password": "Test123!@#"
-        }')
+        -d "{
+            \"email\": \"week2test@example.com\",
+            \"password\": \"$TEST_PASSWORD\"
+        }")
     TOKEN=$(echo "$LOGIN_RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
     if [ -z "$TOKEN" ]; then
         echo -e "${RED}❌ Authentication failed${NC}"
