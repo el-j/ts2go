@@ -1,216 +1,207 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { useAutoSave } from '../useAutoSave'
-import { useSettingsStore } from '@/stores/settings'
-import { createPinia, setActivePinia } from 'pinia'
-import type { OpenFile } from '@/stores/workspace'
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { useAutoSave } from "../useAutoSave";
+import { useSettingsStore } from "@/stores/settings";
+import { createPinia, setActivePinia } from "pinia";
+import type { OpenFile } from "@/stores/workspace";
 
-// Mock useSaveFile
-vi.mock('../useSaveFile', () => ({
-  useSaveFile: () => ({
-    saveFile: vi.fn().mockResolvedValue(true)
-  })
-}))
+// Stable spy shared across mock calls — avoids stale reference issues when
+// the test calls useSaveFile() separately to retrieve the function.
+const saveFileSpy = vi.fn().mockResolvedValue(true);
 
-describe('useAutoSave', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    vi.useFakeTimers()
-  })
+vi.mock("../useSaveFile", () => ({
+	useSaveFile: () => ({
+		saveFile: saveFileSpy,
+	}),
+}));
 
-  afterEach(() => {
-    vi.clearAllMocks()
-    vi.useRealTimers()
-  })
+describe("useAutoSave", () => {
+	beforeEach(() => {
+		setActivePinia(createPinia());
+		vi.useFakeTimers();
+		saveFileSpy.mockClear();
+	});
 
-  it('should schedule auto-save for a dirty file', async () => {
-    const { scheduleSave } = useAutoSave()
-    const settings = useSettingsStore()
-    const { useSaveFile } = await import('../useSaveFile')
-    
-    settings.settings.autoSave = true
-    settings.settings.autoSaveDelay = 3000
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.clearAllMocks();
+	});
 
-    const mockFile: OpenFile = {
-      path: '/test/file.ts',
-      name: 'file.ts',
-      content: 'const x = 1;',
-      isDirty: true
-    }
+	it("should schedule auto-save for a dirty file", async () => {
+		const { scheduleSave } = useAutoSave();
+		const settings = useSettingsStore();
 
-    scheduleSave(mockFile)
+		settings.settings.autoSave = true;
+		settings.settings.autoSaveDelay = 3000;
 
-    // Fast-forward time
-    vi.advanceTimersByTime(3000)
-    await vi.runAllTimersAsync()
+		const mockFile: OpenFile = {
+			path: "/test/file.ts",
+			name: "file.ts",
+			content: "const x = 1;",
+			isDirty: true,
+		};
 
-    const { saveFile } = useSaveFile()
-    expect(saveFile).toHaveBeenCalledWith(mockFile, { showDialog: false })
-  })
+		scheduleSave(mockFile);
 
-  it('should respect auto-save delay setting', async () => {
-    const { scheduleSave } = useAutoSave()
-    const settings = useSettingsStore()
-    const { useSaveFile } = await import('../useSaveFile')
-    
-    settings.settings.autoSave = true
-    settings.settings.autoSaveDelay = 5000 // 5 seconds
+		vi.advanceTimersByTime(3000);
+		await vi.runAllTimersAsync();
 
-    const mockFile: OpenFile = {
-      path: '/test/file.ts',
-      name: 'file.ts',
-      content: 'const x = 1;',
-      isDirty: true
-    }
+		expect(saveFileSpy).toHaveBeenCalledWith(mockFile, { showDialog: false });
+	});
 
-    scheduleSave(mockFile)
+	it("should respect auto-save delay setting", async () => {
+		const { scheduleSave } = useAutoSave();
+		const settings = useSettingsStore();
 
-    // Should not save after 3 seconds
-    vi.advanceTimersByTime(3000)
-    await vi.runAllTimersAsync()
+		settings.settings.autoSave = true;
+		settings.settings.autoSaveDelay = 5000;
 
-    const { saveFile } = useSaveFile()
-    expect(saveFile).not.toHaveBeenCalled()
+		const mockFile: OpenFile = {
+			path: "/test/file.ts",
+			name: "file.ts",
+			content: "const x = 1;",
+			isDirty: true,
+		};
 
-    // Should save after 5 seconds total
-    vi.advanceTimersByTime(2000)
-    await vi.runAllTimersAsync()
+		scheduleSave(mockFile);
 
-    expect(saveFile).toHaveBeenCalled()
-  })
+		// Advance only 4999ms — timer should NOT have fired yet
+		vi.advanceTimersByTime(4999);
+		expect(saveFileSpy).not.toHaveBeenCalled();
 
-  it('should not schedule save when auto-save is disabled', () => {
-    const { scheduleSave } = useAutoSave()
-    const settings = useSettingsStore()
-    
-    settings.settings.autoSave = false
+		// Advance final 1ms — timer fires now
+		vi.advanceTimersByTime(1);
+		await Promise.resolve(); // let the async setTimeout callback resolve
+		expect(saveFileSpy).toHaveBeenCalled();
+	});
 
-    const mockFile: OpenFile = {
-      path: '/test/file.ts',
-      name: 'file.ts',
-      content: 'const x = 1;',
-      isDirty: true
-    }
+	it("should not schedule save when auto-save is disabled", () => {
+		const { scheduleSave } = useAutoSave();
+		const settings = useSettingsStore();
 
-    scheduleSave(mockFile)
-    vi.advanceTimersByTime(3000)
+		settings.settings.autoSave = false;
 
-    // No timers should be scheduled
-    expect(vi.getTimerCount()).toBe(0)
-  })
+		const mockFile: OpenFile = {
+			path: "/test/file.ts",
+			name: "file.ts",
+			content: "const x = 1;",
+			isDirty: true,
+		};
 
-  it('should cancel existing timer when scheduling new save', async () => {
-    const { scheduleSave } = useAutoSave()
-    const settings = useSettingsStore()
-    const { useSaveFile } = await import('../useSaveFile')
-    
-    settings.settings.autoSave = true
-    settings.settings.autoSaveDelay = 3000
+		scheduleSave(mockFile);
+		vi.advanceTimersByTime(3000);
 
-    const mockFile: OpenFile = {
-      path: '/test/file.ts',
-      name: 'file.ts',
-      content: 'const x = 1;',
-      isDirty: true
-    }
+		expect(vi.getTimerCount()).toBe(0);
+	});
 
-    // Schedule first save
-    scheduleSave(mockFile)
-    vi.advanceTimersByTime(1000)
+	it("should cancel existing timer when scheduling new save", async () => {
+		const { scheduleSave } = useAutoSave();
+		const settings = useSettingsStore();
 
-    // Schedule again (should cancel first)
-    scheduleSave(mockFile)
-    vi.advanceTimersByTime(3000)
-    await vi.runAllTimersAsync()
+		settings.settings.autoSave = true;
+		settings.settings.autoSaveDelay = 3000;
 
-    const { saveFile } = useSaveFile()
-    // Should only be called once
-    expect(saveFile).toHaveBeenCalledTimes(1)
-  })
+		const mockFile: OpenFile = {
+			path: "/test/file.ts",
+			name: "file.ts",
+			content: "const x = 1;",
+			isDirty: true,
+		};
 
-  it('should cancel all pending saves', () => {
-    const { scheduleSave, cancelAllSaves } = useAutoSave()
-    const settings = useSettingsStore()
-    
-    settings.settings.autoSave = true
-    settings.settings.autoSaveDelay = 3000
+		// Schedule first save
+		scheduleSave(mockFile);
+		vi.advanceTimersByTime(1000);
 
-    const file1: OpenFile = {
-      path: '/test/file1.ts',
-      name: 'file1.ts',
-      content: 'const x = 1;',
-      isDirty: true
-    }
+		// Schedule again (should cancel first)
+		scheduleSave(mockFile);
+		vi.advanceTimersByTime(3000);
+		await vi.runAllTimersAsync();
 
-    const file2: OpenFile = {
-      path: '/test/file2.ts',
-      name: 'file2.ts',
-      content: 'const y = 2;',
-      isDirty: true
-    }
+		// Should only be called once (second timer)
+		expect(saveFileSpy).toHaveBeenCalledTimes(1);
+	});
 
-    scheduleSave(file1)
-    scheduleSave(file2)
+	it("should cancel all pending saves", () => {
+		const { scheduleSave, cancelAllSaves } = useAutoSave();
+		const settings = useSettingsStore();
 
-    expect(vi.getTimerCount()).toBe(2)
+		settings.settings.autoSave = true;
+		settings.settings.autoSaveDelay = 3000;
 
-    cancelAllSaves()
+		const file1: OpenFile = {
+			path: "/test/file1.ts",
+			name: "file1.ts",
+			content: "const x = 1;",
+			isDirty: true,
+		};
 
-    expect(vi.getTimerCount()).toBe(0)
-  })
+		const file2: OpenFile = {
+			path: "/test/file2.ts",
+			name: "file2.ts",
+			content: "const y = 2;",
+			isDirty: true,
+		};
 
-  it('should cancel save for specific file', () => {
-    const { scheduleSave, cancelSave } = useAutoSave()
-    const settings = useSettingsStore()
-    
-    settings.settings.autoSave = true
-    settings.settings.autoSaveDelay = 3000
+		scheduleSave(file1);
+		scheduleSave(file2);
 
-    const file1: OpenFile = {
-      path: '/test/file1.ts',
-      name: 'file1.ts',
-      content: 'const x = 1;',
-      isDirty: true
-    }
+		expect(vi.getTimerCount()).toBe(2);
 
-    const file2: OpenFile = {
-      path: '/test/file2.ts',
-      name: 'file2.ts',
-      content: 'const y = 2;',
-      isDirty: true
-    }
+		cancelAllSaves();
 
-    scheduleSave(file1)
-    scheduleSave(file2)
+		expect(vi.getTimerCount()).toBe(0);
+	});
 
-    cancelSave('/test/file1.ts')
+	it("should cancel save for specific file", () => {
+		const { scheduleSave, cancelSave } = useAutoSave();
+		const settings = useSettingsStore();
 
-    expect(vi.getTimerCount()).toBe(1)
-  })
+		settings.settings.autoSave = true;
+		settings.settings.autoSaveDelay = 3000;
 
-  it('should not save file that is no longer dirty', async () => {
-    const { scheduleSave } = useAutoSave()
-    const settings = useSettingsStore()
-    const { useSaveFile } = await import('../useSaveFile')
-    
-    settings.settings.autoSave = true
-    settings.settings.autoSaveDelay = 3000
+		const file1: OpenFile = {
+			path: "/test/file1.ts",
+			name: "file1.ts",
+			content: "const x = 1;",
+			isDirty: true,
+		};
 
-    const mockFile: OpenFile = {
-      path: '/test/file.ts',
-      name: 'file.ts',
-      content: 'const x = 1;',
-      isDirty: true
-    }
+		const file2: OpenFile = {
+			path: "/test/file2.ts",
+			name: "file2.ts",
+			content: "const y = 2;",
+			isDirty: true,
+		};
 
-    scheduleSave(mockFile)
+		scheduleSave(file1);
+		scheduleSave(file2);
 
-    // Mark file as clean before timer fires
-    mockFile.isDirty = false
+		cancelSave("/test/file1.ts");
 
-    vi.advanceTimersByTime(3000)
-    await vi.runAllTimersAsync()
+		expect(vi.getTimerCount()).toBe(1);
+	});
 
-    const { saveFile } = useSaveFile()
-    expect(saveFile).not.toHaveBeenCalled()
-  })
-})
+	it("should not save file that is no longer dirty", async () => {
+		const { scheduleSave } = useAutoSave();
+		const settings = useSettingsStore();
+
+		settings.settings.autoSave = true;
+		settings.settings.autoSaveDelay = 3000;
+
+		const mockFile: OpenFile = {
+			path: "/test/file.ts",
+			name: "file.ts",
+			content: "const x = 1;",
+			isDirty: true,
+		};
+
+		scheduleSave(mockFile);
+
+		// Mark file as clean before timer fires
+		mockFile.isDirty = false;
+
+		vi.advanceTimersByTime(3000);
+		await vi.runAllTimersAsync();
+
+		expect(saveFileSpy).not.toHaveBeenCalled();
+	});
+});

@@ -16,19 +16,41 @@ func CleanupOldJobsJob(db *sql.DB, redisClient *redis.Client) Job {
 	return func(ctx context.Context) error {
 		cutoff := time.Now().AddDate(0, 0, -30)
 
-		// Delete old jobs from database
-		query := `DELETE FROM transpilations WHERE completed_at < $1`
-		result, err := db.ExecContext(ctx, query, cutoff)
+		// Delete old jobs from database and get their IDs
+		query := `DELETE FROM transpilations WHERE completed_at < $1 RETURNING id`
+		rows, err := db.QueryContext(ctx, query, cutoff)
 		if err != nil {
 			return fmt.Errorf("failed to delete old jobs: %w", err)
 		}
+		defer rows.Close()
 
-		rows, _ := result.RowsAffected()
+		var deletedJobs []string
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err == nil {
+				deletedJobs = append(deletedJobs, id)
+			}
+		}
+
 		logger.Log.Info().
-			Int64("deleted", rows).
-			Msg("Cleaned up old jobs")
+			Int("deleted", len(deletedJobs)).
+			Msg("Cleaned up old jobs from database")
 
-		// TODO: Clean up Redis job data as well
+		// Clean up Redis job data as well
+		if len(deletedJobs) > 0 {
+			redisKeys := make([]string, len(deletedJobs))
+			for i, id := range deletedJobs {
+				redisKeys[i] = "job:" + id
+			}
+			err = redisClient.Del(ctx, redisKeys...).Err()
+			if err != nil {
+				logger.Log.Warn().Err(err).Msg("Failed to clean up Redis job data")
+			} else {
+				logger.Log.Info().
+					Int("deleted_keys", len(redisKeys)).
+					Msg("Cleaned up old job data from Redis")
+			}
+		}
 
 		return nil
 	}

@@ -40,16 +40,16 @@ build-go:
 # Build Desktop application (skip TS errors for now)
 build-desktop-skip-errors:
 	@echo "🟢 Building Desktop application (skipping TS errors)..."
-	@cd desktop/ui && npm install || true
+	@cd packages/ui-shared && npm install || true
 	@echo "⚠️  Desktop build skipped (TypeScript errors - will fix separately)"
 	@echo "✅ Use 'make build-go' for CLI development"
 
 # Build Desktop application (strict)
 build-desktop:
 	@echo "🟢 Building Desktop application..."
-	@cd desktop/ui && npm install
-	@cd desktop/ui && npm run build
-	@cd desktop/tauri && cargo build --release
+	@cd packages/ui-shared && npm install
+	@cd packages/ui-shared && npm run build:tauri
+	@cd desktop/tauri-backend && cargo build --release
 	@echo "✅ Desktop app built successfully"
 
 # Run all tests
@@ -65,23 +65,23 @@ test-go:
 # Test Desktop app
 test-desktop:
 	@echo "🟢 Testing Desktop app..."
-	@cd desktop/ui && npm test
+	@cd packages/ui-shared && npm test
 
 # Clean build artifacts
 clean:
 	@echo "🧹 Cleaning build artifacts..."
 	@rm -rf bin/
 	@cd go && go clean
-	@cd desktop/ui && rm -rf dist/ node_modules/
-	@cd desktop/tauri && cargo clean
+	@cd packages/ui-shared && rm -rf dist-tauri/ dist-web/ node_modules/
+	@cd desktop/tauri-backend && cargo clean
 	@echo "✅ Cleaned"
 
 # Install dependencies
 install:
 	@echo "📦 Installing dependencies..."
 	@cd go && go mod download
-	@cd desktop/ui && npm install
-	@cd desktop/tauri && cargo fetch
+	@cd packages/ui-shared && npm install
+	@cd desktop/tauri-backend && cargo fetch
 	@echo "✅ Dependencies installed"
 
 # Development mode - Go CLI
@@ -92,13 +92,13 @@ dev-go:
 # Development mode - Desktop app
 dev-desktop:
 	@echo "🟢 Running Desktop app in dev mode..."
-	@cd desktop/tauri && cargo tauri dev
+	@cd desktop/tauri-backend && cargo tauri dev
 
 # Run Desktop app (production)
 run-desktop:
 	@echo "🟢 Running Desktop app..."
-	@cd desktop/tauri && cargo tauri build
-	@echo "Run the app from desktop/tauri/target/release/"
+	@cd desktop/tauri-backend && cargo tauri build
+	@echo "Run the app from desktop/tauri-backend/target/release/"
 
 # Version management
 version:
@@ -114,13 +114,13 @@ check: test lint
 lint:
 	@echo "🔍 Linting..."
 	@cd go && go vet ./...
-	@cd desktop/ui && npm run lint || echo "⚠️  Desktop lint not configured"
+	@cd packages/ui-shared && npm run lint || echo "⚠️  Desktop lint not configured"
 
 # Format code
 fmt:
 	@echo "✨ Formatting code..."
 	@cd go && go fmt ./...
-	@cd desktop/ui && npm run format || echo "⚠️  Desktop format not configured"
+	@cd packages/ui-shared && npm run format || echo "⚠️  Desktop format not configured"
 
 # Documentation
 docs:

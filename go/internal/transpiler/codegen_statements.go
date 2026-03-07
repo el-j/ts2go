@@ -120,8 +120,19 @@ func (g *CodeGenerator) generateDestructuring(pattern *ASTNode, initializer *AST
 
 					if hasRest {
 						// Rest pattern: {...rest}
-						// For now, just assign the whole object (TODO: implement property exclusion)
-						g.writeLine(fmt.Sprintf("%s := %s", elem.Name, tempVar))
+						// Implement property exclusion by copying the map and deleting other elements
+						g.writeLine(fmt.Sprintf("%s := make(map[string]interface{})", elem.Name))
+						g.writeLine(fmt.Sprintf("for k, v := range %s.(map[string]interface{}) {", tempVar))
+						g.indent++
+						g.writeLine(fmt.Sprintf("%s[k] = v", elem.Name))
+						g.indent--
+						g.writeLine("}")
+
+						for _, otherElem := range pattern.Elements {
+							if otherElem.Name != "" && otherElem.Name != elem.Name {
+								g.writeLine(fmt.Sprintf("delete(%s, \"%s\")", elem.Name, otherElem.Name))
+							}
+						}
 					} else {
 						// Simple property: {x} means extract property "x" from object
 						g.writeLine(fmt.Sprintf(`%s := %s.(map[string]interface{})["%s"]`, elem.Name, tempVar, elem.Name))

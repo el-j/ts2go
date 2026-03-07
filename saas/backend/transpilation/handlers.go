@@ -137,7 +137,12 @@ func (h *Handler) GetJobStatus(c *gin.Context) {
 		return
 	}
 
-	// TODO: Verify user owns this job
+	userID, _ := c.Get("user_id")
+	userUUID, _ := uuid.Parse(userID.(string))
+	if job.UserID != userUUID {
+		c.Error(errors.ErrForbidden.WithDetails("You do not have access to this job"))
+		return
+	}
 
 	c.JSON(http.StatusOK, job)
 }
@@ -216,7 +221,12 @@ func (h *Handler) CancelJob(c *gin.Context) {
 		return
 	}
 
-	// TODO: Verify user owns this job
+	userID, _ := c.Get("user_id")
+	userUUID, _ := uuid.Parse(userID.(string))
+	if job.UserID != userUUID {
+		c.Error(errors.ErrForbidden.WithDetails("You do not have access to this job"))
+		return
+	}
 
 	// Only cancel if pending or processing
 	if job.Status != "pending" && job.Status != "processing" {

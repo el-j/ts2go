@@ -133,7 +133,7 @@ func main() {
 	// Initialize handlers
 	authHandler := NewAuthHandler(authService, authRepo)
 	projectsHandler := projects.NewHandler(projectsRepo)
-	storageHandler := storage.NewHandler(storageClient, storageRepo)
+	storageHandler := storage.NewHandler(storageClient, storageRepo, projectsRepo)
 	transpilationHandler := transpilation.NewHandler(jobQueue)
 
 	// Setup Gin router

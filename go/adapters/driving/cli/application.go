@@ -12,6 +12,8 @@ import (
 	"github.com/el-j/ts2go/core/domain"
 	"github.com/el-j/ts2go/core/ports"
 	"github.com/el-j/ts2go/core/services"
+	"github.com/el-j/ts2go/internal/analyzer"
+	"github.com/el-j/ts2go/internal/transpiler"
 )
 
 // Application is the composition root for the CLI application
@@ -57,14 +59,12 @@ func NewApplication() (*Application, error) {
 		return nil, fmt.Errorf("failed to initialize settings repository: %w", err)
 	}
 
-	// Create placeholder services for analyzer, mapper, codegen
-	// TODO: Implement these services in Phase 1 continuation
-	analyzer := &placeholderAnalyzer{}
-	mapper := &placeholderMapper{}
-	codegen := &placeholderCodeGen{}
+	analyzerSvc := &adapterAnalyzer{}
+	mapperSvc := &placeholderMapper{}
+	codegenSvc := &adapterCodeGen{}
 
 	// Create core services (business logic)
-	transpilationService := services.NewTranspilationService(fs, compiler, analyzer, mapper, codegen)
+	transpilationService := services.NewTranspilationService(fs, compiler, analyzerSvc, mapperSvc, codegenSvc)
 	runtimeService := services.NewGoRuntimeService(compiler, fs)
 	stateService := services.NewStateService(stateRepo, settingsRepo)
 
@@ -450,14 +450,22 @@ func (app *Application) SettingsCommand(args []string) error {
 	}
 }
 
-// Placeholder implementations for services not yet migrated
-type placeholderAnalyzer struct{}
+// Real implementation using internal analyzer
+type adapterAnalyzer struct{}
 
-func (p *placeholderAnalyzer) AnalyzeImports(ast interface{}) (*services.ImportAnalysis, error) {
+func (p *adapterAnalyzer) AnalyzeImports(ast interface{}) (*services.ImportAnalysis, error) {
+	node, ok := ast.(*transpiler.ASTNode)
+	if !ok {
+		return nil, fmt.Errorf("invalid AST node type")
+	}
+	res, err := analyzer.AnalyzeImports(node)
+	if err != nil {
+		return nil, err
+	}
 	return &services.ImportAnalysis{
-		LocalImports: []string{},
-		NpmPackages:  []string{},
-		NodeBuiltins: []string{},
+		LocalImports: res.LocalFiles,
+		NpmPackages:  res.NpmPackages,
+		NodeBuiltins: res.BuiltinModules,
 	}, nil
 }
 
@@ -471,12 +479,18 @@ func (p *placeholderMapper) TransformAPICall(code string) (string, error) {
 	return code, nil
 }
 
-type placeholderCodeGen struct{}
+// Real implementation using internal transpiler
+type adapterCodeGen struct{}
 
-func (p *placeholderCodeGen) ParseTypeScript(filePath string) (interface{}, error) {
-	return nil, fmt.Errorf("TypeScript parsing not yet implemented in hexagonal architecture")
+func (p *adapterCodeGen) ParseTypeScript(filePath string) (interface{}, error) {
+	return transpiler.ParseTypeScript(filePath)
 }
 
-func (p *placeholderCodeGen) GenerateGoCode(ast interface{}) (string, error) {
-	return "", fmt.Errorf("Go code generation not yet implemented in hexagonal architecture")
+func (p *adapterCodeGen) GenerateGoCode(ast interface{}) (string, error) {
+	node, ok := ast.(*transpiler.ASTNode)
+	if !ok {
+		return "", fmt.Errorf("invalid AST node type")
+	}
+	generator := transpiler.NewCodeGenerator()
+	return generator.Generate(node)
 }

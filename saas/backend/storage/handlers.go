@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/el-j/ts2go/saas/backend/projects"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -30,15 +31,17 @@ var allowedExtensions = map[string]bool{
 
 // Handler handles file storage endpoints
 type Handler struct {
-	storage *Client
-	repo    *Repository
+	storage      *Client
+	repo         *Repository
+	projectsRepo *projects.Repository
 }
 
 // NewHandler creates a new storage handler
-func NewHandler(storage *Client, repo *Repository) *Handler {
+func NewHandler(storage *Client, repo *Repository, projectsRepo *projects.Repository) *Handler {
 	return &Handler{
-		storage: storage,
-		repo:    repo,
+		storage:      storage,
+		repo:         repo,
+		projectsRepo: projectsRepo,
 	}
 }
 
@@ -219,7 +222,14 @@ func (h *Handler) DownloadFile(c *gin.Context) {
 		return
 	}
 
-	// TODO: Check access to project
+	userID, _ := c.Get("user_id")
+	userUUID, _ := uuid.Parse(userID.(string))
+
+	hasAccess, err := h.projectsRepo.CheckAccess(c.Request.Context(), fileRecord.ProjectID, userUUID)
+	if err != nil || !hasAccess {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied to project files"})
+		return
+	}
 
 	// Get file from storage
 	reader, err := h.storage.DownloadFile(c.Request.Context(), fileRecord.StoragePath)
@@ -268,7 +278,14 @@ func (h *Handler) GetPresignedURL(c *gin.Context) {
 		return
 	}
 
-	// TODO: Check access to project
+	userID, _ := c.Get("user_id")
+	userUUID, _ := uuid.Parse(userID.(string))
+
+	hasAccess, err := h.projectsRepo.CheckAccess(c.Request.Context(), fileRecord.ProjectID, userUUID)
+	if err != nil || !hasAccess {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied to project files"})
+		return
+	}
 
 	// Generate presigned URL (default 1 hour)
 	url, err := h.storage.GetPresignedURL(c.Request.Context(), fileRecord.StoragePath, 3600)
@@ -312,7 +329,14 @@ func (h *Handler) DeleteFile(c *gin.Context) {
 		return
 	}
 
-	// TODO: Check access to project
+	userID, _ := c.Get("user_id")
+	userUUID, _ := uuid.Parse(userID.(string))
+
+	hasAccess, err := h.projectsRepo.CheckAccess(c.Request.Context(), fileRecord.ProjectID, userUUID)
+	if err != nil || !hasAccess {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied to project files"})
+		return
+	}
 
 	// Delete from storage
 	if err := h.storage.DeleteFile(c.Request.Context(), fileRecord.StoragePath); err != nil {
