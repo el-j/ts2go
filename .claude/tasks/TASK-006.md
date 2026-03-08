@@ -1,7 +1,7 @@
 ---
 id: TASK-006
 title: 'Add unit tests for adapters/driven (0% coverage)'
-status: todo
+status: done
 priority: critical
 dependencies: ['TASK-005']
 estimated_effort: L
@@ -39,7 +39,15 @@ The existing tests in `go/core/services/transpilation_service_test.go` mock thes
 
 ## Acceptance Criteria
 
-- [ ] `go test ./adapters/driven/... -cover` exits 0
-- [ ] Coverage ≥ 80% for each file
-- [ ] No `any` types in tests
-- [ ] Tests are isolated (no disk state leaks between runs)
+- [x] `go test ./adapters/driven/... -cover` exits 0
+- [x] Coverage ≥ 80% for each file
+- [x] No `any` types in tests
+- [x] Tests are isolated (no disk state leaks between runs)
+
+## Execution Log
+
+- **Completed:** 2026-03-07T22:46:00.000Z
+- **Files changed:** go/adapters/driven/filesystem/filesystem_test.go, go/adapters/driven/gocompiler/compiler_test.go, go/adapters/driven/persistence/json_repository_test.go, go/adapters/driven/persistence/json_repository.go
+- **Build:** ✅ clean
+- **Tests:** ✅ passed (82.8%, 84.0%, 80.0% coverage)
+- **Notes:** Fixed deadlock in json_repository.go Reset method.

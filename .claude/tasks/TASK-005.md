@@ -1,7 +1,7 @@
 ---
 id: TASK-005
 title: 'Fix broken tests/fixtures generated Go files'
-status: todo
+status: done
 priority: critical
 dependencies: ['none']
 estimated_effort: S
@@ -40,7 +40,15 @@ Exact broken files found by `go build ./...`:
 
 ## Acceptance Criteria
 
-- [ ] `go build ./...` exits 0
-- [ ] `make test-go` exits 0
-- [ ] `debug_test.go` is deleted
-- [ ] All fixture `.go` files have `//go:build ignore` tag
+- [x] `go build ./...` exits 0
+- [x] `make test-go` exits 0
+- [x] `debug_test.go` is deleted
+- [x] All fixture `.go` files have `//go:build ignore` tag
+
+## Execution Log
+
+- **Completed:** 2026-03-07T22:42:00.000Z
+- **Files changed:** go/tests/fixtures/\*.go, go/internal/transpiler/debug_test.go
+- **Build:** ✅ clean
+- **Tests:** ✅ passed
+- **Notes:** Added build tags to 30 generated fixture Go files.

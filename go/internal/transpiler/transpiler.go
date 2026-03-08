@@ -133,6 +133,8 @@ func parseTypeScript(inputFile string) (*ASTNode, error) {
 		"./internal/transpiler/parser/parser.js",
 		"../internal/transpiler/parser/parser.js",
 		"../../internal/transpiler/parser/parser.js",
+		"../../../internal/transpiler/parser/parser.js",
+		"../../../../internal/transpiler/parser/parser.js",
 		filepath.Join(cwd, "internal", "transpiler", "parser", "parser.js"),
 		filepath.Join(filepath.Dir(cwd), "internal", "transpiler", "parser", "parser.js"),
 	}

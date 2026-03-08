@@ -1,7 +1,7 @@
 ---
 id: TASK-010
 title: 'Add transpiler code generation unit tests'
-status: todo
+status: in-progress
 priority: high
 dependencies: ['TASK-005']
 estimated_effort: L

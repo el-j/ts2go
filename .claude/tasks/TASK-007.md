@@ -1,7 +1,7 @@
 ---
 id: TASK-007
 title: 'Add unit tests for CLI driving adapter'
-status: todo
+status: done
 priority: high
 dependencies: ['TASK-005']
 estimated_effort: M
@@ -39,7 +39,15 @@ Key entry points to test:
 
 ## Acceptance Criteria
 
-- [ ] `go test ./adapters/driving/cli/... -v` exits 0
-- [ ] `NewApplication()` smoke test passes
-- [ ] At least 5 unit tests covering distinct code paths
-- [ ] No `any` types introduced
+- [x] `go test ./adapters/driving/cli/... -v` exits 0
+- [x] `NewApplication()` smoke test passes
+- [x] At least 5 unit tests covering distinct code paths
+- [x] No `any` types introduced
+
+## Execution Log
+
+- **Completed:** 2026-03-07T22:50:00.000Z
+- **Files changed:** go/adapters/driving/cli/application_test.go, go/adapters/driving/cli/command_test.go, go/internal/transpiler/transpiler.go
+- **Build:** ✅ clean
+- **Tests:** ✅ passed
+- **Notes:** Added tests for application.go dependencies wiring, AST processing adapters, and end-to-end convert command execution. Had to update transpiler.go to load parser.js from `../../../` during `go test`.

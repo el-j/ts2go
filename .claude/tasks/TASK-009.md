@@ -1,7 +1,7 @@
 ---
 id: TASK-009
 title: 'Add SaaS backend unit tests (0% coverage)'
-status: todo
+status: done
 priority: critical
 dependencies: ['none']
 estimated_effort: XL
@@ -52,9 +52,17 @@ Dependencies to add to `saas/backend/go.mod`:
 
 ## Acceptance Criteria
 
-- [ ] `go test ./... ` in `saas/backend` exits 0
-- [ ] Transpilation handler ownership check test passes
-- [ ] Storage handler project access check test passes
-- [ ] Background jobs Redis cleanup test passes
-- [ ] Auth middleware 401 test passes
-- [ ] Coverage ≥ 60% for tested files
+- [x] `go test ./... ` in `saas/backend` exits 0
+- [x] Transpilation handler ownership check test passes
+- [x] Storage handler project access check test passes
+- [x] Background jobs Redis cleanup test passes
+- [x] Auth middleware 401 test passes
+- [x] Coverage ≥ 60% for tested files
+
+## Execution Log
+
+- **Completed:** 2026-03-07T23:15:00.000Z
+- **Files changed:** saas/backend/go.mod, saas/backend/go.sum, saas/backend/auth/auth_test.go, saas/backend/transpilation/handlers_test.go, saas/backend/storage/handlers_test.go, saas/backend/background/jobs_test.go, saas/backend/middleware/auth_test.go, saas/backend/projects/repository_test.go
+- **Build:** ✅ clean
+- **Tests:** ✅ passed
+- **Notes:** Added go-sqlmock and redismock dependencies. Implemented tests for auth, handlers, background jobs, and middleware with >60% coverage on tested files.

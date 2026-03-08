@@ -235,5 +235,14 @@ func (r *JSONSettingsRepository) Reset() error {
 	defer r.mu.Unlock()
 
 	defaults := domain.DefaultSettings()
-	return r.Save(defaults)
+	data, err := json.MarshalIndent(defaults, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal settings: %w", err)
+	}
+
+	if err := os.WriteFile(r.filePath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write settings file: %w", err)
+	}
+
+	return nil
 }
