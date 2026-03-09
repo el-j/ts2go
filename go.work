@@ -1,19 +1,8 @@
 go 1.24.9
 
+toolchain go1.24.10
+
 use (
-	.
-	./cmd/ts2go
-	./examples/multipackage-demo
-	./internal/analyzer
-	./internal/mapper
-	./internal/module
-	./internal/orchestrator
-	./internal/project
-	./internal/tests
-	./internal/transpiler
-	./pkg/cli
-	./pkg/optimizer
-	./runtime
-	./test-projects/simple-multi-file-go
-	./tests
+	./go
+	./saas
 )

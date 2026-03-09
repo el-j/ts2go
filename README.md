@@ -11,17 +11,37 @@ A TypeScript-to-Go transpiler that converts a subset of TypeScript into idiomati
 ## Quick Start
 
 ```bash
-# Install dependencies
-cd internal/transpiler/parser && npm install && cd ../../..
+# Build the CLI
+make build-go
 
-# Build
-make build
+# Run CLI
+./bin/ts2go transpile <project-dir> --out output
 
-# Use CLI
-./ts2go convert --in app.ts --out app.go      # Single file conversion
-./ts2go transpile <project-dir> --out output  # Full project transpilation
-./ts2go analyze <project-dir>                  # Analyze dependencies
-./ts2go ui --port 8080 --open                 # Web UI (legacy, for quick testing)
+# Or use Makefile targets
+make help           # See all available commands
+make build          # Build everything
+make test           # Run all tests
+make dev-desktop    # Run desktop app in dev mode
+```
+
+## Project Structure
+
+```
+ts2go/
+├── go/              # 🔵 Go CLI & Core Engine
+│   ├── core/        # Hexagonal architecture (domain, ports, services)
+│   ├── adapters/    # Infrastructure adapters
+│   ├── cmd/         # CLI binaries
+│   ├── runtime/     # Go runtime library
+│   └── go.mod       # Single Go module
+│
+├── desktop/         # 🟢 Desktop Application
+│   ├── ui/          # Vue.js + TypeScript frontend
+│   └── tauri/       # Rust + Tauri backend
+│
+├── docs/            # 📚 Documentation
+├── bin/             # 🔨 Compiled binaries
+└── Makefile         # 🎯 Main build orchestration
 ```
 
 ## Example
@@ -52,58 +72,68 @@ func Greet(person Person) string {
 
 ## Documentation
 
-### Getting Started
-- 🚀 [Getting Started](docs/GETTING_STARTED.md) - Installation and basic usage
-- 🖥️ **[Phase 21: Desktop UI](docs/PHASE21_DESKTOP_UI.md)** - **NEW! Web UI documentation**
-- 📚 [Migration Guide](docs/MIGRATION_GUIDE.md) - Complete guide to migrating projects
-- 💡 [Examples](docs/EXAMPLES.md) - Before/after transpilation examples
+**Main Documentation:** See [docs/README.md](docs/README.md) for complete documentation index.
 
-### Reference
-- 📋 [Specification](SPEC.md) - Currently supported TypeScript features
-- 📦 [Package Mappings](docs/PACKAGE_MAPPINGS.md) - npm to Go quick reference (100+ packages)
-- 📊 [Status](docs/STATUS.md) - Current implementation status
-- ⚠️ **[Known Issues](KNOWN_ISSUES.md)** - **Current limitations and workarounds**
-
-### Advanced
-- 🗺️ **[Roadmap](docs/ROADMAP.md)** - **Complete plan for all TypeScript features + dependencies**
-- 🚀 **[Roadmap to 1.0.0](ROADMAP_TO_1.0.0.md)** - **Comprehensive 12-week plan to stable release**
-- 🎯 **[Next Phase Roadmap](docs/NEXT_PHASE_ROADMAP.md)** - **Detailed plan for upcoming implementation phases**
-- 🔧 **[Dependency Guide](docs/DEPENDENCY_GUIDE.md)** - **Implementation guide for dependency resolution**
-- 🏗️ [Architecture](docs/ARCHITECTURE.md) - Project structure and design
-- 📝 [Implementation Plan](implementationPlan.md) - Original development phases
+### Quick Links
+- 📊 [Current State](docs/CURRENT_STATE.md) - Implementation status
+- 🚀 [Getting Started](docs/GETTING_STARTED_v2.md) - Installation and usage
+- 📋 [Specification](docs/SPEC.md) - Supported TypeScript features
+- 🖥️ [Desktop Guide](desktop/ui/USER_GUIDE.md) - Desktop app user guide
+- 📦 [Package Mappings](docs/PACKAGE_MAPPINGS.md) - NPM to Go mappings
+- 🏗️ [Architecture](docs/ARCHITECTURE.md) - System design
+- ⚠️ [Known Issues](docs/KNOWN_ISSUES.md) - Limitations and workarounds
 
 ## Features
 
-### Core Transpilation
-✅ Interface to struct transpilation  
-✅ Type aliases  
-✅ Function declarations with typed parameters  
-✅ Basic types (string, number, boolean, arrays)  
-✅ Classes with inheritance, static methods, getters/setters  
-✅ Union types and enums  
-✅ Console.log mapping  
-✅ Go runtime library for Node.js APIs  
+### ✅ Desktop UI (85-90% Complete)
+✅ **Full project workspace** with file tree, multi-file tabs, Monaco editor  
+✅ **Real-time transpilation** with progress tracking  
+✅ **Go code execution** - Run single files or complete projects  
+✅ **Settings & persistence** - Customizable theme, editor, and project settings  
+✅ **Recent projects** - Quick access to recently opened projects  
+✅ **Example gallery** - 6 built-in examples to learn from  
+✅ **History tracking** - View past transpilations  
+✅ **Keyboard shortcuts** - Efficient workflow with hotkeys  
 
-### ✅ Advanced Features (Phases 16-20 Complete)
+### ✅ Core Transpilation (80% Complete)
+✅ Interface to struct transpilation  
+✅ Type aliases, enums, unions, tuples  
+✅ Function declarations with typed parameters  
+✅ Basic & advanced types (string, number, boolean, arrays, generics)  
+✅ Classes with inheritance, static methods, getters/setters  
+✅ Console.log and Node.js API mappings  
 ✅ **Control flow** - if/else, for/while loops, switch statements  
 ✅ **Error handling** - try/catch/finally, throw statements  
 ✅ **Async/await** - Goroutine-based async with channels  
-✅ **Advanced operators** - typeof, instanceof, in, delete  
+✅ **Modern JS** - Arrow functions, template literals, destructuring, spread operators  
 
-### 🆕 Desktop UI (Phase 21 - 52% Complete)
-✅ **Tauri + Vue 3 + Monaco Editor** - Professional desktop app  
-✅ **Split-pane editor** with TypeScript input and Go output  
-✅ **Real-time transpilation** with instant feedback  
-✅ **Resizable panes and LogViewer** component  
-✅ **39 tests passing** with 100% store coverage  
+### ✅ CLI Tools (70% Complete)
+✅ `convert` - Single file transpilation  
+✅ `transpile` - Full project transpilation  
+✅ `analyze` - Dependency analysis  
+✅ `watch` - Auto-transpile on file changes  
+✅ `ui` - Legacy web UI server  
 
-### In Progress
-🔄 Modern JavaScript syntax (arrow functions, template literals, destructuring)  
-🔄 Desktop UI completion (Weeks 3-4 remaining)  
+### 🔄 Alpha 2.0.1 Features (In Progress → Complete!)
+✅ **Go build integration** - Compile transpiled code into binaries (CLI + GUI)
+✅ **Go test integration** - Run tests on transpiled code (CLI + GUI)
+✅ **Build artifacts** - Track and manage compiled binaries
+✅ **Test results UI** - Display test pass/fail in GUI with detailed output
+
+**New Commands:**
+- `ts2go build --source <dir> --output <binary>` - Compile Go code
+- `ts2go test --source <dir> --verbose --coverage` - Run Go tests
+
+**GUI Features:**
+- 🔨 Build button in ProjectView
+- 🧪 Test button in ProjectView
+- Build/test results display in log panel
+- Artifact tracking with localStorage persistence
 
 ❌ Frontend frameworks (React, Vue, Angular) - Out of scope  
 
 ## Installation
+
 
 ### From Source
 ```bash

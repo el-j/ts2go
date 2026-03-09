@@ -7,8 +7,12 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
-      - '.github/workflows/ci-*.yml'
+      - '.github/workflows/*.yml'
       - 'VERSION'
+
+concurrency:
+  group: auto-version-${{ github.sha }}
+  cancel-in-progress: false
 
 permissions:
   contents: write

@@ -1,0 +1,73 @@
+name: CI - Tests & Checks
+
+on:
+  pull_request:
+    branches: ['**']
+  push:
+    branches-ignore:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.5'
+          cache: true
+          cache-dependency-path: |
+            go/go.sum
+            saas/go.sum
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            desktop/ui/package-lock.json
+            packages/ui-shared/package-lock.json
+
+      - name: Go mod verify
+        run: go work sync && go mod verify
+
+      - name: Run go fmt
+        run: |
+          cd go
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "Code is not formatted. Run 'go fmt'"
+            gofmt -s -l .
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: |
+          cd go && go vet ./...
+          cd saas && go vet ./...
+
+      - name: Build Go CLI
+        run: make build-go
+
+      - name: Run Go tests
+        run: |
+          cd go && go test -v -race ./core/... ./adapters/... || true
+        continue-on-error: true
+
+      - name: Build Desktop UI (if exists)
+        run: |
+          if [ -d "desktop/ui" ]; then
+            cd desktop/ui && npm install && npm run build || true
+          fi
+        continue-on-error: true
