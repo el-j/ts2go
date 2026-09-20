@@ -125,6 +125,10 @@ function convertNode(node) {
   // Add declarations for variable statements
   if (node.declarationList) {
     result.declarations = node.declarationList.declarations.map(convertNode);
+    if (node.declarationList.flags !== undefined) {
+      result.isConst = Boolean(node.declarationList.flags & ts.NodeFlags.Const);
+      result.isLet = Boolean(node.declarationList.flags & ts.NodeFlags.Let);
+    }
   }
 
   // Add type for type annotations

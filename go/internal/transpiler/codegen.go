@@ -8,11 +8,13 @@ import (
 type CodeGenerator struct {
 	output                    strings.Builder
 	indent                    int
-	currentFunctionReturnType string          // Track the current function's return type for type assertions
-	currentReceiverVar        string          // Track the current method's receiver variable for "this" replacement
-	currentClassMembers       map[string]bool // Track private members of current class (name -> isPrivate)
-	tempVarCounter            int             // Counter for generating unique temporary variables
-	imports                   map[string]bool // Track required imports
+	currentFunctionReturnType string            // Track the current function's return type for type assertions
+	currentReceiverVar        string            // Track the current method's receiver variable for "this" replacement
+	currentClassMembers       map[string]bool   // Track private members of current class (name -> isPrivate)
+	tempVarCounter            int               // Counter for generating unique temporary variables
+	imports                   map[string]bool   // Track required imports
+	expectedType              string            // Track expected target type (e.g. struct name) for literals
+	declaredFunctions         map[string]string // Track declared function casing (originalName -> PascalCaseName)
 
 	// Module system support
 	module     interface{} // *module.Module - using interface{} to avoid circular dependency
@@ -27,6 +29,8 @@ func NewCodeGenerator() *CodeGenerator {
 		indent:                    0,
 		currentFunctionReturnType: "",
 		currentReceiverVar:        "",
+		expectedType:              "",
+		declaredFunctions:         make(map[string]string),
 		imports:                   make(map[string]bool),
 	}
 }
@@ -37,6 +41,8 @@ func NewCodeGeneratorWithModule(mod, resolver, visibility interface{}, isEntry b
 		indent:                    0,
 		currentFunctionReturnType: "",
 		currentReceiverVar:        "",
+		expectedType:              "",
+		declaredFunctions:         make(map[string]string),
 		module:                    mod,
 		resolver:                  resolver,
 		visibility:                visibility,

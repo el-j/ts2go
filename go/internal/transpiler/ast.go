@@ -28,6 +28,8 @@ type ASTNode struct {
 	Expression      *ASTNode  `json:"expression,omitempty"` // For template spans
 	Literal         *ASTNode  `json:"literal,omitempty"`    // For template spans
 	Head            *ASTNode  `json:"head,omitempty"`       // For template expressions
+	IsConst         bool      `json:"isConst,omitempty"`
+	IsLet           bool      `json:"isLet,omitempty"`
 }
 
 // TypeScriptKind maps to TypeScript SyntaxKind enum

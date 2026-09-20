@@ -303,6 +303,38 @@ func (g *CodeGenerator) generateObjectLiteral(node *ASTNode) (string, error) {
 		return g.generateObjectMerge(parts), nil
 	}
 
+	targetType := g.expectedType
+	if targetType == "" && g.currentFunctionReturnType != "" {
+		targetType = g.currentFunctionReturnType
+	}
+
+	if isStructTypeName(targetType) {
+		isPtr := strings.HasPrefix(targetType, "*")
+		structName := strings.TrimPrefix(targetType, "*")
+
+		fields := []string{}
+		for _, prop := range node.Properties {
+			if prop.Kind == "PropertyAssignment" {
+				propName := toPascalCase(prop.Name)
+				var value string
+				var err error
+				if prop.Initializer != nil {
+					value, err = g.generateExpression(prop.Initializer)
+					if err != nil {
+						return "", err
+					}
+				}
+				fields = append(fields, fmt.Sprintf("%s: %s", propName, value))
+			}
+		}
+
+		prefix := ""
+		if isPtr {
+			prefix = "&"
+		}
+		return fmt.Sprintf("%s%s{%s}", prefix, structName, strings.Join(fields, ", ")), nil
+	}
+
 	// No spread elements - generate simple object literal
 	fields := []string{}
 	for _, prop := range node.Properties {
@@ -574,9 +606,10 @@ func (g *CodeGenerator) generateCallExpression(node *ASTNode) (string, error) {
 		return "", err
 	}
 
-	// Convert function names to PascalCase only if they start with uppercase
-	// (i.e., they're exported functions, not local variables)
-	if funcNode.Kind == Identifier && len(funcExpr) > 0 {
+	// Map declared function names to their PascalCase equivalents
+	if mappedName, ok := g.declaredFunctions[funcExpr]; ok {
+		funcExpr = mappedName
+	} else if funcNode.Kind == Identifier && len(funcExpr) > 0 {
 		// Only PascalCase if the original starts with uppercase (exported function)
 		firstChar := funcExpr[0]
 		if firstChar >= 'A' && firstChar <= 'Z' {
@@ -923,4 +956,22 @@ func (g *CodeGenerator) generateAwaitExpression(node *ASTNode) (string, error) {
 	// In Go, await translates to receiving from a channel
 	// The expression should be a function call that returns a channel
 	return fmt.Sprintf("(<-%s)", expr), nil
+}
+
+// isStructTypeName determines if a Go type identifier represents a struct type (not a primitive or map/slice)
+func isStructTypeName(t string) bool {
+	if t == "" || t == "interface{}" || t == "any" || t == "void" || t == "error" {
+		return false
+	}
+	switch t {
+	case "string", "int", "int8", "int16", "int32", "int64",
+		"uint", "uint8", "uint16", "uint32", "uint64",
+		"float32", "float64", "bool", "byte", "rune":
+		return false
+	}
+	if strings.HasPrefix(t, "map[") || strings.HasPrefix(t, "[]") ||
+		strings.HasPrefix(t, "chan ") || strings.HasPrefix(t, "func(") {
+		return false
+	}
+	return true
 }

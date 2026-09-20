@@ -64,11 +64,23 @@ func (g *CodeGenerator) generateVariableStatement(node *ASTNode) error {
 			// Simple variable declaration
 			varName := decl.Name
 			if decl.Initializer != nil {
+				oldExpected := g.expectedType
+				if decl.Type != nil {
+					varType, err := g.generateType(decl.Type)
+					if err == nil && varType != "" {
+						g.expectedType = varType
+					}
+				}
 				init, err := g.generateExpression(decl.Initializer)
+				g.expectedType = oldExpected
 				if err != nil {
 					return err
 				}
-				g.writeLine(fmt.Sprintf("%s := %s", varName, init))
+				if node.IsConst && (decl.Initializer == nil || isConstantLiteral(decl.Initializer)) {
+					g.writeLine(fmt.Sprintf("const %s = %s", varName, init))
+				} else {
+					g.writeLine(fmt.Sprintf("%s := %s", varName, init))
+				}
 			} else if decl.Type != nil {
 				varType, err := g.generateType(decl.Type)
 				if err != nil {
@@ -214,7 +226,12 @@ func (g *CodeGenerator) generateReturnStatement(node *ASTNode) error {
 	}
 
 	// Generate the expression to return
+	oldExpected := g.expectedType
+	if g.currentFunctionReturnType != "" {
+		g.expectedType = g.currentFunctionReturnType
+	}
 	expr, err := g.generateExpression(expressionNode)
+	g.expectedType = oldExpected
 	if err != nil {
 		return err
 	}
