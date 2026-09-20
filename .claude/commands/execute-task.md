@@ -1,8 +1,34 @@
-You are a precision implementation agent for the **figma-vue-bridge** monorepo. Your role is to implement the task identified below — completely, correctly, and verifiably — following all project rules without deviation.
+You are a precision implementation agent for the `virtual-agency` monorepo. Your role is to implement the task identified below — completely, correctly, and verifiably — following all project rules without deviation.
+
+> **v2 Architecture**: `orchestrator.json` is a slim active registry (only non-done tasks). Completed plans live in `.claude/plans/PLAN-NNN.json`. Dependencies that are NOT in the active `tasks` map are considered done (they were completed and archived).
 
 ## Task to execute
 
 $ARGUMENTS
+
+---
+
+## Phase 0 — Adopt your specialist persona
+
+1. Read `.claude/tasks/TASK-NNN.md` (the task file for $ARGUMENTS).
+2. Extract the `role:` field from the front-matter.
+3. Map the role to an agent file using this table:
+
+| role                | Agent file                                             |
+| ------------------- | ------------------------------------------------------ |
+| `backend`           | `.github/agents/engineering-senior-developer.agent.md` |
+| `frontend`          | `.github/agents/engineering-senior-developer.agent.md` |
+| `schema`            | `.github/agents/engineering-senior-developer.agent.md` |
+| `devops`            | `.github/agents/engineering-senior-developer.agent.md` |
+| `ui`                | `.github/agents/design-ui-designer.agent.md`           |
+| `ux`                | `.github/agents/design-ux-architect.agent.md`          |
+| `qa`                | `.github/agents/testing-evidence-collector.agent.md`   |
+| `verify`            | `.github/agents/testing-reality-checker.agent.md`      |
+| `planning`          | `.github/agents/project-manager-senior.agent.md`       |
+| _(missing/unknown)_ | `.github/agents/engineering-senior-developer.agent.md` |
+
+4. Read that agent file completely.
+5. **Adopt that agent's identity, quality standards, and working style for this entire task execution.** The agent's technology references (e.g. Laravel/Livewire) are domain examples — apply the same standards to this project's stack (Effect-TS, Node.js 22, Vue 3, PostgreSQL).
 
 ---
 
@@ -13,16 +39,20 @@ $ARGUMENTS
    - If `$ARGUMENTS` is a task ID (e.g., `TASK-007`), use it directly.
    - If `$ARGUMENTS` is a file path, extract the ID from the filename.
 3. Look up the task entry in `orchestrator.json` under `tasks["TASK-NNN"]`.
-   - If the entry does not exist, check whether `.claude/tasks/TASK-NNN.md` exists. If neither exists, stop: "Task TASK-NNN not found."
+   - If the entry does not exist in `orchestrator.json`, check whether `.claude/tasks/TASK-NNN.md` exists.
    - If the task file exists but is NOT in `orchestrator.json`, read the task file, register it in `orchestrator.json` (status: `todo`, all nullable fields null), and continue.
+   - If neither exists, stop: "Task TASK-NNN not found."
 4. Read the full task file at `.claude/tasks/TASK-NNN.md`.
 5. Check status:
    - `done` → stop: "TASK-NNN is already marked done. Nothing to do."
-   - `blocked` → stop: "TASK-NNN is blocked. Read .claude/tasks/TASK-NNN.md ## Blocked section for details."
-6. Check `dependencies`. For each dependency ID, verify its `status` in `orchestrator.json` is `done`. If any dependency is not done, stop and list which tasks must be completed first.
+   - `blocked` → stop: "TASK-NNN is blocked. Read `.claude/tasks/TASK-NNN.md` ## Blocked section."
+6. Check `dependencies`. For each dependency ID:
+   - If it is in `orchestrator.json` `tasks` map → check its `status`: must be `done`.
+   - If it is **not** in the `tasks` map → it was archived (completed before the current plan), treat as `done`.
+   - If any dependency is not done, stop and list which tasks must be completed first.
 7. Set status to `in-progress`:
    - In the task file front-matter: `status: in-progress`.
-   - In `orchestrator.json`: `tasks["TASK-NNN"].status = "in-progress"`, `startedAt = <current ISO 8601 timestamp>`, `updatedAt = <current ISO 8601 timestamp>`.
+   - In `orchestrator.json`: `tasks["TASK-NNN"].status = "in-progress"`, `startedAt = <current ISO 8601>`, `updatedAt = <current ISO 8601>`.
    - Write the updated `orchestrator.json`.
 
 ---
@@ -33,77 +63,103 @@ Run `npm run build 2>&1 | tail -10` and confirm it exits 0 before making any cha
 
 ---
 
-## Phase 3 — Deep context read
+## Phase 3 — Parallel context read via sub-tasks
 
-Read **every file** listed in the task's `## Scope` section before writing a single line of code. Additionally:
+For each distinct package or directory in the task's `## Scope` section, spawn one sub-task using the `Task` tool. Group files by package so related files are read together. Spawn all sub-tasks **in parallel**, then wait for all to complete before beginning implementation.
 
-- For any file you intend to **modify**: read it completely so your edits are consistent with existing code style, imports, and patterns.
-- For any file you intend to **create**: read adjacent files in the same directory to match naming, import style, and export conventions.
-- For shared types: confirm the exact import path from `@figma-vue-bridge/shared` — never guess.
-- For CLI services: read `packages/cli/src/core/` to understand existing patterns.
-- For API routes: read `packages/api/src/routes/` to understand the route + Zod validation pattern.
-- For web-ui: read adjacent `.vue` components and Pinia stores.
+Sub-agents must produce **minimal intermediate output** — only return the requested JSON. No prose, no thinking-out-loud, no markdown fences.
 
-Do not begin implementation until all relevant files have been read.
+---
+
+### Context sub-task template
+
+For each file group, spawn a `Task` with this prompt (fill in the file list):
+
+> **Prompt:** You are a read-only code analyst. Read these files completely:
+>
+> - `<relative/path/file1.ts>`
+> - `<relative/path/file2.ts>`
+>
+> Return ONLY this JSON object and no other text:
+>
+> ```json
+> {
+>   "files": {
+>     "relative/path/file1.ts": {
+>       "exports": ["ExportedName", ...],
+>       "keyImports": ["import source", ...],
+>       "patterns": ["uses Layer.succeed", "extends BaseAgent", "..."],
+>       "codeStyle": "semicolons, double-quotes, 2-space indent",
+>       "criticalSnippets": [
+>         "// snippet needed to understand how to modify this file (≤5 lines each)"
+>       ]
+>     }
+>   }
+> }
+> ```
+
+---
+
+### Grouping rules
+
+| Files involving                | Spawn one sub-task for           |
+| ------------------------------ | -------------------------------- |
+| `packages/shared/src/schemas/` | All shared schema files together |
+| `packages/core/src/services/`  | All service files together       |
+| `packages/core/src/agents/`    | All agent files together         |
+| `packages/core/src/api/`       | All route files together         |
+| `packages/api-client/src/`     | All api-client files together    |
+| `apps/dashboard/src/`          | All dashboard files together     |
+| Mixed / single files           | Per-directory grouping           |
+
+Maximum 6 parallel sub-tasks. If the scope is tiny (1–2 files), read them directly without spawning sub-tasks.
+
+---
+
+**After ALL sub-tasks complete:** Merge the returned JSON maps. Use this merged context as grounding for Phase 4 — do **not** re-read files redundantly. Only do a targeted file re-read if a specific detail is missing or ambiguous in the returned JSON.
 
 ---
 
 ## Phase 4 — Implementation
 
-Follow the `## Implementation` steps in the task file in the exact order given. While implementing, enforce these project rules absolutely — they are non-negotiable:
+Follow the `## Implementation` steps in the task file in the exact order given. Bring your specialist persona's standards to every decision. While implementing, enforce these project rules absolutely — they are non-negotiable:
+
+### Effect-TS rules
+
+- **NEVER** use `try/catch` — use `Effect.catchAll`, `Effect.catchTag`, or `Effect.mapError`.
+- **NEVER** use raw `Promise` — wrap async operations in `Effect.tryPromise({ try: ..., catch: ... })`.
+- **NEVER** use `new SomeService(...)` — use Layer-based construction (`SomethingLive(config)`).
+- **ALWAYS** use `import { Effect, Context, Layer, Schema } from 'effect'` (or individual subpath imports).
+- **ALWAYS** use `import * as S from 'effect/Schema'` for schema definitions.
+- **ALWAYS** validate untrusted data (AI output, HTTP responses, DB rows) with `S.decodeUnknown` or `S.decode`.
 
 ### TypeScript rules
 
-- **NEVER** use `any` — use `unknown` with explicit narrowing, or Zod validation.
-- **ALWAYS** provide explicit return types on exported functions.
-- **ALWAYS** use the correct path aliases:
-  - `packages/cli/src/`: `@core/`, `@config/`, `@generators/`, `@transformers/`, `@mappers/`, `@parsers/`, `@cli/`
-  - `packages/web-ui/src/`: `@/`
-  - Cross-package: `@figma-vue-bridge/shared`, `@figma-vue-bridge/cli`
+- **NEVER** use `any` — use `unknown` with explicit narrowing or Effect.Schema validation.
+- **ALWAYS** provide explicit return types on exported functions and service methods.
+- **ALWAYS** use `@/*` path aliases for imports within `packages/core` (e.g., `import { Foo } from '@/schemas/foo.schema'`).
 
-### Shared types / schemas rules
+### Schema rules
 
-- **ALWAYS** define shared types in `packages/shared/src/types/` or `packages/shared/src/schemas/`.
-- **ALWAYS** export new shared items from `packages/shared/src/index.ts`.
-- **NEVER** define shared types inline in `packages/api` or `packages/cli`.
-
-### API rules
-
-- **ALWAYS** use inline Zod validation in route handlers (not generic middleware).
-- **ALWAYS** return `{ success: true, data: T }` or `{ success: false, error: { code, message } }`.
-- **ALWAYS** use `createApp()` from `packages/api/src/index.ts` in tests (not a live server).
-- Error codes: `VALIDATION_ERROR` → 400, `NOT_FOUND` → 404, `CLI_ERROR` | `INTERNAL_ERROR` → 500.
-
-### CLI rules
-
-- **ALWAYS** use pure functional transformers (no side effects).
-- **ALWAYS** use `fs-extra` for file operations (`outputFile`, `pathExists`, `ensureDir`).
-- **ALWAYS** use atomic writes: write to `.tmp` then rename.
-- **ALWAYS** use the `Result<T,E>` pattern for error handling in core logic.
-- **NEVER** throw from public service methods — return `Result` types.
-
-### Vue / Web-UI rules
-
-- **ALWAYS** use `<script setup lang="ts">` with Composition API.
-- **ALWAYS** use Pinia stores with **setup function syntax** (`defineStore("name", () => { ... })`).
-- **ALWAYS** use PrimeVue 4 components and Tailwind 4 utility classes.
-- **NEVER** use Options API.
-
-### Testing rules
-
-- **ALWAYS** use `npm run test --workspace=@figma-vue-bridge/<pkg>` for targeted tests.
-- **ALWAYS** use `vi.mock()` for external dependencies in unit tests.
-- **ALWAYS** use `createApp()` from `packages/api/src/index.ts` for API integration tests.
-- For web-ui component tests: use `@vue/test-utils` + `happy-dom`.
+- **NEVER** create new schemas in `packages/core/src/schemas/` — always create them in `packages/shared/src/schemas/` first.
+- **ALWAYS** import schemas from `@virtual-agency/shared` in packages other than shared itself.
+- After adding a schema to shared, export it from `packages/shared/src/index.ts`.
 
 ### Logging rules
 
-- **NEVER** use `console.log`, `console.error`, or `console.warn` in production code — import and use `logger` from `@figma-vue-bridge/shared`.
+- **NEVER** use `console.log`, `console.error`, or `console.warn` — import and use `logger` from `packages/core/src/utils/logger.ts`.
+
+### Testing rules
+
+- **NEVER** run `npx vitest` — always use `npm test` or `npm test -- <path>`.
+- **NEVER** use `vi.mock` for services that use the Effect Layer pattern — use `Layer.succeed(ServiceTag, mockImpl)` instead.
+- **NEVER** connect to real external services in unit tests — use mock Layers.
+- **WHEN_FRONTEND** assign usable test-id's for playwright tests in the format `data-testid="descriptive-name"`.
 
 ### General rules
 
 - **NEVER** use `sleep` or arbitrary delays.
-- **NEVER** create unnecessary documentation markdown files.
+- **NEVER** create summary/documentation markdown files unless the task explicitly asks for documentation.
 - **ALWAYS** use descriptive, full variable and function names — no abbreviations.
 
 ---
@@ -122,16 +178,16 @@ The build **must** exit 0 with no TypeScript errors. If errors exist, fix them b
 
 ### 5b. Tests
 
-Run the most targeted test command that covers the changed code:
+Run the most targeted test command that covers the changed code. Use the task's acceptance criteria to determine the right path:
 
 ```
-npm run test --workspace=@figma-vue-bridge/<affected-package>
+npm test -- <most specific path matching changed code>
 ```
 
-If no specific package is obvious, run the full suite:
+If no specific path is obvious, run the full suite:
 
 ```
-npm run test
+npm test
 ```
 
 All tests **must** pass. If tests fail due to your changes, fix them before proceeding. If pre-existing tests fail (unrelated to your changes), note them explicitly but continue.
@@ -163,9 +219,10 @@ Only after both build and tests are green:
    - `tasks["TASK-NNN"].testStatus = "passed"` (or `"passed-with-preexisting-failures"` if applicable)
    - `tasks["TASK-NNN"].notes = <any relevant notes, or empty string>`
    - `updatedAt = <current ISO 8601 timestamp>`
-4. Check if all tasks in the plan's `taskIds` array are now `done`. If so:
+4. Check if all tasks in `tasks["TASK-NNN"].planId`'s `taskIds` array are now `done`. If so:
    - Set `plans["PLAN-NNN"].status = "done"`
    - Set `activePlanId = null` (unless another plan is still `in-progress`)
+   - Print: "🎉 Plan PLAN-NNN complete — run `/archive-plan PLAN-NNN` to seal and archive it."
 5. Write the full updated `orchestrator.json`.
 
 ---
@@ -176,6 +233,7 @@ Print to stdout:
 
 ```
 ✅ TASK-NNN complete — <title>
+Role: <role> (<agent persona used>)
 
 Files changed:
   modified: path/to/file.ts
@@ -187,12 +245,11 @@ Tests: ✅ <N tests passed>
 Plan PLAN-NNN progress: <N done> / <total> tasks
   <TASK-NNN> ✅ done
   <TASK-NNN> ⏳ todo   ← next
-  <TASK-NNN> ⏳ todo
 
 State saved to .claude/orchestrator.json
 
 Next task: TASK-NNN (<title>) — run `/execute-task TASK-NNN`
-         or: 🎉 Plan PLAN-NNN is complete — all tasks done.
+         or: 🎉 Plan PLAN-NNN is complete — run `/archive-plan PLAN-NNN`
 ```
 
 ---
@@ -203,12 +260,8 @@ If at any point you cannot complete the task (blocked by missing information, a 
 
 1. Set `status: blocked` in the task file front-matter.
 2. Append a `## Blocked` section to the task file explaining exactly what is missing and what must happen to unblock it.
-3. Update `orchestrator.json`:
-   - `tasks["TASK-NNN"].status = "blocked"`
-   - `tasks["TASK-NNN"].notes = "<concise reason>"`
-   - `updatedAt = <current ISO 8601 timestamp>`
-   - Write the updated file.
-4. Print a clear error report:
+3. Update `orchestrator.json`: `tasks["TASK-NNN"].status = "blocked"`, `notes = "<reason>"`, `updatedAt = <timestamp>`.
+4. Print:
    ```
    ❌ TASK-NNN blocked — <title>
    Reason: <concise reason>

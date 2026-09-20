@@ -1,4 +1,6 @@
-You are a task-definition writer for the **figma-vue-bridge** monorepo. Given the description below, produce one precise, self-contained task file and register it in `.claude/orchestrator.json`.
+You are a task-definition writer for the `virtual-agency` monorepo. Given the description below, produce one precise, self-contained task file and register it in `.claude/orchestrator.json`.
+
+> **v2 Architecture**: `orchestrator.json` is a slim active registry. Use `counters.nextTaskId` for the new task ID — do **not** scan task keys to compute the max.
 
 ## Task description
 
@@ -10,32 +12,35 @@ $ARGUMENTS
 
 Read `.claude/orchestrator.json`.
 
-- If the file does not exist, initialise it with the empty structure:
+- If the file does not exist, initialise it with the v2 empty structure:
   ```json
   {
-    "version": "1",
+    "version": "2",
     "updatedAt": "<ISO 8601>",
+    "counters": { "nextTaskId": 1, "nextPlanId": 1 },
     "activePlanId": null,
+    "notes": "",
     "plans": {},
     "tasks": {}
   }
   ```
-- Find the highest existing `TASK-NNN` key in the `tasks` map. The new task ID is that number plus one, zero-padded to three digits (e.g., if the highest is `TASK-007`, create `TASK-008`).
-- If `tasks` is empty, start at `TASK-001`.
-- If there is an `activePlanId`, note it — the new task will be linked to that plan. If there is no active plan, set `planId` to `null` in the registry entry.
+- Read `counters.nextTaskId` — this is the ID number to use (zero-padded to 3 digits, e.g. `204` → `TASK-204`).
+- If there is an `activePlanId`, note it — the new task will be linked to that plan.
+  If there is no active plan, set `planId` to `null` in the registry entry.
+- Scan the active `tasks` map keys only (not archives) to confirm no identical task already exists.
 
 ---
 
 ## Step 2 — Gather codebase context
 
-Before writing the task, read the files most relevant to the description. Use CLAUDE.md as your map. At minimum:
+Before writing the task, read the files most relevant to the description. At minimum:
 
-- If the task involves a new shared type or schema → read `packages/shared/src/types/` and `packages/shared/src/schemas/` to check if it already exists.
-- If the task involves the CLI → read `packages/cli/src/core/` for the relevant service(s).
-- If the task involves the API → read `packages/api/src/routes/` and `packages/api/src/services/`.
-- If the task involves the Web UI → read `packages/web-ui/src/views/` and `packages/web-ui/src/stores/`.
-- If the task involves the Figma Plugin → read `packages/figma-plugin/src/code.ts` and `packages/figma-plugin/src/extractors.ts`.
-- If the task involves the VS Code extension → read `packages/vscode-extension/src/extension.ts`.
+- If the task involves a new schema → read `packages/shared/src/schemas/` to check if it already exists and to understand naming conventions.
+- If the task involves a service → read `packages/core/src/services/` to understand existing patterns.
+- If the task involves an agent → read `packages/core/src/agents/` to understand `BaseAgent` and existing implementations.
+- If the task involves the API → read `packages/core/src/api/`.
+- If the task involves the dashboard → read `apps/dashboard/src/`.
+- If the task involves the API client → read `packages/api-client/src/`.
 
 Do **not** skip this. The task file must reference real file paths and real symbol names.
 
@@ -51,6 +56,7 @@ id: TASK-NNN
 title: "<concise imperative title, max 60 chars>"
 status: todo
 priority: <critical|high|medium|low>
+role: <backend|frontend|schema|devops|ui|ux|qa|verify|planning>
 dependencies: [<TASK-NNN, ...> or "none"]
 estimated_effort: <XS 15min | S 30min | M 1h | L 2h | XL 4h+>
 ---
@@ -61,7 +67,7 @@ One sentence: what this task achieves and why it is needed.
 
 ## Context
 
-Key facts the executing agent must know (type names, service names, existing patterns to follow, pitfalls to avoid). Be specific. Reference exact file paths and the correct path aliases.
+Key facts the executing agent must know (schema names, service names, existing patterns to follow, pitfalls to avoid). Be specific. Reference exact file paths.
 
 ## Scope
 
@@ -77,19 +83,35 @@ Key facts the executing agent must know (type names, service names, existing pat
 ## Implementation
 
 Step-by-step instructions in order. Be explicit about:
-- Which package/path alias to use for imports
-- Which existing types/schemas to import from `@figma-vue-bridge/shared`
+- Which Effect-TS patterns to use (Layer, Context.GenericTag, Effect.tryPromise, etc.)
+- Which schemas to import from `@virtual-agency/shared`
 - Which existing utilities/services to reuse
 - What NOT to do
 
 ## Acceptance Criteria
 
 - [ ] `npm run build` exits 0 with no new TypeScript errors
-- [ ] `npm run test --workspace=@figma-vue-bridge/<pkg>` exits 0
+- [ ] `npm test` exits 0 (or `npm test -- <path>` for targeted run)
 - [ ] <specific functional criterion 1>
 - [ ] <specific functional criterion 2>
 - [ ] No `any` types introduced
+- [ ] No raw Promises introduced
+- [ ] No try/catch introduced
 ```
+
+### Role field → specialist agent
+
+| role       | Agent              | Use for                                      |
+| ---------- | ------------------ | -------------------------------------------- |
+| `backend`  | Senior Developer   | Services, agents, API routes, DB, queue      |
+| `frontend` | Senior Developer   | Vue components, dashboard, composables       |
+| `schema`   | Senior Developer   | Effect.Schema definitions in packages/shared |
+| `devops`   | Senior Developer   | Docker, CI, migrations, infra                |
+| `ui`       | UI Designer        | Visual design, component styling             |
+| `ux`       | UX Architect       | User flows, information architecture         |
+| `qa`       | Evidence Collector | Writing tests, documenting issues            |
+| `verify`   | Reality Checker    | Integration/build/test certification         |
+| `planning` | Senior PM          | Breaking down ambiguous goals                |
 
 ---
 
@@ -104,6 +126,7 @@ After saving the task file, update `.claude/orchestrator.json`:
   "id": "TASK-NNN",
   "planId": "<activePlanId or null>",
   "title": "<title from task file>",
+  "role": "<role from task file>",
   "status": "todo",
   "priority": "<priority>",
   "dependencies": ["TASK-NNN"],
@@ -118,9 +141,10 @@ After saving the task file, update `.claude/orchestrator.json`:
 }
 ```
 
-2. If there is an `activePlanId`, append `TASK-NNN` to that plan's `taskIds` array.
-3. Set `"updatedAt"` to the current ISO 8601 timestamp.
-4. Write the full updated JSON back to `.claude/orchestrator.json`.
+2. Increment `counters.nextTaskId` by 1.
+3. If there is an `activePlanId`, append `TASK-NNN` to that plan's `taskIds` array.
+4. Set `"updatedAt"` to the current ISO 8601 timestamp.
+5. Write the full updated JSON back to `.claude/orchestrator.json`.
 
 ---
 
@@ -130,8 +154,9 @@ Print:
 
 ```
 Created:      .claude/tasks/TASK-NNN.md
-Registered:   .claude/orchestrator.json → tasks.TASK-NNN
+Registered:   .claude/orchestrator.json → tasks.TASK-NNN (nextTaskId now NNN+1)
 Title:        <title>
+Role:         <role> → will use <agent persona>
 Priority:     <priority>
 Effort:       <effort>
 Dependencies: <list or none>
@@ -145,10 +170,8 @@ Run `/execute-task TASK-NNN` to implement this task.
 ## Constraints
 
 - One task file only — do not create multiple tasks.
-- If the description is too vague to write a scoped task, state what information is missing and stop. Do not invent scope.
-- NEVER add `any` types to implementation instructions.
-- NEVER point shared types to `packages/api` or `packages/cli` — always `packages/shared/src/`.
-- NEVER use `npx vitest` — always `npm run test`.
-- NEVER use `console.log` in implementation instructions — always the `logger` from `@figma-vue-bridge/shared`.
-- ALWAYS check existing `tasks` in `orchestrator.json` before creating a duplicate — task descriptions that are already covered must be rejected with an explanation.
-- ALWAYS follow project coding standards from CLAUDE.md.
+- If the description is too vague to write a scoped task, state what information is missing and stop.
+- NEVER add `any` types, raw Promises, try/catch, or `console.log` to implementation instructions.
+- NEVER point schemas to `packages/core` — always `packages/shared/src/schemas/`.
+- ALWAYS assign a `role:` field.
+- ALWAYS check active `tasks` in `orchestrator.json` before creating a duplicate.
