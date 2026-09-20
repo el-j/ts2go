@@ -150,7 +150,7 @@ func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(`<!DOCTYPE html>
+	_, _ = w.Write([]byte(`<!DOCTYPE html>
 <html>
 <head>
     <title>TS2Go Web API</title>
@@ -473,7 +473,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 // respondError sends an error response
@@ -525,9 +525,9 @@ func (m *adapterMapper) TransformAPICall(code string) (string, error) {
 type placeholderCodeGen struct{}
 
 func (p *placeholderCodeGen) ParseTypeScript(filePath string) (interface{}, error) {
-	return nil, fmt.Errorf("TypeScript parsing not yet implemented in hexagonal architecture")
+	return nil, fmt.Errorf("typescript parsing not yet implemented in hexagonal architecture")
 }
 
 func (p *placeholderCodeGen) GenerateGoCode(ast interface{}) (string, error) {
-	return "", fmt.Errorf("Go code generation not yet implemented in hexagonal architecture")
+	return "", fmt.Errorf("go code generation not yet implemented in hexagonal architecture")
 }

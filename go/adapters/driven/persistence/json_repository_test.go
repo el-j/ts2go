@@ -14,7 +14,7 @@ func TestJSONStateRepository(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	repo, err := persistence.NewJSONStateRepository(tempDir)
 	if err != nil {
@@ -53,7 +53,7 @@ func TestJSONStateRepository(t *testing.T) {
 	})
 
 	t.Run("GetAllStates", func(t *testing.T) {
-		repo.SaveState("/path/to/another", &domain.ProjectState{ProjectPath: "/path/to/another"})
+		_ = repo.SaveState("/path/to/another", &domain.ProjectState{ProjectPath: "/path/to/another"})
 
 		states, err := repo.GetAllStates()
 		if err != nil {
@@ -71,45 +71,43 @@ func TestJSONStateRepository(t *testing.T) {
 			t.Fatalf("DeleteState failed: %v", err)
 		}
 
-		exists, _ := repo.Exists("/path/to/myproj")
+		exists, err := repo.Exists("/path/to/myproj")
+		if err != nil {
+			t.Fatalf("Exists failed after delete: %v", err)
+		}
 		if exists {
-			t.Errorf("State still exists after deletion")
+			t.Errorf("Expected state to be deleted")
 		}
 	})
 
 	t.Run("Errors and Edge Cases", func(t *testing.T) {
-		// Write invalid json
 		stateFile := filepath.Join(tempDir, "invalid.json")
-		os.WriteFile(stateFile, []byte("{ bad json"), 0644)
+		_ = os.WriteFile(stateFile, []byte("{ bad json"), 0644)
 
 		_, err := repo.GetState("invalid")
 		if err == nil {
 			t.Errorf("Expected error for invalid JSON")
 		}
 
-		// Hit GetAllStates with invalid JSON present (it should skip without error)
 		states, err := repo.GetAllStates()
 		if err != nil {
 			t.Errorf("GetAllStates with invalid JSON should not fail: %v", err)
 		}
-		if len(states) != 2 { // We saved 2 states earlier: /path/to/myproj, /path/to/another
-			// Just a sanity check, might be 1 if myproj was deleted
+		if len(states) < 1 {
+			t.Errorf("Expected at least 1 state")
 		}
 
-		// Delete missing state
 		err = repo.DeleteState("missing_project")
 		if err != nil {
 			t.Errorf("DeleteState on missing project should not error")
 		}
 
-		// SaveState with invalid path (e.g. file exists where dir should be)
 		badDir := filepath.Join(tempDir, "bad_dir_file")
-		os.WriteFile(badDir, []byte("data"), 0644)
+		_ = os.WriteFile(badDir, []byte("data"), 0644)
 
 		badRepo, _ := persistence.NewJSONStateRepository(filepath.Join(badDir, "subdir"))
 		if badRepo != nil {
-			// If it somehow creates it, we try to save
-			badRepo.SaveState("test", &domain.ProjectState{})
+			_ = badRepo.SaveState("test", &domain.ProjectState{})
 		}
 	})
 }
@@ -119,7 +117,7 @@ func TestJSONSettingsRepository(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	settingsFile := filepath.Join(tempDir, "settings.json")
 	repo, err := persistence.NewJSONSettingsRepository(settingsFile)
@@ -163,7 +161,7 @@ func TestJSONSettingsRepository(t *testing.T) {
 			t.Fatalf("Get failed after reset: %v", err)
 		}
 
-		if retrieved.Theme == "dark" /* unless default is dark */ {
+		if retrieved.Theme == "dark" {
 			exists, _ := repo.Exists()
 			if !exists {
 				t.Errorf("Expected settings to exist after Reset")
@@ -172,14 +170,12 @@ func TestJSONSettingsRepository(t *testing.T) {
 	})
 
 	t.Run("Errors and Edge Cases", func(t *testing.T) {
-		// Invalid JSON
-		os.WriteFile(settingsFile, []byte("{ bad json"), 0644)
+		_ = os.WriteFile(settingsFile, []byte("{ bad json"), 0644)
 		_, err := repo.Get()
 		if err == nil {
 			t.Errorf("Expected error for invalid JSON")
 		}
 
-		// Get missing settings
 		missingSettingsFile := filepath.Join(tempDir, "missing", "settings.json")
 		missingRepo, _ := persistence.NewJSONSettingsRepository(missingSettingsFile)
 		_, err = missingRepo.Get()
@@ -187,12 +183,11 @@ func TestJSONSettingsRepository(t *testing.T) {
 			t.Errorf("Expected error for missing settings")
 		}
 
-		// Read-only settings
 		readOnlySettings := filepath.Join(tempDir, "readonly_set.json")
-		os.WriteFile(readOnlySettings, []byte("{}"), 0400)
+		_ = os.WriteFile(readOnlySettings, []byte("{}"), 0400)
 		roSetRepo, _ := persistence.NewJSONSettingsRepository(readOnlySettings)
 		if roSetRepo != nil {
-			roSetRepo.Save(domain.DefaultSettings()) // just to bump coverage
+			_ = roSetRepo.Save(domain.DefaultSettings())
 		}
 	})
 }

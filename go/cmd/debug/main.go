@@ -3,15 +3,28 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/el-j/ts2go/internal/transpiler"
 )
 
 func main() {
-	data, _ := ioutil.ReadFile("/tmp/ast.json")
+	data, err := os.ReadFile("/tmp/ast.json")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading AST file: %v\n", err)
+		return
+	}
+
 	var ast transpiler.ASTNode
-	json.Unmarshal(data, &ast)
+	if err := json.Unmarshal(data, &ast); err != nil {
+		fmt.Fprintf(os.Stderr, "Error unmarshaling AST: %v\n", err)
+		return
+	}
+
+	if len(ast.Statements) < 2 || ast.Statements[1].Body == nil || len(ast.Statements[1].Body.Statements) < 3 {
+		return
+	}
+
 	funcDecl := ast.Statements[1]
 	ifStmt := funcDecl.Body.Statements[2]
 

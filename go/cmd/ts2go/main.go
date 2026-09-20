@@ -1,13 +1,19 @@
+// Package main provides the command-line interface entrypoint for ts2go,
+// a tool for transpiling TypeScript projects and files into idiomatic Go code.
 package main
 
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/el-j/ts2go/adapters/driving/cli"
-	legacycli "github.com/el-j/ts2go/cli"
 	"github.com/el-j/ts2go/internal/transpiler"
 )
+
+// Version is the current release version of ts2go.
+// It can be overridden at link time via -ldflags "-X main.Version=x.y.z".
+var Version = "0.5.1"
 
 func main() {
 	// Initialize the application with dependency injection
@@ -69,8 +75,8 @@ func main() {
 			os.Exit(1)
 		}
 	case "ui":
-		// Legacy command - keep old implementation
-		if err := legacycli.UICommand(args); err != nil {
+		// Start web-based UI server
+		if err := app.UICommand(args); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
@@ -140,9 +146,14 @@ func printUsage() {
 	fmt.Println("  test           Run Go tests on transpiled code")
 	fmt.Println("                 ts2go test --source <source-dir> [--verbose] [--coverage] [--flags <test-flags>]")
 	fmt.Println()
-	fmt.Println("  ui             Start web-based UI (legacy)")
+	fmt.Println("  state          Manage persistent project transpilation state")
+	fmt.Println("                 ts2go state <get|set|delete> <project-path> [json-data]")
+	fmt.Println()
+	fmt.Println("  settings       Manage global application settings")
+	fmt.Println("                 ts2go settings <get|set> [json-data]")
+	fmt.Println()
+	fmt.Println("  ui             Start web-based UI server")
 	fmt.Println("                 ts2go ui [--port 8080] [--open]")
-	fmt.Println("                 Note: For modern desktop app, see desktop-ui/")
 	fmt.Println()
 	fmt.Println("  help, h        Show this help message")
 	fmt.Println("  version, v     Show version information")
@@ -157,20 +168,33 @@ func printUsage() {
 	fmt.Println("  # Analyze project dependencies")
 	fmt.Println("  ts2go analyze ./my-project")
 	fmt.Println()
+	fmt.Println("  # Inspect project state")
+	fmt.Println("  ts2go state get ./my-project")
+	fmt.Println()
+	fmt.Println("  # Retrieve application settings")
+	fmt.Println("  ts2go settings get")
+	fmt.Println()
 	fmt.Println("  # Build transpiled code")
 	fmt.Println("  ts2go build --source ./output --output ./my-app")
 	fmt.Println()
 	fmt.Println("  # Run tests on transpiled code")
 	fmt.Println("  ts2go test --source ./output --verbose --coverage")
 	fmt.Println()
-	fmt.Println("  # Start web UI (legacy)")
+	fmt.Println("  # Start web UI")
 	fmt.Println("  ts2go ui --port 8080 --open")
 	fmt.Println()
 	fmt.Println("For more information, visit: https://github.com/el-j/ts2go")
 }
 
 func printVersion() {
-	fmt.Println("ts2go version 0.1.0")
+	v := Version
+	for _, path := range []string{"VERSION", "../VERSION", "../../VERSION"} {
+		if data, err := os.ReadFile(path); err == nil {
+			v = strings.TrimSpace(string(data))
+			break
+		}
+	}
+	fmt.Printf("ts2go version %s\n", v)
 	fmt.Println("TypeScript to Go Transpiler")
 	fmt.Println("https://github.com/el-j/ts2go")
 }

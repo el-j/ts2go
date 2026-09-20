@@ -162,9 +162,9 @@ func (r *ImportResolver) GenerateImportBlock() (string, error) {
 
 		// Generate import line
 		if imp.PackageAlias != "" {
-			builder.WriteString(fmt.Sprintf("\t%s \"%s\"\n", imp.PackageAlias, imp.PackagePath))
+			fmt.Fprintf(&builder, "\t%s \"%s\"\n", imp.PackageAlias, imp.PackagePath)
 		} else {
-			builder.WriteString(fmt.Sprintf("\t\"%s\"\n", imp.PackagePath))
+			fmt.Fprintf(&builder, "\t\"%s\"\n", imp.PackagePath)
 		}
 	}
 

@@ -123,28 +123,6 @@ func (g *CodeGenerator) getModuleImports() string {
 	return ""
 }
 
-// getGoSymbolName converts TypeScript symbol name to Go symbol name based on visibility
-func (g *CodeGenerator) getGoSymbolName(tsName string) string {
-	if g.visibility == nil {
-		// Default behavior - public by default
-		return toPascalCase(tsName)
-	}
-
-	// Use reflection to check visibility
-	type visibilityChecker interface {
-		IsExported(string) bool
-	}
-
-	if v, ok := g.visibility.(visibilityChecker); ok {
-		if v.IsExported(tsName) {
-			return toPascalCase(tsName)
-		}
-		return toCamelCase(tsName)
-	}
-
-	return toPascalCase(tsName)
-}
-
 // needsOptionalAccess checks if the AST tree contains any optional chaining
 func (g *CodeGenerator) needsOptionalAccess(node *ASTNode) bool {
 	if node == nil {

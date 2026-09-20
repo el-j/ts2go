@@ -152,10 +152,10 @@ func (mg *ModuleGenerator) formatGoMod(moduleName, goVersion string, dependencie
 	var sb strings.Builder
 
 	// Module declaration
-	sb.WriteString(fmt.Sprintf("module %s\n\n", moduleName))
+	fmt.Fprintf(&sb, "module %s\n\n", moduleName)
 
 	// Go version
-	sb.WriteString(fmt.Sprintf("go %s\n", goVersion))
+	fmt.Fprintf(&sb, "go %s\n", goVersion)
 
 	// Dependencies
 	if len(dependencies) > 0 {
@@ -171,7 +171,7 @@ func (mg *ModuleGenerator) formatGoMod(moduleName, goVersion string, dependencie
 		// Write each dependency
 		for _, pkg := range packages {
 			version := dependencies[pkg]
-			sb.WriteString(fmt.Sprintf("\t%s %s\n", pkg, version))
+			fmt.Fprintf(&sb, "\t%s %s\n", pkg, version)
 		}
 
 		sb.WriteString(")\n")
@@ -264,21 +264,21 @@ func (ds *DependencySummary) FormatSummary() string {
 	sb.WriteString("Dependency Summary\n")
 	sb.WriteString("==================\n\n")
 
-	sb.WriteString(fmt.Sprintf("NPM Packages: %d\n", ds.TotalNPM))
-	sb.WriteString(fmt.Sprintf("Go Packages: %d\n", ds.TotalGo))
-	sb.WriteString(fmt.Sprintf("  - Standard Library: %d\n", len(ds.StdlibPackages)))
-	sb.WriteString(fmt.Sprintf("  - External: %d\n", len(ds.ExternalPackages)))
-	sb.WriteString(fmt.Sprintf("  - Runtime: %d\n", len(ds.RuntimePackages)))
+	fmt.Fprintf(&sb, "NPM Packages: %d\n", ds.TotalNPM)
+	fmt.Fprintf(&sb, "Go Packages: %d\n", ds.TotalGo)
+	fmt.Fprintf(&sb, "  - Standard Library: %d\n", len(ds.StdlibPackages))
+	fmt.Fprintf(&sb, "  - External: %d\n", len(ds.ExternalPackages))
+	fmt.Fprintf(&sb, "  - Runtime: %d\n", len(ds.RuntimePackages))
 	sb.WriteString("\n")
 
-	sb.WriteString(fmt.Sprintf("Supported: %d\n", ds.Supported))
-	sb.WriteString(fmt.Sprintf("Partial: %d\n", ds.Partial))
-	sb.WriteString(fmt.Sprintf("Unsupported: %d\n", ds.Unsupported))
+	fmt.Fprintf(&sb, "Supported: %d\n", ds.Supported)
+	fmt.Fprintf(&sb, "Partial: %d\n", ds.Partial)
+	fmt.Fprintf(&sb, "Unsupported: %d\n", ds.Unsupported)
 
 	if len(ds.UnsupportedList) > 0 {
 		sb.WriteString("\nUnsupported Packages:\n")
 		for _, pkg := range ds.UnsupportedList {
-			sb.WriteString(fmt.Sprintf("  - %s\n", pkg))
+			fmt.Fprintf(&sb, "  - %s\n", pkg)
 		}
 	}
 

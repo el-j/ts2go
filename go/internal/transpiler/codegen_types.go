@@ -73,7 +73,7 @@ func (g *CodeGenerator) generateTupleType(node *ASTNode) (string, error) {
 
 // generateInlineStruct converts a TypeLiteral to an inline struct definition
 func (g *CodeGenerator) generateInlineStruct(node *ASTNode) (string, error) {
-	if node.Members == nil || len(node.Members) == 0 {
+	if len(node.Members) == 0 {
 		return "struct{}", nil
 	}
 

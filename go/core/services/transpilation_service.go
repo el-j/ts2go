@@ -194,9 +194,7 @@ func (s *TranspilationServiceImpl) AnalyzeProject(projectPath string) (*domain.A
 		}
 
 		// Collect dependencies
-		for _, pkg := range analysis.NpmPackages {
-			report.Dependencies = append(report.Dependencies, pkg)
-		}
+		report.Dependencies = append(report.Dependencies, analysis.NpmPackages...)
 	}
 
 	return report, nil
