@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import AppLayout from '@/components/AppLayout.vue'
-import ExampleGallery from '@/components/ExampleGallery.vue'
-import type { Example } from '@/data/examples'
-import Splitter from 'primevue/splitter'
-import SplitterPanel from 'primevue/splitterpanel'
-import Card from 'primevue/card'
-import Button from 'primevue/button'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import AppLayout from '@/components/AppLayout.vue';
+import ExampleGallery from '@/components/ExampleGallery.vue';
+import type { Example } from '@/data/examples';
+import Splitter from 'primevue/splitter';
+import SplitterPanel from 'primevue/splitterpanel';
+import Card from 'primevue/card';
+import Button from 'primevue/button';
 
-const router = useRouter()
-const selectedExample = ref<Example | null>(null)
+const router = useRouter();
+const selectedExample = ref<Example | null>(null);
 
 function loadExample(example: Example) {
-  selectedExample.value = example
+  selectedExample.value = example;
 }
 
 function openInEditor() {
@@ -22,9 +22,9 @@ function openInEditor() {
     router.push({
       name: 'editor',
       query: {
-        code: selectedExample.value.typescript
-      }
-    })
+        code: selectedExample.value.typescript,
+      },
+    });
   }
 }
 </script>
@@ -33,7 +33,9 @@ function openInEditor() {
   <AppLayout>
     <div class="h-full flex flex-col">
       <!-- Header -->
-      <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+      <div
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4"
+      >
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Example Gallery</h2>
@@ -62,9 +64,9 @@ function openInEditor() {
                   <template #title>
                     <div class="flex items-center justify-between">
                       <span>{{ selectedExample.title }}</span>
-                      <Button 
-                        label="Open in Editor" 
-                        icon="pi pi-external-link" 
+                      <Button
+                        label="Open in Editor"
+                        icon="pi pi-external-link"
                         size="small"
                         @click="openInEditor"
                       />
@@ -77,20 +79,28 @@ function openInEditor() {
 
                     <!-- TypeScript Code -->
                     <div class="mb-4">
-                      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                      <h3
+                        class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2"
+                      >
                         <i class="pi pi-file text-blue-500"></i>
                         TypeScript Input
                       </h3>
-                      <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto text-sm"><code>{{ selectedExample.typescript }}</code></pre>
+                      <pre
+                        class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto text-sm"
+                      ><code>{{ selectedExample.typescript }}</code></pre>
                     </div>
 
                     <!-- Go Code -->
                     <div>
-                      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                      <h3
+                        class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2"
+                      >
                         <i class="pi pi-file text-cyan-500"></i>
                         Generated Go Output
                       </h3>
-                      <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto text-sm"><code>{{ selectedExample.go }}</code></pre>
+                      <pre
+                        class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto text-sm"
+                      ><code>{{ selectedExample.go }}</code></pre>
                     </div>
                   </template>
                 </Card>

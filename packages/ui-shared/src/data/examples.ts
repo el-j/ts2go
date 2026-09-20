@@ -1,10 +1,10 @@
 export interface Example {
-  id: string
-  title: string
-  description: string
-  category: 'basic' | 'intermediate' | 'advanced'
-  typescript: string
-  go: string
+  id: string;
+  title: string;
+  description: string;
+  category: 'basic' | 'intermediate' | 'advanced';
+  typescript: string;
+  go: string;
 }
 
 export const EXAMPLES: Example[] = [
@@ -34,7 +34,7 @@ type Address struct {
 \tStreet  string \`json:"street"\`
 \tCity    string \`json:"city"\`
 \tZipCode string \`json:"zipCode"\`
-}`
+}`,
   },
   {
     id: 'class',
@@ -84,7 +84,7 @@ func NewDog(name string) *Dog {
 
 func (d *Dog) Speak() string {
 \treturn fmt.Sprintf("%s - Woof!", d.Animal.Speak())
-}`
+}`,
   },
   {
     id: 'function',
@@ -112,7 +112,7 @@ func Greet(name string) string {
 
 func ProcessArray(items []string) float64 {
 \treturn float64(len(items))
-}`
+}`,
   },
   {
     id: 'enum',
@@ -165,7 +165,7 @@ func GetColorName(color Color) string {
 \tdefault:
 \t\treturn ""
 \t}
-}`
+}`,
   },
   {
     id: 'async',
@@ -209,7 +209,7 @@ func ProcessData() chan interface{} {
 \t\tresultCh <- nil
 \t}()
 \treturn resultCh
-}`
+}`,
   },
   {
     id: 'control-flow',
@@ -267,6 +267,6 @@ func Categorize(value float64) string {
 \tdefault:
 \t\treturn "unknown"
 \t}
-}`
-  }
-]
+}`,
+  },
+];

@@ -1,173 +1,170 @@
 <template>
   <!-- <div class="project-loader"> -->
-    <!-- <div class="loader-content"> -->
-      
-      
-      <div class="folder-selector">
-        <label>Project Folder:</label>
-        <div class="input-group">
-          <input 
-            v-model="selectedPath" 
-            type="text" 
-            placeholder="Select a folder or enter path..."
-            @keyup.enter="loadProject"
-          >
-          <button @click="browseFolder" class="btn-browse">
-            📁 Browse
-          </button>
-        </div>
-      </div>
+  <!-- <div class="loader-content"> -->
 
-      <div v-if="loading" class="loading">
-        <span class="spinner"></span>
-        Loading project...
-      </div>
+  <div class="folder-selector">
+    <label>Project Folder:</label>
+    <div class="input-group">
+      <input
+        v-model="selectedPath"
+        type="text"
+        placeholder="Select a folder or enter path..."
+        @keyup.enter="loadProject"
+      />
+      <button @click="browseFolder" class="btn-browse">📁 Browse</button>
+    </div>
+  </div>
 
-      <div v-if="projectInfo" class="project-info">
-        <h3>✅ Project Loaded</h3>
-        <div class="info-row">
-          <span class="label">Root:</span>
-          <span class="value">{{ projectInfo.root }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Files Found:</span>
-          <span class="value">{{ projectInfo.files.length }} TypeScript files</span>
-        </div>
-        
-        <div class="actions">
-          <button @click="autoTranspile" class="btn-primary" :disabled="transpiling">
-            {{ transpiling ? '⏳ Transpiling...' : '🚀 Auto-Transpile Project' }}
-          </button>
-          <button @click="openInEditor" class="btn-secondary">
-            📝 Open in Editor
-          </button>
-        </div>
-      </div>
+  <div v-if="loading" class="loading">
+    <span class="spinner"></span>
+    Loading project...
+  </div>
 
-      <div v-if="transpileResult" class="transpile-result" :class="{ success: transpileResult.success, error: !transpileResult.success }">
-        <h3>{{ transpileResult.success ? '✅ Transpilation Complete!' : '❌ Transpilation Failed' }}</h3>
-        <div v-if="transpileResult.success">
-          <p><strong>Output Directory:</strong> {{ transpileResult.output_dir }}</p>
-          <p><strong>Files Transpiled:</strong> {{ transpileResult.files_transpiled }}</p>
-          <p class="message">{{ transpileResult.message }}</p>
-          
-          <button @click="openOutputFolder" class="btn-secondary">
-            📂 Open Output Folder
-          </button>
-        </div>
-        <div v-else>
-          <p class="error-message">{{ transpileResult.error }}</p>
-        </div>
-      </div>
+  <div v-if="projectInfo" class="project-info">
+    <h3>✅ Project Loaded</h3>
+    <div class="info-row">
+      <span class="label">Root:</span>
+      <span class="value">{{ projectInfo.root }}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Files Found:</span>
+      <span class="value">{{ projectInfo.files.length }} TypeScript files</span>
+    </div>
 
-      <div v-if="error" class="error-box">
-        ⚠️ {{ error }}
-      </div>
-    <!-- </div> -->
+    <div class="actions">
+      <button @click="autoTranspile" class="btn-primary" :disabled="transpiling">
+        {{ transpiling ? '⏳ Transpiling...' : '🚀 Auto-Transpile Project' }}
+      </button>
+      <button @click="openInEditor" class="btn-secondary">📝 Open in Editor</button>
+    </div>
+  </div>
+
+  <div
+    v-if="transpileResult"
+    class="transpile-result"
+    :class="{ success: transpileResult.success, error: !transpileResult.success }"
+  >
+    <h3>
+      {{ transpileResult.success ? '✅ Transpilation Complete!' : '❌ Transpilation Failed' }}
+    </h3>
+    <div v-if="transpileResult.success">
+      <p><strong>Output Directory:</strong> {{ transpileResult.output_dir }}</p>
+      <p><strong>Files Transpiled:</strong> {{ transpileResult.files_transpiled }}</p>
+      <p class="message">{{ transpileResult.message }}</p>
+
+      <button @click="openOutputFolder" class="btn-secondary">📂 Open Output Folder</button>
+    </div>
+    <div v-else>
+      <p class="error-message">{{ transpileResult.error }}</p>
+    </div>
+  </div>
+
+  <div v-if="error" class="error-box">⚠️ {{ error }}</div>
+  <!-- </div> -->
   <!-- </div> -->
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { open } from '@tauri-apps/plugin-dialog'
-import { useWorkspaceStore } from '../stores/workspace'
-import { useProjectStore } from '../stores/project'
-import { useTranspileStore } from '../stores/transpile'
-import { useRouter } from 'vue-router'
+import { ref, computed } from 'vue';
+import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
+import { useWorkspaceStore } from '../stores/workspace';
+import { useProjectStore } from '../stores/project';
+import { useTranspileStore } from '../stores/transpile';
+import { useRouter } from 'vue-router';
 
-const selectedPath = ref('')
-const loading = ref(false)
-const projectInfo = ref<any>(null)
-const error = ref('')
+const selectedPath = ref('');
+const loading = ref(false);
+const projectInfo = ref<any>(null);
+const error = ref('');
 
-const workspaceStore = useWorkspaceStore()
-const projectStore = useProjectStore()
-const transpileStore = useTranspileStore()
-const router = useRouter()
+const workspaceStore = useWorkspaceStore();
+const projectStore = useProjectStore();
+const transpileStore = useTranspileStore();
+const router = useRouter();
 
-const transpiling = computed(() => transpileStore.isTranspiling)
-const transpileResult = computed(() => transpileStore.currentResult)
+const transpiling = computed(() => transpileStore.isTranspiling);
+const transpileResult = computed(() => transpileStore.currentResult);
 
 async function browseFolder() {
   try {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: 'Select TypeScript Project Folder'
-    })
-    
+      title: 'Select TypeScript Project Folder',
+    });
+
     if (selected) {
-      selectedPath.value = selected as string
-      await loadProject()
+      selectedPath.value = selected as string;
+      await loadProject();
     }
   } catch (err) {
-    error.value = `Failed to browse folder: ${err}`
+    error.value = `Failed to browse folder: ${err}`;
   }
 }
 
 async function loadProject() {
   if (!selectedPath.value) {
-    error.value = 'Please select a folder'
-    return
+    error.value = 'Please select a folder';
+    return;
   }
 
-  loading.value = true
-  error.value = ''
-  projectInfo.value = null
-  transpileStore.clearResult()
+  loading.value = true;
+  error.value = '';
+  projectInfo.value = null;
+  transpileStore.clearResult();
 
   try {
     const result = await invoke<any>('load_project_folder', {
-      path: selectedPath.value
-    })
-    
-    projectInfo.value = result
-    
+      path: selectedPath.value,
+    });
+
+    projectInfo.value = result;
+
     // Add to recent projects
     projectStore.addRecentProject({
       name: selectedPath.value.split('/').pop() || 'Project',
       path: selectedPath.value,
-      lastOpened: Date.now()
-    })
+      lastOpened: Date.now(),
+    });
   } catch (err) {
-    error.value = `Failed to load project: ${err}`
+    error.value = `Failed to load project: ${err}`;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 async function autoTranspile() {
-  if (!projectInfo.value) return
+  if (!projectInfo.value) return;
 
-  error.value = ''
+  error.value = '';
 
   try {
-    await transpileStore.transpileProject(projectInfo.value.root)
+    await transpileStore.transpileProject(projectInfo.value.root);
   } catch (err) {
-    error.value = `Failed to transpile project: ${err}`
+    error.value = `Failed to transpile project: ${err}`;
   }
 }
 
 function openInEditor() {
-  if (!projectInfo.value) return
+  if (!projectInfo.value) return;
 
   // Load files into workspace
-  workspaceStore.loadProject(projectInfo.value)
-  
+  workspaceStore.loadProject(projectInfo.value);
+
   // Navigate to project view
-  router.push('/project')
+  router.push('/project');
 }
 
 function openOutputFolder() {
-  if (!transpileResult.value?.output_dir) return
-  
+  if (!transpileResult.value?.output_dir) return;
+
   // Open the output folder in system file explorer
   invoke('open_in_explorer', {
-    path: transpileResult.value.output_dir
+    path: transpileResult.value.output_dir,
   }).catch(err => {
-    error.value = `Failed to open folder: ${err}`
-  })
+    error.value = `Failed to open folder: ${err}`;
+  });
 }
 </script>
 
@@ -247,7 +244,9 @@ h2 {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .project-info {

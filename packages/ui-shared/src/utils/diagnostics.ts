@@ -88,7 +88,7 @@ export function parseDiagnostics(output: string): DiagnosticMessage[] {
     if (goMatch) {
       const message = goMatch[4];
       let severity: DiagnosticSeverity = 'error';
-      
+
       if (message.toLowerCase().includes('warning')) {
         severity = 'warning';
       } else if (message.toLowerCase().includes('info') || message.toLowerCase().includes('note')) {

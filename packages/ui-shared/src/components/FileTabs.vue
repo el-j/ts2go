@@ -3,7 +3,7 @@
     <div v-if="openFiles.length === 0" class="no-tabs">
       <!-- <span>No files open</span> -->
     </div>
-    
+
     <div v-else class="tabs-container">
       <div
         v-for="file in openFiles"
@@ -15,9 +15,7 @@
         <span class="tab-icon">{{ getFileIcon(file.name) }}</span>
         <span class="tab-name">{{ file.name }}</span>
         <span v-if="file.isDirty" class="dirty-indicator">●</span>
-        <Button class="close-btn" @click.stop="closeFile(file.path)" title="Close">
-          ×
-        </Button>
+        <Button class="close-btn" @click.stop="closeFile(file.path)" title="Close"> × </Button>
       </div>
     </div>
     <!-- <ProjectLoader />  -->
@@ -25,32 +23,39 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from 'vue';
 // import ProjectLoader from './ProjectLoader.vue'
-import { useWorkspaceStore } from '../stores/workspace'
-const workspace = useWorkspaceStore()
+import { useWorkspaceStore } from '../stores/workspace';
+const workspace = useWorkspaceStore();
 
-const openFiles = computed(() => workspace.openFiles)
-const activeFilePath = computed(() => workspace.activeFilePath)
+const openFiles = computed(() => workspace.openFiles);
+const activeFilePath = computed(() => workspace.activeFilePath);
 
 function setActiveFile(path: string) {
-  workspace.setActiveFile(path)
+  workspace.setActiveFile(path);
 }
 
 function closeFile(path: string) {
-  workspace.closeFile(path)
+  workspace.closeFile(path);
 }
 
 function getFileIcon(fileName: string): string {
-  const ext = fileName.split('.').pop()?.toLowerCase()
+  const ext = fileName.split('.').pop()?.toLowerCase();
   switch (ext) {
-    case 'ts': return '🔷'
-    case 'js': return '🟨'
-    case 'json': return '📋'
-    case 'md': return '📝'
-    case 'go': return '🔵'
-    case 'vue': return '💚'
-    default: return '📄'
+    case 'ts':
+      return '🔷';
+    case 'js':
+      return '🟨';
+    case 'json':
+      return '📋';
+    case 'md':
+      return '📝';
+    case 'go':
+      return '🔵';
+    case 'vue':
+      return '💚';
+    default:
+      return '📄';
   }
 }
 </script>

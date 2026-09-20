@@ -1,0 +1,29 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+
+linters-settings:
+  govet:
+    enable-all: false
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+  misspell:
+    locale: US
+
+issues:
+  exclude-dirs:
+    - test-projects
+    - fixtures
+  max-issues-per-linter: 50
+  max-same-issues: 10

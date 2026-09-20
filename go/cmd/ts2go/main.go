@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/el-j/ts2go/internal/transpiler"
 	"github.com/el-j/ts2go/adapters/driving/cli"
 	legacycli "github.com/el-j/ts2go/cli"
+	"github.com/el-j/ts2go/internal/transpiler"
 )
 
 func main() {

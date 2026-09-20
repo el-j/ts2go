@@ -11,12 +11,12 @@
         </Button>
       </div>
     </div>
-    
+
     <div v-if="fileTree.length === 0" class="empty-state">
       <p>No files in project</p>
       <Button @click="createNewFile" class="btn-primary">Create File</Button>
     </div>
-    
+
     <div v-else class="tree-content">
       <FileTreeNode
         v-for="node in fileTree"
@@ -32,67 +32,67 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { useWorkspaceStore } from '../stores/workspace'
-import { useTranspileStore } from '../stores/transpile'
-import FileTreeNode from './FileTreeNode.vue'
+import { computed } from 'vue';
+import { invoke } from '@tauri-apps/api/core';
+import { useWorkspaceStore } from '../stores/workspace';
+import { useTranspileStore } from '../stores/transpile';
+import FileTreeNode from './FileTreeNode.vue';
 
-const workspace = useWorkspaceStore()
-const transpileStore = useTranspileStore()
+const workspace = useWorkspaceStore();
+const transpileStore = useTranspileStore();
 
-const fileTree = computed(() => workspace.fileTree)
-const activeFilePath = computed(() => workspace.activeFilePath)
+const fileTree = computed(() => workspace.fileTree);
+const activeFilePath = computed(() => workspace.activeFilePath);
 
-async function handleSelect({path, name}: {path: string, name: string}) {
+async function handleSelect({ path, name }: { path: string; name: string }) {
   try {
     // Read file content from disk
-    const content = await invoke<string>('read_file', { path })
-    workspace.openFile(path, name, content)
-    
+    const content = await invoke<string>('read_file', { path });
+    workspace.openFile(path, name, content);
+
     // Check if this file has been transpiled and auto-load Go output
-    const transpilation = workspace.getTranspilation(path)
+    const transpilation = workspace.getTranspilation(path);
     if (transpilation && transpilation.success && transpilation.goCode) {
       // Auto-load the Go code into output panel
       transpileStore.currentResult = {
         success: true,
         message: `Showing transpiled output for ${name}`,
         files_transpiled: 1,
-        goCode: transpilation.goCode
-      }
+        goCode: transpilation.goCode,
+      };
     }
   } catch (error) {
-    console.error('Failed to read file:', error)
+    console.error('Failed to read file:', error);
     // Open with error message if read fails
-    workspace.openFile(path, name, `Error loading file: ${error}`)
+    workspace.openFile(path, name, `Error loading file: ${error}`);
   }
 }
 
 function createNewFile() {
-  const fileName = prompt('Enter file name:')
+  const fileName = prompt('Enter file name:');
   if (fileName) {
-    workspace.createFile('', fileName)
+    workspace.createFile('', fileName);
   }
 }
 
 function createNewFolder() {
-  const folderName = prompt('Enter folder name:')
+  const folderName = prompt('Enter folder name:');
   if (folderName) {
-    workspace.createFolder('', folderName)
+    workspace.createFolder('', folderName);
   }
 }
 
 function handleRename(path: string) {
-  const oldName = path.split('/').pop() || ''
-  const newName = prompt('Enter new name:', oldName)
+  const oldName = path.split('/').pop() || '';
+  const newName = prompt('Enter new name:', oldName);
   if (newName && newName !== oldName) {
-    workspace.renameFile(path, newName)
+    workspace.renameFile(path, newName);
   }
 }
 
 function handleDelete(path: string) {
   if (confirm(`Delete ${path}?`)) {
-    workspace.deleteFile(path)
+    workspace.deleteFile(path);
   }
 }
 </script>

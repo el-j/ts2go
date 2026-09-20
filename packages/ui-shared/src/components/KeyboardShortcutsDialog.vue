@@ -1,81 +1,81 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import Dialog from 'primevue/dialog'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import Tag from 'primevue/tag'
+import { ref } from 'vue';
+import Dialog from 'primevue/dialog';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import Tag from 'primevue/tag';
 
-const visible = defineModel<boolean>('visible', { default: false })
+const visible = defineModel<boolean>('visible', { default: false });
 
 interface ShortcutInfo {
-  keys: string
-  description: string
-  context: string
+  keys: string;
+  description: string;
+  context: string;
 }
 
 const shortcuts = ref<ShortcutInfo[]>([
   {
     keys: 'Ctrl+S',
     description: 'Transpile current file',
-    context: 'Editor'
+    context: 'Editor',
   },
   {
     keys: 'Ctrl+O',
     description: 'Open file dialog',
-    context: 'Global'
+    context: 'Global',
   },
   {
     keys: 'Ctrl+W',
     description: 'Close current tab',
-    context: 'Editor'
+    context: 'Editor',
   },
   {
     keys: 'Ctrl+Shift+W',
     description: 'Close all tabs',
-    context: 'Editor'
+    context: 'Editor',
   },
   {
     keys: 'Ctrl+F',
     description: 'Find in file',
-    context: 'Editor'
+    context: 'Editor',
   },
   {
     keys: 'Ctrl+H',
     description: 'Find and replace',
-    context: 'Editor'
+    context: 'Editor',
   },
   {
     keys: 'Ctrl+/',
     description: 'Show keyboard shortcuts',
-    context: 'Global'
+    context: 'Global',
   },
   {
     keys: 'Ctrl+B',
     description: 'Toggle sidebar',
-    context: 'Global'
+    context: 'Global',
   },
   {
     keys: 'Ctrl+`',
     description: 'Toggle terminal',
-    context: 'Global'
+    context: 'Global',
   },
   {
     keys: 'Ctrl+Shift+P',
     description: 'Command palette',
-    context: 'Global'
+    context: 'Global',
   },
   {
     keys: 'Escape',
     description: 'Close dialog',
-    context: 'Global'
-  }
-])
+    context: 'Global',
+  },
+]);
 </script>
 
 <template>
-  <Dialog 
-    v-model:visible="visible" 
-    modal 
+  <Dialog
+    v-model:visible="visible"
+    modal
     header="Keyboard Shortcuts"
     :style="{ width: '50rem' }"
     :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
@@ -86,11 +86,7 @@ const shortcuts = ref<ShortcutInfo[]>([
       </p>
     </div>
 
-    <DataTable 
-      :value="shortcuts" 
-      stripedRows
-      class="text-sm"
-    >
+    <DataTable :value="shortcuts" stripedRows class="text-sm">
       <Column field="keys" header="Keys" style="width: 150px">
         <template #body="slotProps">
           <Tag :value="slotProps.data.keys" severity="secondary" />
@@ -99,8 +95,8 @@ const shortcuts = ref<ShortcutInfo[]>([
       <Column field="description" header="Description" />
       <Column field="context" header="Context" style="width: 120px">
         <template #body="slotProps">
-          <Tag 
-            :value="slotProps.data.context" 
+          <Tag
+            :value="slotProps.data.context"
             :severity="slotProps.data.context === 'Global' ? 'info' : 'success'"
           />
         </template>

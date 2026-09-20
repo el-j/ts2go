@@ -1,16 +1,17 @@
 <template>
-  <Dialog 
-    v-model:visible="visible" 
-    modal 
+  <Dialog
+    v-model:visible="visible"
+    modal
     header="Unsaved Changes"
     :style="{ width: '450px' }"
     :closable="false"
   >
     <div class="unsaved-changes-dialog">
       <p class="dialog-message">
-        You have unsaved changes in {{ dirtyFiles.length }} {{ dirtyFiles.length === 1 ? 'file' : 'files' }}:
+        You have unsaved changes in {{ dirtyFiles.length }}
+        {{ dirtyFiles.length === 1 ? 'file' : 'files' }}:
       </p>
-      
+
       <div class="file-list-container">
         <ul class="file-list">
           <li v-for="file in dirtyFiles" :key="file.path" class="file-item">
@@ -20,82 +21,72 @@
           </li>
         </ul>
       </div>
-      
-      <p class="dialog-question">
-        Do you want to save them before closing?
-      </p>
+
+      <p class="dialog-question">Do you want to save them before closing?</p>
     </div>
-    
+
     <template #footer>
       <div class="dialog-actions">
-        <Button 
-          label="Don't Save" 
+        <Button
+          label="Don't Save"
           severity="secondary"
           text
           @click="discardChanges"
           class="discard-btn"
         />
-        <Button 
-          label="Cancel" 
-          severity="secondary"
-          @click="cancel"
-        />
-        <Button 
-          label="Save All" 
-          @click="saveAll"
-          autofocus
-        />
+        <Button label="Cancel" severity="secondary" @click="cancel" />
+        <Button label="Save All" @click="saveAll" autofocus />
       </div>
     </template>
   </Dialog>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import Dialog from 'primevue/dialog'
-import Button from 'primevue/button'
-import { useWorkspaceStore } from '@/stores/workspace'
-import { useSaveFile } from '@/composables/useSaveFile'
+import { computed } from 'vue';
+import Dialog from 'primevue/dialog';
+import Button from 'primevue/button';
+import { useWorkspaceStore } from '@/stores/workspace';
+import { useSaveFile } from '@/composables/useSaveFile';
 
 interface Props {
-  modelValue: boolean
+  modelValue: boolean;
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  'save': []
-  'discard': []
-  'cancel': []
-}>()
+  'update:modelValue': [value: boolean];
+  save: [];
+  discard: [];
+  cancel: [];
+}>();
 
-const workspace = useWorkspaceStore()
-const { saveAll: saveAllFiles } = useSaveFile()
+const workspace = useWorkspaceStore();
+const { saveAll: saveAllFiles } = useSaveFile();
 
 const visible = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-})
+  set: value => emit('update:modelValue', value),
+});
 
 const dirtyFiles = computed(() => {
-  return workspace.openFiles.filter(f => f.isDirty)
-})
+  return workspace.openFiles.filter(f => f.isDirty);
+});
 
 async function saveAll() {
-  await saveAllFiles()
-  visible.value = false
-  emit('save')
+  await saveAllFiles();
+  visible.value = false;
+  emit('save');
 }
 
 function discardChanges() {
-  visible.value = false
-  emit('discard')
+  visible.value = false;
+  emit('discard');
 }
 
 function cancel() {
-  visible.value = false
-  emit('cancel')
+  visible.value = false;
+  emit('cancel');
 }
 </script>
 

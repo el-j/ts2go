@@ -88,6 +88,6 @@ export const useDiagnosticsStore = defineStore('diagnostics', () => {
     clearFile,
     clearAll,
     getDiagnosticsForFile,
-    setActiveDiagnostic
+    setActiveDiagnostic,
   };
 });

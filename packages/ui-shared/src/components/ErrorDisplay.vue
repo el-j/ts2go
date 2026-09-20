@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import Message from 'primevue/message'
-import Accordion from 'primevue/accordion'
-import AccordionTab from 'primevue/accordiontab'
+import { computed } from 'vue';
+import Message from 'primevue/message';
+import Accordion from 'primevue/accordion';
+import AccordionTab from 'primevue/accordiontab';
 
 interface TranspilationError {
-  file?: string
-  line?: number
-  column?: number
-  message: string
-  context?: string
+  file?: string;
+  line?: number;
+  column?: number;
+  message: string;
+  context?: string;
 }
 
 interface Props {
-  errors: TranspilationError[]
+  errors: TranspilationError[];
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  jumpToError: [error: TranspilationError]
-}>()
+  jumpToError: [error: TranspilationError];
+}>();
 
-const errorCount = computed(() => props.errors.length)
-const hasErrors = computed(() => errorCount.value > 0)
+const errorCount = computed(() => props.errors.length);
+const hasErrors = computed(() => errorCount.value > 0);
 </script>
 
 <template>
@@ -38,10 +38,7 @@ const hasErrors = computed(() => errorCount.value > 0)
     </Message>
 
     <Accordion :multiple="true">
-      <AccordionTab 
-        v-for="(error, index) in errors" 
-        :key="index"
-      >
+      <AccordionTab v-for="(error, index) in errors" :key="index">
         <template #header>
           <div class="flex items-center gap-2 flex-1">
             <i class="pi pi-times-circle text-red-500"></i>
@@ -56,7 +53,9 @@ const hasErrors = computed(() => errorCount.value > 0)
 
         <div class="space-y-3">
           <!-- Error Message -->
-          <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-3">
+          <div
+            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-3"
+          >
             <p class="text-sm text-red-800 dark:text-red-200">{{ error.message }}</p>
           </div>
 

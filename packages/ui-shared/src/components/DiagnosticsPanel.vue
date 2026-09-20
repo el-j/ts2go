@@ -3,24 +3,14 @@
     <div class="diagnostics-header">
       <h3 class="text-lg font-semibold">Problems</h3>
       <div class="diagnostics-stats">
-        <span v-if="errorCount > 0" class="error-count">
-          ❌ {{ errorCount }}
-        </span>
-        <span v-if="warningCount > 0" class="warning-count">
-          ⚠️ {{ warningCount }}
-        </span>
-        <span v-if="infoCount > 0" class="info-count">
-          ℹ️ {{ infoCount }}
-        </span>
-        <span v-if="totalCount === 0" class="no-problems">
-          ✓ No problems
-        </span>
+        <span v-if="errorCount > 0" class="error-count"> ❌ {{ errorCount }} </span>
+        <span v-if="warningCount > 0" class="warning-count"> ⚠️ {{ warningCount }} </span>
+        <span v-if="infoCount > 0" class="info-count"> ℹ️ {{ infoCount }} </span>
+        <span v-if="totalCount === 0" class="no-problems"> ✓ No problems </span>
       </div>
-      <button @click="clearDiagnostics" class="clear-btn" title="Clear all problems">
-        Clear
-      </button>
+      <button @click="clearDiagnostics" class="clear-btn" title="Clear all problems">Clear</button>
     </div>
-    
+
     <div class="diagnostics-list" v-if="totalCount > 0">
       <div
         v-for="(diagnostic, index) in diagnostics"
@@ -37,14 +27,12 @@
           </div>
           <div class="diagnostic-location">
             {{ diagnostic.file || 'current file' }} ({{ diagnostic.line }}:{{ diagnostic.column }})
-            <span v-if="diagnostic.code" class="diagnostic-code">
-              [{{ diagnostic.code }}]
-            </span>
+            <span v-if="diagnostic.code" class="diagnostic-code"> [{{ diagnostic.code }}] </span>
           </div>
         </div>
       </div>
     </div>
-    
+
     <div v-else class="no-diagnostics">
       <div class="text-center text-gray-500 py-8">
         <div class="text-4xl mb-2">✓</div>

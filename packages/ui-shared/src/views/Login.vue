@@ -1,41 +1,41 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import Button from 'primevue/button'
-import Message from 'primevue/message'
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
+import Button from 'primevue/button';
+import Message from 'primevue/message';
 
-const router = useRouter()
-const authStore = useAuthStore()
+const router = useRouter();
+const authStore = useAuthStore();
 
-const email = ref('')
-const password = ref('')
-const error = ref<string | null>(null)
-const isLoading = ref(false)
+const email = ref('');
+const password = ref('');
+const error = ref<string | null>(null);
+const isLoading = ref(false);
 
 onMounted(() => {
   // Redirect if already authenticated
   if (authStore.isAuthenticated) {
-    router.push('/')
+    router.push('/');
   }
-})
+});
 
 async function handleLogin() {
-  error.value = null
-  isLoading.value = true
-  
+  error.value = null;
+  isLoading.value = true;
+
   try {
-    await authStore.login({ email: email.value, password: password.value })
-    router.push('/')
+    await authStore.login({ email: email.value, password: password.value });
+    router.push('/');
   } catch (e: any) {
-    error.value = e.message || 'Login failed. Please check your credentials.'
+    error.value = e.message || 'Login failed. Please check your credentials.';
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
 function goToRegister() {
-  router.push('/register')
+  router.push('/register');
 }
 </script>
 
@@ -87,10 +87,7 @@ function goToRegister() {
       <div class="text-center">
         <p class="text-sm text-gray-600">
           Don't have an account?
-          <button
-            @click="goToRegister"
-            class="font-medium text-blue-600 hover:text-blue-500"
-          >
+          <button @click="goToRegister" class="font-medium text-blue-600 hover:text-blue-500">
             Sign up
           </button>
         </p>
