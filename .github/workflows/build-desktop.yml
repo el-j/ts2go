@@ -124,8 +124,8 @@ jobs:
         run: |
           echo "Verifying required files exist before build..."
           test -f "mappings/npm-to-go.yaml" && echo "✓ mappings/npm-to-go.yaml exists" || (echo "✗ mappings file missing" && exit 1)
-          test -f "internal/transpiler/parser/parser.js" && echo "✓ parser.js exists" || (echo "✗ parser.js missing" && exit 1)
-          test -f "desktop-ui/package.json" && echo "✓ package.json exists" || (echo "✗ package.json missing" && exit 1)
+          test -f "go/internal/transpiler/parser/parser.js" && echo "✓ parser.js exists" || (echo "✗ parser.js missing" && exit 1)
+          test -f "desktop/ui/package.json" && echo "✓ package.json exists" || (echo "✗ package.json missing" && exit 1)
           echo "✓ All required files present"
 
       - name: Build Desktop App using Makefile
