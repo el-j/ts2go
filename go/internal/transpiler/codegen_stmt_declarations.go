@@ -159,6 +159,8 @@ func (g *CodeGenerator) generateReturnStatement(node *ASTNode) error {
 
 	if strings.Contains(expr, "nullishCoalesce(") && g.currentFunctionReturnType != "" && g.currentFunctionReturnType != "interface{}" {
 		expr = fmt.Sprintf("%s.(%s)", expr, g.currentFunctionReturnType)
+	} else if g.currentFunctionReturnType == "float64" && expressionNode.Kind == "Identifier" {
+		expr = fmt.Sprintf("float64(%s)", expr)
 	}
 
 	g.writeLine(fmt.Sprintf("return %s", expr))

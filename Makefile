@@ -4,7 +4,7 @@
 OS := $(shell uname -s)
 ARCH := $(shell uname -m)
 
-.PHONY: help all build build-go build-desktop test test-go test-desktop clean install dev-go dev-desktop run-desktop fmt fmt-check lint type-check quality setup-hooks setup-dev check
+.PHONY: help all build build-go build-desktop test test-go test-desktop mutation-test clean install dev-go dev-desktop run-desktop fmt fmt-check lint type-check quality setup-hooks setup-dev check
 
 # Default target
 all: build
@@ -18,6 +18,7 @@ help:
 	@echo "  build-go         Build Go CLI binaries for $(OS)"
 	@echo "  build-desktop    Build Desktop application"
 	@echo "  test             Run all tests"
+	@echo "  mutation-test    Run Gremlins mutation testing"
 	@echo "  clean            Clean all build artifacts"
 	@echo "  install          Install all project dependencies"
 	@echo ""
@@ -63,7 +64,12 @@ test: test-go test-desktop
 # Test Go code
 test-go:
 	@echo "🔵 Testing Go code..."
-	@cd go && go test ./core/... ./adapters/... -v
+	@cd go && go test -v -race ./...
+
+# Mutation testing
+mutation-test:
+	@echo "🧬 Running mutation testing..."
+	@./scripts/mutation-test.sh
 
 # Test Desktop app
 test-desktop:
@@ -103,9 +109,9 @@ lint:
 	@echo "🔍 Linting Go code..."
 	@cd go && go vet ./...
 	@if command -v golangci-lint >/dev/null 2>&1; then \
-		cd go && golangci-lint run ./... || true; \
+		cd go && golangci-lint run ./...; \
 	elif [ -f "$$HOME/go/bin/golangci-lint" ]; then \
-		cd go && $$HOME/go/bin/golangci-lint run ./... || true; \
+		cd go && $$HOME/go/bin/golangci-lint run ./...; \
 	else \
 		echo "⚠️  golangci-lint not found in PATH, skipping"; \
 	fi

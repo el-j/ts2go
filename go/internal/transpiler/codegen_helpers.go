@@ -150,6 +150,26 @@ func (g *CodeGenerator) needsOptionalAccess(node *ASTNode) bool {
 		}
 	}
 
+	// Check declarations
+	if node.Declarations != nil {
+		for _, decl := range node.Declarations {
+			if g.needsOptionalAccess(&decl) {
+				return true
+			}
+		}
+	}
+
+	// Check sub-node pointers
+	if node.Body != nil && g.needsOptionalAccess(node.Body) {
+		return true
+	}
+	if node.Initializer != nil && g.needsOptionalAccess(node.Initializer) {
+		return true
+	}
+	if node.Expression != nil && g.needsOptionalAccess(node.Expression) {
+		return true
+	}
+
 	return false
 }
 
@@ -160,7 +180,7 @@ func (g *CodeGenerator) needsNullishCoalesce(node *ASTNode) bool {
 	}
 
 	// Check if this is a nullish coalescing operator
-	if node.Kind == "BinaryExpression" && node.Operator == "??" {
+	if node.Kind == "BinaryExpression" && (node.Operator == "??" || node.Operator == "QuestionQuestionToken" || node.Operator == QuestionQuestionToken) {
 		return true
 	}
 
@@ -178,6 +198,26 @@ func (g *CodeGenerator) needsNullishCoalesce(node *ASTNode) bool {
 				return true
 			}
 		}
+	}
+
+	// Check declarations
+	if node.Declarations != nil {
+		for _, decl := range node.Declarations {
+			if g.needsNullishCoalesce(&decl) {
+				return true
+			}
+		}
+	}
+
+	// Check sub-node pointers
+	if node.Body != nil && g.needsNullishCoalesce(node.Body) {
+		return true
+	}
+	if node.Initializer != nil && g.needsNullishCoalesce(node.Initializer) {
+		return true
+	}
+	if node.Expression != nil && g.needsNullishCoalesce(node.Expression) {
+		return true
 	}
 
 	return false
