@@ -146,6 +146,9 @@ function convertNode(node) {
   if (node.literal) {
     result.literal = convertNode(node.literal);
   }
+  if (node.argumentExpression) {
+    result.argumentExpression = convertNode(node.argumentExpression);
+  }
 
   // Recursively convert children
   const children = [];
@@ -153,7 +156,8 @@ function convertNode(node) {
     // Skip already processed properties
     if (child !== node.name && child !== node.type && child !== node.body && 
         child !== node.initializer && child !== node.declarationList &&
-        child !== node.head && child !== node.expression && child !== node.literal) {
+        child !== node.head && child !== node.expression && child !== node.literal &&
+        child !== node.argumentExpression) {
       children.push(convertNode(child));
     }
   });

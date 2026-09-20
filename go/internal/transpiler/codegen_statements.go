@@ -43,9 +43,14 @@ func (g *CodeGenerator) generateStatement(node *ASTNode) error {
 		return g.generateTryStatement(node)
 	case ThrowStatement:
 		return g.generateThrowStatement(node)
-	default:
-		// Skip unknown statements for now
+	case Block:
+		return g.generateBlock(node)
+	case "EmptyStatement":
 		return nil
+	case "ImportDeclaration", "ExportDeclaration", "ExportAssignment":
+		return nil
+	default:
+		return UnsupportedFeatureError("", 0, 0, fmt.Sprintf("unsupported statement: %s", node.Kind))
 	}
 }
 

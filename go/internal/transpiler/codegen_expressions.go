@@ -57,8 +57,20 @@ func (g *CodeGenerator) generateExpression(node *ASTNode) (string, error) {
 		return g.generateDeleteExpression(node)
 	case AwaitExpression:
 		return g.generateAwaitExpression(node)
+	case ElementAccessExpression:
+		return g.generateElementAccess(node)
+	case SpreadElement, "SpreadAssignment":
+		return g.generateSpreadElement(node)
+	case "ParenthesizedExpression":
+		return g.generateParenthesizedExpression(node)
+	case "NonNullExpression":
+		return g.generateNonNullExpression(node)
+	case "AsExpression", "TypeAssertionExpression":
+		return g.generateAsExpression(node)
+	case "UndefinedKeyword", "VoidExpression":
+		return "nil", nil
 	default:
-		return "/* unsupported expression */", nil
+		return "", UnsupportedFeatureError("", 0, 0, fmt.Sprintf("unsupported expression: %s", node.Kind))
 	}
 }
 
@@ -764,21 +776,67 @@ func (g *CodeGenerator) generatePrefixUnaryExpression(node *ASTNode) (string, er
 		return "", fmt.Errorf("invalid prefix unary expression")
 	}
 
-	operand, err := g.generateExpression(&node.Children[0])
+	var opNode *ASTNode
+	var operandNode *ASTNode
+
+	if len(node.Children) >= 2 && isUnaryOperatorToken(node.Children[0].Kind) {
+		opNode = &node.Children[0]
+		operandNode = &node.Children[1]
+	} else {
+		operandNode = &node.Children[0]
+	}
+
+	operand, err := g.generateExpression(operandNode)
 	if err != nil {
 		return "", err
+	}
+
+	op := ""
+	if opNode != nil {
+		switch opNode.Kind {
+		case "ExclamationToken":
+			op = "!"
+		case "PlusPlusToken":
+			op = "++"
+		case "MinusMinusToken":
+			op = "--"
+		case "MinusToken":
+			op = "-"
+		case "PlusToken":
+			op = "+"
+		case "TildeToken":
+			op = "^"
+		}
+	}
+	if op == "" && node.Operator != "" {
+		switch node.Operator {
+		case "ExclamationToken", "!":
+			op = "!"
+		case "PlusPlusToken", "++":
+			op = "++"
+		case "MinusMinusToken", "--":
+			op = "--"
+		case "MinusToken", "-":
+			op = "-"
+		case "PlusToken", "+":
+			op = "+"
+		}
+	}
+
+	if op != "" {
+		return op + operand, nil
 	}
 
 	// Determine the operator based on context
 	// If operand is a number literal or the operator spans 1 char before operand, it's likely - or !
 	// Otherwise it's likely ++ or --
-	operatorLen := node.Children[0].Pos - node.Pos
+	operatorLen := operandNode.Pos - node.Pos
 
 	switch operatorLen {
 	case 1:
 		// Single character operator: -, +, !, ~
 		// Check operand type to guess which one
-		if node.Children[0].Kind == "TrueKeyword" || node.Children[0].Kind == "FalseKeyword" {
+		if operandNode.Kind == "TrueKeyword" || operandNode.Kind == "FalseKeyword" {
 			return "!" + operand, nil
 		}
 		// Assume negation for numbers
@@ -789,6 +847,15 @@ func (g *CodeGenerator) generatePrefixUnaryExpression(node *ASTNode) (string, er
 	default:
 		// Default to negation
 		return "-" + operand, nil
+	}
+}
+
+func isUnaryOperatorToken(kind string) bool {
+	switch kind {
+	case "ExclamationToken", "PlusPlusToken", "MinusMinusToken", "MinusToken", "PlusToken", "TildeToken":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -847,9 +914,15 @@ func (g *CodeGenerator) generateElementAccess(node *ASTNode) (string, error) {
 		return "", fmt.Errorf("generating element access expression: %w", err)
 	}
 
-	// The argument expression is the index/key
-	if len(node.Children) > 0 && node.Children[0].Kind != "undefined" {
-		index, err := g.generateExpression(&node.Children[0])
+	var indexNode *ASTNode
+	if node.ArgumentExpression != nil {
+		indexNode = node.ArgumentExpression
+	} else if len(node.Children) > 0 && node.Children[0].Kind != "undefined" {
+		indexNode = &node.Children[0]
+	}
+
+	if indexNode != nil {
+		index, err := g.generateExpression(indexNode)
 		if err != nil {
 			return "", fmt.Errorf("generating element access index: %w", err)
 		}
@@ -857,6 +930,64 @@ func (g *CodeGenerator) generateElementAccess(node *ASTNode) (string, error) {
 	}
 
 	return "", fmt.Errorf("element access missing index")
+}
+
+// generateParenthesizedExpression generates code for parenthesized expressions
+func (g *CodeGenerator) generateParenthesizedExpression(node *ASTNode) (string, error) {
+	innerNode := node.Expression
+	if innerNode == nil && len(node.Children) > 0 {
+		innerNode = &node.Children[0]
+	}
+	if innerNode == nil {
+		return "()", nil
+	}
+	expr, err := g.generateExpression(innerNode)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("(%s)", expr), nil
+}
+
+// generateNonNullExpression generates code for TypeScript's non-null assertion operator (x!)
+func (g *CodeGenerator) generateNonNullExpression(node *ASTNode) (string, error) {
+	innerNode := node.Expression
+	if innerNode == nil && len(node.Children) > 0 {
+		innerNode = &node.Children[0]
+	}
+	if innerNode == nil {
+		return "", fmt.Errorf("non-null expression missing inner expression")
+	}
+	return g.generateExpression(innerNode)
+}
+
+// generateAsExpression generates code for TypeScript type assertions (expr as Type or <Type>expr)
+func (g *CodeGenerator) generateAsExpression(node *ASTNode) (string, error) {
+	innerNode := node.Expression
+	if innerNode == nil && len(node.Children) > 0 {
+		innerNode = &node.Children[0]
+	}
+	if innerNode == nil {
+		return "", fmt.Errorf("type assertion missing expression")
+	}
+	expr, err := g.generateExpression(innerNode)
+	if err != nil {
+		return "", err
+	}
+	if node.Type == nil {
+		return expr, nil
+	}
+	targetType, err := g.generateType(node.Type)
+	if err != nil || targetType == "" || targetType == "interface{}" || targetType == "any" {
+		return expr, nil
+	}
+	switch targetType {
+	case "int", "int8", "int16", "int32", "int64",
+		"uint", "uint8", "uint16", "uint32", "uint64",
+		"float32", "float64", "string", "bool":
+		return fmt.Sprintf("%s(%s)", targetType, expr), nil
+	default:
+		return fmt.Sprintf("%s.(%s)", expr, targetType), nil
+	}
 }
 
 // generateSpreadElement generates code for spread operator
