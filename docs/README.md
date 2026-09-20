@@ -2,6 +2,14 @@
 
 Welcome to the TS2Go documentation! This directory contains all project documentation organized by purpose.
 
+## 🧠 Agentic Orchestration & Mastermind (Source of Truth)
+
+- **[Agentic Workflow Hub](orchestration/README.md)** - Model-agnostic orchestration system & principles
+- **[Living Roadmap & Matrix](orchestration/ROADMAP.md)** - Tracking all 4 Milestones, 15 GitHub Issues, and DoD
+- **[Agent Playbook](orchestration/AGENT_PLAYBOOK.md)** - Step-by-step standard operating procedure for AI agents
+- **[Orchestration History](orchestration/HISTORY.md)** - Chronological session logs, audits, and completions
+- **[Architecture Decisions](orchestration/DECISIONS.md)** - Architectural Decision Records (ADRs)
+
 ## 📚 Main Documentation
 
 - **[Current State](CURRENT_STATE.md)** - Current implementation status (code analysis)
