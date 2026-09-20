@@ -22,7 +22,7 @@ permissions:
 jobs:
   test:
     name: Test Desktop UI
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_LOCAL_RUNNER == 'true' && fromJSON('["self-hosted", "local"]') || 'ubuntu-latest' }}
     defaults:
       run:
         working-directory: packages/ui-shared
@@ -128,7 +128,7 @@ jobs:
 
   build-web-only:
     name: Build Web Version
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_LOCAL_RUNNER == 'true' && fromJSON('["self-hosted", "local"]') || 'ubuntu-latest' }}
     defaults:
       run:
         working-directory: packages/ui-shared

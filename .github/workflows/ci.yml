@@ -20,7 +20,7 @@ permissions:
 jobs:
   test:
     name: Test & Lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_LOCAL_RUNNER == 'true' && fromJSON('["self-hosted", "local"]') || 'ubuntu-latest' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
