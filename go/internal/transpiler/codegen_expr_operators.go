@@ -6,27 +6,39 @@ import (
 
 // generateConditionalExpression generates code for ternary operator (condition ? whenTrue : whenFalse)
 func (g *CodeGenerator) generateConditionalExpression(node *ASTNode) (string, error) {
-	if len(node.Children) < 3 {
-		return "", fmt.Errorf("conditional expression has insufficient children: %d", len(node.Children))
+	var exprChildren []ASTNode
+	for _, ch := range node.Children {
+		if ch.Kind != "QuestionToken" && ch.Kind != "ColonToken" {
+			exprChildren = append(exprChildren, ch)
+		}
 	}
 
-	condition, err := g.generateExpression(&node.Children[0])
+	if len(exprChildren) < 3 {
+		return "", fmt.Errorf("conditional expression has insufficient children: %d", len(exprChildren))
+	}
+
+	condition, err := g.generateExpression(&exprChildren[0])
 	if err != nil {
 		return "", fmt.Errorf("generating ternary condition: %w", err)
 	}
 
-	whenTrue, err := g.generateExpression(&node.Children[1])
+	whenTrue, err := g.generateExpression(&exprChildren[1])
 	if err != nil {
 		return "", fmt.Errorf("generating ternary whenTrue: %w", err)
 	}
 
-	whenFalse, err := g.generateExpression(&node.Children[2])
+	whenFalse, err := g.generateExpression(&exprChildren[2])
 	if err != nil {
 		return "", fmt.Errorf("generating ternary whenFalse: %w", err)
 	}
 
-	result := fmt.Sprintf("func() interface{} { if %s { return %s } else { return %s } }()",
-		condition, whenTrue, whenFalse)
+	retType := "interface{}"
+	if g.expectedType != "" && g.expectedType != "interface{}" {
+		retType = g.expectedType
+	}
+
+	result := fmt.Sprintf("func() %s { if %s { return %s } else { return %s } }()",
+		retType, condition, whenTrue, whenFalse)
 
 	return result, nil
 }
@@ -48,7 +60,11 @@ func (g *CodeGenerator) generateBinaryExpression(node *ASTNode) (string, error) 
 	}
 
 	if node.Operator == QuestionQuestionToken {
-		return fmt.Sprintf("nullishCoalesce(%s, %s)", left, right), nil
+		expr := fmt.Sprintf("nullishCoalesce(%s, %s)", left, right)
+		if g.expectedType != "" && g.expectedType != "interface{}" {
+			expr = fmt.Sprintf("%s.(%s)", expr, g.expectedType)
+		}
+		return expr, nil
 	}
 
 	if node.Operator == "InstanceOfKeyword" || node.Operator == "instanceof" {
@@ -182,6 +198,18 @@ func isUnaryOperatorToken(kind string) bool {
 // mapOperator maps AST operator constants to Go operators
 func (g *CodeGenerator) mapOperator(op string) string {
 	switch op {
+	case "EqualsToken", "=":
+		return "="
+	case "PlusEqualsToken", "FirstCompoundAssignment", "+=":
+		return "+="
+	case "MinusEqualsToken", "-=":
+		return "-="
+	case "AsteriskEqualsToken", "*=":
+		return "*="
+	case "SlashEqualsToken", "/=":
+		return "/="
+	case "PercentEqualsToken", "%=":
+		return "%="
 	case "PlusToken":
 		return "+"
 	case "MinusToken":
@@ -221,58 +249,4 @@ func (g *CodeGenerator) mapOperator(op string) string {
 	default:
 		return ""
 	}
-}
-
-// generateTypeOfExpression generates code for typeof operator
-// TypeScript: typeof x
-// Go: reflect.TypeOf(x).String()
-func (g *CodeGenerator) generateTypeOfExpression(node *ASTNode) (string, error) {
-	if node.Expression == nil {
-		return "", fmt.Errorf("typeof expression missing operand")
-	}
-
-	expr, err := g.generateExpression(node.Expression)
-	if err != nil {
-		return "", fmt.Errorf("generating typeof operand: %w", err)
-	}
-
-	return fmt.Sprintf("reflect.TypeOf(%s).String()", expr), nil
-}
-
-// generateDeleteExpression generates code for delete operator
-// TypeScript: delete obj.prop or delete obj["key"]
-// Go: Generates delete() for maps, comment for others
-func (g *CodeGenerator) generateDeleteExpression(node *ASTNode) (string, error) {
-	if node.Expression == nil {
-		return "", fmt.Errorf("delete expression missing operand")
-	}
-
-	expr := node.Expression
-	switch expr.Kind {
-	case PropertyAccessExpression:
-		obj, err := g.generateExpression(expr.Expression)
-		if err != nil {
-			return "", err
-		}
-		propName := expr.Name
-		return fmt.Sprintf("delete(%s, \"%s\")", obj, propName), nil
-	case "ElementAccessExpression":
-		obj, err := g.generateExpression(expr.Expression)
-		if err != nil {
-			return "", err
-		}
-		if len(expr.Children) > 0 {
-			key, err := g.generateExpression(&expr.Children[0])
-			if err != nil {
-				return "", err
-			}
-			return fmt.Sprintf("delete(%s, %s)", obj, key), nil
-		}
-	}
-
-	operand, err := g.generateExpression(expr)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("/* delete %s - not supported in Go */", operand), nil
 }

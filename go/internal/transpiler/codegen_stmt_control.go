@@ -105,21 +105,34 @@ func (g *CodeGenerator) generateIfStatement(node *ASTNode) error {
 
 // generateSwitchStatement generates code for switch statements
 func (g *CodeGenerator) generateSwitchStatement(node *ASTNode) error {
-	if len(node.Children) < 2 {
-		return fmt.Errorf("switch statement requires 2 children (expression, case block)")
+	var switchExpr string
+	var caseBlock *ASTNode
+
+	if node.Expression != nil {
+		expr, err := g.generateExpression(node.Expression)
+		if err != nil {
+			return fmt.Errorf("generating switch expression: %w", err)
+		}
+		switchExpr = expr
+		if len(node.Children) > 0 {
+			caseBlock = &node.Children[0]
+		}
+	} else if len(node.Children) >= 2 {
+		expr, err := g.generateExpression(&node.Children[0])
+		if err != nil {
+			return fmt.Errorf("generating switch expression: %w", err)
+		}
+		switchExpr = expr
+		caseBlock = &node.Children[1]
+	} else {
+		return fmt.Errorf("switch statement missing expression or case block")
 	}
 
-	switchExpr, err := g.generateExpression(&node.Children[0])
-	if err != nil {
-		return fmt.Errorf("generating switch expression: %w", err)
+	if caseBlock == nil || caseBlock.Kind != CaseBlock {
+		return fmt.Errorf("expected CaseBlock, got %v", caseBlock)
 	}
 
 	g.writeLine(fmt.Sprintf("switch %s {", switchExpr))
-
-	caseBlock := &node.Children[1]
-	if caseBlock.Kind != CaseBlock {
-		return fmt.Errorf("expected CaseBlock, got %s", caseBlock.Kind)
-	}
 
 	for _, clause := range caseBlock.Children {
 		switch clause.Kind {
@@ -140,23 +153,33 @@ func (g *CodeGenerator) generateSwitchStatement(node *ASTNode) error {
 
 // generateCaseClause generates code for a case clause in a switch statement
 func (g *CodeGenerator) generateCaseClause(node *ASTNode) error {
-	if len(node.Children) < 1 {
-		return fmt.Errorf("case clause requires at least 1 child (case expression)")
-	}
-
-	caseValue, err := g.generateExpression(&node.Children[0])
-	if err != nil {
-		return fmt.Errorf("generating case value: %w", err)
+	var caseValue string
+	if node.Expression != nil {
+		val, err := g.generateExpression(node.Expression)
+		if err != nil {
+			return fmt.Errorf("generating case value: %w", err)
+		}
+		caseValue = val
+	} else if len(node.Children) > 0 {
+		val, err := g.generateExpression(&node.Children[0])
+		if err != nil {
+			return fmt.Errorf("generating case value: %w", err)
+		}
+		caseValue = val
+	} else {
+		return fmt.Errorf("case clause missing expression")
 	}
 
 	g.writeLine(fmt.Sprintf("case %s:", caseValue))
 	g.indent++
 
-	if node.Statements != nil {
-		for _, stmt := range node.Statements {
-			if err := g.generateStatement(&stmt); err != nil {
-				return fmt.Errorf("generating case statement: %w", err)
-			}
+	stmts := node.Statements
+	if len(stmts) == 0 {
+		stmts = node.Children
+	}
+	for _, stmt := range stmts {
+		if err := g.generateStatement(&stmt); err != nil {
+			return fmt.Errorf("generating case statement: %w", err)
 		}
 	}
 
@@ -169,11 +192,13 @@ func (g *CodeGenerator) generateDefaultClause(node *ASTNode) error {
 	g.writeLine("default:")
 	g.indent++
 
-	if node.Statements != nil {
-		for _, stmt := range node.Statements {
-			if err := g.generateStatement(&stmt); err != nil {
-				return fmt.Errorf("generating default statement: %w", err)
-			}
+	stmts := node.Statements
+	if len(stmts) == 0 {
+		stmts = node.Children
+	}
+	for _, stmt := range stmts {
+		if err := g.generateStatement(&stmt); err != nil {
+			return fmt.Errorf("generating default statement: %w", err)
 		}
 	}
 

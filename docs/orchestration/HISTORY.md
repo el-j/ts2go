@@ -133,4 +133,43 @@ Executed all 4 issues for Milestone 2 on branch `feat/m2-quality-and-refactoring
 - `wc -l go/internal/transpiler/*.go`: All files strictly <300 lines.
 - `./scripts/pre-commit.sh`: 100% pass (gofmt, go vet, vue-tsc, prettier).
 - `cd go && go test ./...`: 100% green across all packages.
+- PR #30 merged into `develop`.
+
+---
+
+## 📅 Session Log: 2026-09-20 — Milestone 3 Execution (Testing, E2E & CI - P1)
+
+### 1. Overview
+Executed all 4 issues for Milestone 3 on branch `feat/m3-tests-e2e-and-ci`:
+- **Issue #22**: Implemented comprehensive unit tests for packages that previously had 0% or low coverage (`runtime/console`, `runtime/fs`, `runtime/path`, `cmd/ts2go`, `adapters/driving/web`, `adapters/driving/cli`).
+- **Issue #23**: Built an automated End-to-End (E2E) CLI test matrix comparing compiled Go output with Node.js ground truth across realistic TypeScript scenarios (arithmetic/logic, loops/accumulation, switch control flow, classes/constructors, arrow functions/closures, interfaces/struct instantiation, and nullish coalescing).
+- **Issue #24**: Established the mutation testing suite using `gremlins unleash`, automated via `scripts/mutation-test.sh` and `make mutation-test`, verifying 100% test efficacy and 100% mutator coverage on runtime packages.
+- **Issue #25**: Hardened `.github/workflows/ci.yml` with strict quality gates: Go 1.24+ via `go.work`, race detector enabled (`go test -v -race ./...`), strict `golangci-lint` without `|| true`, and canonical frontend type-checking.
+
+### 2. Issues Implemented & Resolved
+- **Issue #22**:
+  - `go/runtime/console/console_test.go`: 100% statement coverage for `Log`, `Error`, and `Warn`.
+  - `go/runtime/fs/fs.go` & `fs_test.go`: 100% statement coverage for `ReadFile`, `WriteFile`, `Exists`, `Unlink`, `Mkdir`, and `Stat`.
+  - `go/runtime/path/path.go` & `path_test.go`: >92% statement coverage for path manipulation functions.
+  - `go/adapters/driving/web/server_test.go`: Handlers tested for `/health`, `/`, CORS options, settings, state, transpile, build, and test.
+  - `go/cmd/ts2go/main_test.go`: CLI entrypoint flags, usage, version, and subcommand dispatching tested.
+  - `go/adapters/driving/cli/application_test.go`: Full test coverage for state, settings, and validation error flows.
+- **Issue #23**:
+  - Created `go/internal/tests/e2e_matrix_test.go` with round-trip validation: transpiles TypeScript to Go, compiles binary via `go build`, executes binary, and verifies exact output equality against `node --experimental-strip-types`.
+  - Upgraded transpiler: compound assignments (`+=`, `-=`, etc.), conditional expression typing, switch statement children mapping, deep AST traversal for optional chaining and nullish coalescing helpers, and float64 return casting.
+  - All 7 matrix test scenarios pass 100%.
+- **Issue #24**:
+  - Added `scripts/mutation-test.sh` integrating the modern Gremlins mutation engine.
+  - Added `make mutation-test` target to root `Makefile`.
+  - Verified 100% test efficacy and 100% mutator coverage on runtime packages with zero surviving mutants.
+- **Issue #25**:
+  - Updated `.github/workflows/ci.yml`: Go 1.24+ via `go.work`, removed all `|| true` and `continue-on-error`, enforced `golangci-lint-action@v6`, and tested all packages with `go test -v -race ./...`.
+  - Updated root `Makefile`: strict Go linting, race-enabled `test-go`, and mutation testing target.
+
+### 3. Verification & Guardrails
+- `golangci-lint run ./go/...`: 0 issues.
+- `wc -l go/internal/transpiler/*.go`: All files strictly <300 lines.
+- `go test -v -race ./...`: 100% passing with race detector across all packages.
+- `make mutation-test`: 100% test efficacy and mutator coverage.
+- `./scripts/pre-commit.sh`: 100% pass (gofmt, go vet, vue-tsc, prettier).
 

@@ -20,7 +20,7 @@ permissions:
 jobs:
   test:
     name: Test & Lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_LOCAL_RUNNER == 'true' && fromJSON('["self-hosted", "local"]') || 'ubuntu-latest' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22.5'
+          go-version-file: 'go.work'
           cache: true
           cache-dependency-path: |
             go/go.sum
@@ -37,9 +37,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
-          cache-dependency-path: go/internal/transpiler/parser/package-lock.json
+          cache-dependency-path: |
+            go/internal/transpiler/parser/package-lock.json
+            packages/ui-shared/package-lock.json
 
       - name: Install parser dependencies
         run: |
@@ -62,10 +64,22 @@ jobs:
           (cd go && go vet ./...)
           if [ -d "saas" ]; then (cd saas && go vet ./...); fi
 
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.11.4
+          args: --timeout=5m ./go/...
+
       - name: Build Go CLI
         run: make build-go
 
       - name: Run Go tests
         run: |
-          (cd go && go test -v -race ./core/... ./adapters/... ./internal/tests)
+          (cd go && go test -v -race ./...)
+
+      - name: Frontend Quality Check
+        run: |
+          cd packages/ui-shared
+          npm ci
+          npm run type-check
 

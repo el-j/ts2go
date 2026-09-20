@@ -126,3 +126,116 @@ func TestAdapterCodeGen_GenerateGoCode(t *testing.T) {
 		t.Errorf("Expected error with invalid AST type")
 	}
 }
+
+func TestApplication_StateCommand(t *testing.T) {
+	app, err := NewApplication()
+	if err != nil {
+		t.Fatalf("NewApplication failed: %v", err)
+	}
+
+	tempDir := t.TempDir()
+
+	// Insufficient args
+	if err := app.StateCommand([]string{}); err == nil {
+		t.Errorf("expected error for empty args")
+	}
+
+	// Unknown action
+	if err := app.StateCommand([]string{"invalid_action", tempDir}); err == nil {
+		t.Errorf("expected error for unknown action")
+	}
+
+	// Get state for non-existent project (returns empty JSON, no error)
+	if err := app.StateCommand([]string{"get", tempDir}); err != nil {
+		t.Errorf("StateCommand get failed: %v", err)
+	}
+
+	// Set state missing json
+	if err := app.StateCommand([]string{"set", tempDir}); err == nil {
+		t.Errorf("expected error for set without JSON")
+	}
+
+	// Set state invalid json
+	if err := app.StateCommand([]string{"set", tempDir, "{bad-json"}); err == nil {
+		t.Errorf("expected error for set with invalid JSON")
+	}
+
+	// Set state valid json
+	if err := app.StateCommand([]string{"set", tempDir, `{"projectPath":"` + tempDir + `"}`}); err != nil {
+		t.Errorf("StateCommand set failed: %v", err)
+	}
+
+	// Get state after set
+	if err := app.StateCommand([]string{"get", tempDir}); err != nil {
+		t.Errorf("StateCommand get failed: %v", err)
+	}
+
+	// Delete state
+	if err := app.StateCommand([]string{"delete", tempDir}); err != nil {
+		t.Errorf("StateCommand delete failed: %v", err)
+	}
+}
+
+func TestApplication_SettingsCommand(t *testing.T) {
+	app, err := NewApplication()
+	if err != nil {
+		t.Fatalf("NewApplication failed: %v", err)
+	}
+
+	// Insufficient args
+	if err := app.SettingsCommand([]string{}); err == nil {
+		t.Errorf("expected error for empty args")
+	}
+
+	// Unknown action
+	if err := app.SettingsCommand([]string{"invalid"}); err == nil {
+		t.Errorf("expected error for unknown action")
+	}
+
+	// Get settings
+	if err := app.SettingsCommand([]string{"get"}); err != nil {
+		t.Errorf("SettingsCommand get failed: %v", err)
+	}
+
+	// Set settings missing json
+	if err := app.SettingsCommand([]string{"set"}); err == nil {
+		t.Errorf("expected error for set without JSON")
+	}
+
+	// Set settings invalid json
+	if err := app.SettingsCommand([]string{"set", "{bad-json"}); err == nil {
+		t.Errorf("expected error for set with invalid JSON")
+	}
+
+	// Set settings valid json
+	if err := app.SettingsCommand([]string{"set", `{"theme":"dark","autoSave":true,"autoSaveDelay":500}`}); err != nil {
+		t.Errorf("SettingsCommand set failed: %v", err)
+	}
+}
+
+func TestApplication_ValidationErrors(t *testing.T) {
+	app, err := NewApplication()
+	if err != nil {
+		t.Fatalf("NewApplication failed: %v", err)
+	}
+
+	// TranspileCommand empty
+	if err := app.TranspileCommand([]string{}); err == nil {
+		t.Errorf("expected error for empty transpile args")
+	}
+
+	// AnalyzeCommand empty
+	if err := app.AnalyzeCommand([]string{}); err == nil {
+		t.Errorf("expected error for empty analyze args")
+	}
+
+	// BuildCommand empty
+	if err := app.BuildCommand([]string{}); err == nil {
+		t.Errorf("expected error for empty build args")
+	}
+
+	// TestCommand empty
+	if err := app.TestCommand([]string{}); err == nil {
+		t.Errorf("expected error for empty test args")
+	}
+}

@@ -131,12 +131,15 @@ func parseTypeScript(inputFile string) (*ASTNode, error) {
 	// Try to find parser.js in several locations
 	parserPaths := []string{
 		"./internal/transpiler/parser/parser.js",
+		"./go/internal/transpiler/parser/parser.js",
 		"../internal/transpiler/parser/parser.js",
 		"../../internal/transpiler/parser/parser.js",
 		"../../../internal/transpiler/parser/parser.js",
 		"../../../../internal/transpiler/parser/parser.js",
 		filepath.Join(cwd, "internal", "transpiler", "parser", "parser.js"),
+		filepath.Join(cwd, "go", "internal", "transpiler", "parser", "parser.js"),
 		filepath.Join(filepath.Dir(cwd), "internal", "transpiler", "parser", "parser.js"),
+		filepath.Join(filepath.Dir(cwd), "go", "internal", "transpiler", "parser", "parser.js"),
 	}
 
 	// Also try relative to executable (for bundled app)
@@ -147,6 +150,7 @@ func parseTypeScript(inputFile string) (*ASTNode, error) {
 		parserPaths = append(parserPaths,
 			filepath.Join(exeDir, "internal", "transpiler", "parser", "parser.js"),
 			filepath.Join(exeDir, "..", "internal", "transpiler", "parser", "parser.js"),
+			filepath.Join(exeDir, "..", "go", "internal", "transpiler", "parser", "parser.js"),
 		)
 
 		// For macOS app bundle: .app/Contents/MacOS/ts2go-cli -> .app/Contents/Resources/bin/parser/

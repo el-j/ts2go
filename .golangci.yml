@@ -1,4 +1,4 @@
-version: 2
+version: "2"
 
 run:
   timeout: 5m
@@ -17,12 +17,9 @@ linters:
       - path: '.*_test\.go'
         linters:
           - errcheck
-
-linters-settings:
-  govet:
-    enable-all: false
-  errcheck:
-    check-type-assertions: false
-    check-blank: false
-  misspell:
-    locale: US
+  settings:
+    errcheck:
+      check-type-assertions: false
+      check-blank: false
+    misspell:
+      locale: US
