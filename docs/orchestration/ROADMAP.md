@@ -19,8 +19,8 @@
 
 | Milestone | Title | Priority | GitHub Milestone | Status | Issues |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **M1** | CLI Core Transpilation & Pipeline Fixes | **P0 (CLI First)** | [Milestone 1](https://github.com/el-j/ts2go/milestone/1) | 🟡 In Progress | #14, #15, #16, #17 |
-| **M2** | Code Quality, Refactoring & Boss-Files | **P1 (Quality)** | [Milestone 2](https://github.com/el-j/ts2go/milestone/2) | ⚪ Ready | #18, #19, #20, #21 |
+| **M1** | CLI Core Transpilation & Pipeline Fixes | **P0 (CLI First)** | [Milestone 1](https://github.com/el-j/ts2go/milestone/1) | 🟢 Completed | #14, #15, #16, #17 |
+| **M2** | Code Quality, Refactoring & Boss-Files | **P1 (Quality)** | [Milestone 2](https://github.com/el-j/ts2go/milestone/2) | 🟡 Next Up | #18, #19, #20, #21 |
 | **M3** | 100% Test Coverage, E2E & Mutation | **P1 (Testing)** | [Milestone 3](https://github.com/el-j/ts2go/milestone/3) | ⚪ Queued | #22, #23, #24, #25 |
 | **M4** | Web API & GUI Modernization | **P2 (GUI After)** | [Milestone 4](https://github.com/el-j/ts2go/milestone/4) | ⚪ Queued | #26, #27, #28 |
 
@@ -31,40 +31,40 @@
 ### Milestone 1: CLI Core Transpilation & Pipeline Fixes (Priority: P0)
 *Goal: Fix all core transpilation bugs, get Go test suite green, eliminate placeholder mappers, wire AST nodes.*
 
-- [ ] **[#14: Fix Core E2E Transpilation Test Failures (Object Literals & Case Sensitivity)](https://github.com/el-j/ts2go/issues/14)**
-  - **Status**: 🟡 Next Up
+- [x] **[#14: Fix Core E2E Transpilation Test Failures (Object Literals & Case Sensitivity)](https://github.com/el-j/ts2go/issues/14)**
+  - **Status**: 🟢 Resolved & Verified
   - **Target Files**: `go/internal/transpiler/codegen_expressions.go`, `go/internal/transpiler/codegen_statements.go`, `go/internal/tests/e2e_test.go`
   - **DoD**:
-    - [ ] Struct instantiation emitted instead of `map[string]interface{}` when return type is a struct.
-    - [ ] Function call casing matches PascalCased function declarations (`CreateUser` vs `createUser`).
-    - [ ] Top-level `const` emitted as `const PI = ...` instead of `:=` inside `func main()`.
-    - [ ] `go test ./internal/tests` passes 100%.
+    - [x] Struct instantiation emitted instead of `map[string]interface{}` when return type is a struct.
+    - [x] Function call casing matches PascalCased function declarations (`CreateUser` vs `createUser`).
+    - [x] Top-level `const` emitted as `const PI = ...` instead of `:=` inside `func main()`.
+    - [x] `go test ./internal/tests` passes 100%.
 
-- [ ] **[#15: Wire Real NPM-to-Go Mapper into Hexagonal CLI & Fix Integration Tests](https://github.com/el-j/ts2go/issues/15)**
-  - **Status**: ⚪ Todo
+- [x] **[#15: Wire Real NPM-to-Go Mapper into Hexagonal CLI & Fix Integration Tests](https://github.com/el-j/ts2go/issues/15)**
+  - **Status**: 🟢 Resolved & Verified
   - **Target Files**: `go/adapters/driving/cli/application.go`, `go/mappings/npm-to-go.yaml`, `go/internal/mapper/integration_test.go`
   - **DoD**:
-    - [ ] Replace `placeholderMapper` in CLI with real `internal/mapper` instance.
-    - [ ] Fix builtins typing in `npm-to-go.yaml` and `integration_test.go` (`os`, `http`, `url`).
-    - [ ] Replace `github.com/yourusername/...` and `github.com/ts2go/...` with `github.com/el-j/ts2go/...`.
-    - [ ] `go test ./internal/mapper` passes 100%.
+    - [x] Replace `placeholderMapper` in CLI with real `internal/mapper` instance.
+    - [x] Fix builtins typing in `npm-to-go.yaml` and `integration_test.go` (`os`, `http`, `url`).
+    - [x] Replace `github.com/yourusername/...` and `github.com/ts2go/...` with `github.com/el-j/ts2go/...`.
+    - [x] `go test ./internal/mapper` passes 100%.
 
-- [ ] **[#16: Connect Unlinked AST Node Generators & Fix Expression Fallthroughs](https://github.com/el-j/ts2go/issues/16)**
-  - **Status**: ⚪ Todo
+- [x] **[#16: Connect Unlinked AST Node Generators & Fix Expression Fallthroughs](https://github.com/el-j/ts2go/issues/16)**
+  - **Status**: 🟢 Resolved & Verified
   - **Target Files**: `go/internal/transpiler/codegen_expressions.go`, `go/internal/transpiler/codegen_statements.go`
   - **DoD**:
-    - [ ] Wire `generateElementAccess` (`arr[i]`, `obj[k]`) into `generateExpression`.
-    - [ ] Wire `generateSpreadElement` (`...args`) into `generateExpression`.
-    - [ ] Handle `ParenthesizedExpression`, `NonNullExpression`, `AsExpression`, `UndefinedKeyword`.
-    - [ ] Eliminate silent drops; return typed `TranspilationError`.
+    - [x] Wire `generateElementAccess` (`arr[i]`, `obj[k]`) into `generateExpression`.
+    - [x] Wire `generateSpreadElement` (`...args`) into `generateExpression`.
+    - [x] Handle `ParenthesizedExpression`, `NonNullExpression`, `AsExpression`, `UndefinedKeyword`.
+    - [x] Eliminate silent drops; return typed `TranspilationError`.
 
-- [ ] **[#17: Multi-File & Project Orchestrator Integration in CLI](https://github.com/el-j/ts2go/issues/17)**
-  - **Status**: ⚪ Todo
+- [x] **[#17: Multi-File & Project Orchestrator Integration in CLI](https://github.com/el-j/ts2go/issues/17)**
+  - **Status**: 🟢 Resolved & Verified
   - **Target Files**: `go/core/services/transpilation_service.go`, `go/internal/project/module.go`, `go/internal/orchestrator/`
   - **DoD**:
-    - [ ] Connect dependency graph scanner into `TranspileProject`.
-    - [ ] Infer package names from folder hierarchy (no `package main` in library packages).
-    - [ ] Generate real `go.mod` for transpiled output.
+    - [x] Connect dependency graph scanner into `TranspileProject`.
+    - [x] Infer package names from folder hierarchy (no `package main` in library packages).
+    - [x] Generate real `go.mod` for transpiled output.
 
 ---
 

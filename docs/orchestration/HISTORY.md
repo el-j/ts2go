@@ -50,3 +50,37 @@ Established 4 GitHub Milestones and 15 GitHub Issues in [el-j/ts2go](https://git
 - **TypeScript & Vitest**: Fixed `tsconfig.json` (`TS5103`), configured `vitest run` to prevent interactive hangs.
 - **Git Pre-Commit Hook**: Installed `.git/hooks/pre-commit` verifying formatting, `go vet`, and `vue-tsc` before every commit.
 - **Issue #26 Completed**: Frontend build, type-check, and Vitest runner verified 100% clean.
+
+---
+
+## 📅 Session Log: 2026-09-20 — Milestone 1 Execution (CLI First - P0)
+
+### 1. Overview
+Executed all 4 foundational issues for Milestone 1 on branch `feat/m1-cli-core-transpilation`, bringing the Go test suite to 100% green across all packages, wiring real mapping and orchestration pipelines, and eliminating stub placeholders.
+
+### 2. Issues Implemented & Resolved
+- **Issue #14 ([Commit 9b8caad](https://github.com/el-j/ts2go/commit/9b8caad))**:
+  - Implemented target-type inference for object literals returning struct types (`StructName{ Field: val }` instead of `map[string]interface{}`).
+  - Added function casing mapping between TypeScript identifiers and Go exports to match declared functions.
+  - Added top-level constant recognition to emit package-level `const PI = ...` instead of executable `:=` statements inside `func main()`.
+  - All E2E tests (`internal/tests`) passing 100%.
+- **Issue #15 ([Commit e353ada](https://github.com/el-j/ts2go/commit/e353ada))**:
+  - Replaced dummy `placeholderMapper` in `adapters/driving/cli/application.go` and `adapters/driving/web/server.go` with `adapterMapper` wired to `internal/mapper` and `mappings/npm-to-go.yaml`.
+  - Fixed npm-to-go YAML package definitions from `github.com/yourusername/...` and `github.com/ts2go/...` to `github.com/el-j/ts2go/...`.
+  - Updated `internal/mapper/integration_test.go` and fixed `codegen_expressions.go` runtime array imports.
+  - All `internal/mapper` tests passing 100%.
+- **Issue #16 ([Commit d042384](https://github.com/el-j/ts2go/commit/d042384))**:
+  - Connected `ElementAccessExpression` (`arr[i]`, `obj[k]`) and `SpreadElement` (`...args`) in `generateExpression`.
+  - Added full AST support and codegen for `ParenthesizedExpression`, `NonNullExpression` (`x!`), `AsExpression` (`expr as Type`), `UndefinedKeyword` (`nil`), and `VoidExpression`.
+  - Replaced silent `/* unsupported expression */` drops with structured `*TranspilationError`.
+  - Added 8 comprehensive unit tests for all newly connected AST nodes in `codegen_expressions_test.go`.
+- **Issue #17 ([Commit 63b6f13](https://github.com/el-j/ts2go/commit/63b6f13))**:
+  - Replaced hardcoded `github.com/yourusername/` in `internal/project/module.go` with configurable `modulePrefix` defaulting to `github.com/el-j/`.
+  - Made AST node parser directory search resilient and dynamic, eliminating hardcoded filesystem paths.
+  - Integrated `internal/project` scanner and `internal/orchestrator.MultiPackageTranspiler` into `core/services/transpilation_service.go` (`TranspileProject`).
+  - Added `TestTranspileProjectMultiFile` integration test validating multi-file dependency graph resolution, multi-package emission, and `go.mod` generation.
+
+### 3. Verification & Guardrails
+- `cd go && go test ./...`: 100% green across all packages.
+- Pre-commit hook executed and passed without `--no-verify`.
+- Ready for Pull Request targeting `develop`.
