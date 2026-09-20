@@ -33,7 +33,10 @@ func main() {
 
 	switch os.Args[1] {
 	case "lookup":
-		lookupCmd.Parse(os.Args[2:])
+		if err := lookupCmd.Parse(os.Args[2:]); err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing arguments: %v\n", err)
+			os.Exit(1)
+		}
 		if *lookupPackage == "" {
 			fmt.Fprintf(os.Stderr, "Error: -package flag is required\n")
 			lookupCmd.PrintDefaults()
@@ -42,11 +45,17 @@ func main() {
 		lookupMapping(db, *lookupPackage)
 
 	case "list":
-		listCmd.Parse(os.Args[2:])
+		if err := listCmd.Parse(os.Args[2:]); err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing arguments: %v\n", err)
+			os.Exit(1)
+		}
 		listMappings(db, *listType)
 
 	case "summary":
-		summaryCmd.Parse(os.Args[2:])
+		if err := summaryCmd.Parse(os.Args[2:]); err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing arguments: %v\n", err)
+			os.Exit(1)
+		}
 		fmt.Println(db.Summary())
 
 	default:

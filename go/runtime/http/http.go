@@ -42,7 +42,7 @@ func CreateServer(handler RequestHandler) *Server {
 		}
 
 		body, _ := io.ReadAll(r.Body)
-		defer r.Body.Close()
+		defer func() { _ = r.Body.Close() }()
 
 		query := make(map[string]string)
 		for k, v := range r.URL.Query() {

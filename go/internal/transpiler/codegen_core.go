@@ -148,11 +148,11 @@ func (g *CodeGenerator) Generate(node *ASTNode) (string, error) {
 		trackedImports := g.getTrackedImports()
 		if len(trackedImports) > 0 {
 			if len(trackedImports) == 1 {
-				result.WriteString(fmt.Sprintf("import \"%s\"\n\n", trackedImports[0]))
+				fmt.Fprintf(&result, "import \"%s\"\n\n", trackedImports[0])
 			} else {
 				result.WriteString("import (\n")
 				for _, imp := range trackedImports {
-					result.WriteString(fmt.Sprintf("\t\"%s\"\n", imp))
+					fmt.Fprintf(&result, "\t\"%s\"\n", imp)
 				}
 				result.WriteString(")\n\n")
 			}
@@ -163,55 +163,6 @@ func (g *CodeGenerator) Generate(node *ASTNode) (string, error) {
 	result.WriteString(body)
 
 	return result.String(), nil
-}
-
-// collectImports analyzes the AST to determine needed imports
-func (g *CodeGenerator) collectImports(node *ASTNode) []string {
-	imports := make(map[string]bool)
-	g.findImports(node, imports)
-
-	result := []string{}
-	for imp := range imports {
-		result = append(result, imp)
-	}
-	return result
-}
-
-func (g *CodeGenerator) findImports(node *ASTNode, imports map[string]bool) {
-	if node == nil {
-		return
-	}
-
-	// Check for console.log -> needs fmt
-	if node.Kind == CallExpression {
-		if len(node.Children) > 0 && node.Children[0].Kind == "PropertyAccessExpression" {
-			propAccess := &node.Children[0]
-			if len(propAccess.Children) > 0 {
-				obj := propAccess.Children[0].Text
-				prop := propAccess.Name
-				if obj == "console" && prop == "log" {
-					imports["fmt"] = true
-				}
-			}
-		}
-	}
-
-	// Recursively check children
-	for _, child := range node.Children {
-		g.findImports(&child, imports)
-	}
-	if node.Body != nil {
-		g.findImports(node.Body, imports)
-	}
-	for _, stmt := range node.Statements {
-		g.findImports(&stmt, imports)
-	}
-	for _, decl := range node.Declarations {
-		g.findImports(&decl, imports)
-	}
-	if node.Initializer != nil {
-		g.findImports(node.Initializer, imports)
-	}
 }
 
 // isTopLevelConstant checks if a variable statement consists exclusively of constants with literal initializers

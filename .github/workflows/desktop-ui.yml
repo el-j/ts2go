@@ -6,7 +6,8 @@ on:
       - main
       - develop
     paths:
-      - 'desktop/**'
+      - 'packages/ui-shared/**'
+      - 'desktop/tauri-backend/**'
       - '.github/workflows/desktop-ui.yml'
   # Note: push triggers removed - releases handled by release-*.yml workflows
   # This prevents duplicate runs on push events
@@ -24,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: desktop/ui
+        working-directory: packages/ui-shared
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,7 +35,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: desktop/ui/package-lock.json
+          cache-dependency-path: packages/ui-shared/package-lock.json
 
       - name: Install dependencies
         run: npm ci

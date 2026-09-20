@@ -21,11 +21,11 @@ func (e *TranspilationError) Error() string {
 	var builder strings.Builder
 
 	// Main error line
-	builder.WriteString(fmt.Sprintf("\n%s:%d:%d: %s\n", e.File, e.Line, e.Column, e.Message))
+	fmt.Fprintf(&builder, "\n%s:%d:%d: %s\n", e.File, e.Line, e.Column, e.Message)
 
 	// Error code
 	if e.Code != "" {
-		builder.WriteString(fmt.Sprintf("  Code: %s\n", e.Code))
+		fmt.Fprintf(&builder, "  Code: %s\n", e.Code)
 	}
 
 	// Context
@@ -35,13 +35,13 @@ func (e *TranspilationError) Error() string {
 			lineNum := e.Line - len(e.Context)/2 + i
 			if lineNum == e.Line {
 				// Highlight the error line
-				builder.WriteString(fmt.Sprintf("  > %4d | %s\n", lineNum, line))
+				fmt.Fprintf(&builder, "  > %4d | %s\n", lineNum, line)
 				// Add caret pointing to column
 				if e.Column > 0 {
-					builder.WriteString(fmt.Sprintf("  %s^ here\n", strings.Repeat(" ", e.Column+7)))
+					fmt.Fprintf(&builder, "  %s^ here\n", strings.Repeat(" ", e.Column+7))
 				}
 			} else {
-				builder.WriteString(fmt.Sprintf("    %4d | %s\n", lineNum, line))
+				fmt.Fprintf(&builder, "    %4d | %s\n", lineNum, line)
 			}
 		}
 		builder.WriteString("\n")
@@ -49,7 +49,7 @@ func (e *TranspilationError) Error() string {
 
 	// Suggestion
 	if e.Suggestion != "" {
-		builder.WriteString(fmt.Sprintf("💡 Suggestion: %s\n", e.Suggestion))
+		fmt.Fprintf(&builder, "💡 Suggestion: %s\n", e.Suggestion)
 	}
 
 	return builder.String()

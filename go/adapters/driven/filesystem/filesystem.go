@@ -134,7 +134,7 @@ func (fs *OSFileSystem) CopyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer sourceFile.Close()
+	defer func() { _ = sourceFile.Close() }()
 
 	// Create destination directory if needed
 	destDir := filepath.Dir(dst)
@@ -147,7 +147,7 @@ func (fs *OSFileSystem) CopyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer destFile.Close()
+	defer func() { _ = destFile.Close() }()
 
 	// Copy content
 	_, err = io.Copy(destFile, sourceFile)

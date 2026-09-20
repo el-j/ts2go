@@ -232,7 +232,7 @@ func TestPrefixUnaryExpression(t *testing.T) {
 	node.Children = append(node.Children, ASTNode{Kind: Identifier, Text: "ok"})
 
 	g := NewCodeGenerator()
-	result, err := g.generateExpression(node)
+	_, err := g.generateExpression(node)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -244,7 +244,7 @@ func TestPrefixUnaryExpression(t *testing.T) {
 			{Kind: Identifier, Text: "ok", Pos: 1}, // +1 length operator
 		},
 	}
-	result, _ = g.generateExpression(node2)
+	result, _ := g.generateExpression(node2)
 	if result != "-ok" {
 		t.Errorf("Expected '-ok', got '%s'", result) // because it guesses - by default for 1 char diff without true/false
 	}

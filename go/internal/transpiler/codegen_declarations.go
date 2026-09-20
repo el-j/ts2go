@@ -94,7 +94,7 @@ func (g *CodeGenerator) generateNumericEnum(enumName string, node *ASTNode) erro
 						g.writeLine(fmt.Sprintf("%s = %s", memberName, member.Initializer.Text))
 					}
 				} else {
-					g.writeLine(fmt.Sprintf("%s", memberName))
+					g.writeLine(memberName)
 				}
 			}
 		}

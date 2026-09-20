@@ -38,12 +38,14 @@ help:
 # Build everything
 build: build-go build-desktop
 
+VERSION ?= $(shell cat VERSION 2>/dev/null || echo "0.5.1")
+
 # Build Go CLI for macOS / current host
 build-go:
-	@echo "🔵 Building Go CLI for $(OS) ($(ARCH))..."
+	@echo "🔵 Building Go CLI for $(OS) ($(ARCH)) v$(VERSION)..."
 	@mkdir -p bin
-	@cd go && go build -ldflags="-s -w" -o ../bin/ts2go ./cmd/ts2go
-	@cd go && go build -ldflags="-s -w" -o ../bin/ts2go-web ./cmd/ts2go-web
+	@cd go && go build -ldflags="-s -w -X main.Version=$(VERSION)" -o ../bin/ts2go ./cmd/ts2go
+	@cd go && go build -ldflags="-s -w -X main.Version=$(VERSION)" -o ../bin/ts2go-web ./cmd/ts2go-web
 	@echo "✅ Go CLI built successfully → bin/ts2go, bin/ts2go-web"
 
 # Build Desktop application

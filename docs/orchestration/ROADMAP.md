@@ -20,8 +20,8 @@
 | Milestone | Title | Priority | GitHub Milestone | Status | Issues |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **M1** | CLI Core Transpilation & Pipeline Fixes | **P0 (CLI First)** | [Milestone 1](https://github.com/el-j/ts2go/milestone/1) | 🟢 Completed | #14, #15, #16, #17 |
-| **M2** | Code Quality, Refactoring & Boss-Files | **P1 (Quality)** | [Milestone 2](https://github.com/el-j/ts2go/milestone/2) | 🟡 Next Up | #18, #19, #20, #21 |
-| **M3** | 100% Test Coverage, E2E & Mutation | **P1 (Testing)** | [Milestone 3](https://github.com/el-j/ts2go/milestone/3) | ⚪ Queued | #22, #23, #24, #25 |
+| **M2** | Code Quality, Refactoring & Boss-Files | **P1 (Quality)** | [Milestone 2](https://github.com/el-j/ts2go/milestone/2) | 🟢 Completed | #18, #19, #20, #21 |
+| **M3** | 100% Test Coverage, E2E & Mutation | **P1 (Testing)** | [Milestone 3](https://github.com/el-j/ts2go/milestone/3) | 🟡 Next Up | #22, #23, #24, #25 |
 | **M4** | Web API & GUI Modernization | **P2 (GUI After)** | [Milestone 4](https://github.com/el-j/ts2go/milestone/4) | ⚪ Queued | #26, #27, #28 |
 
 ---
@@ -71,21 +71,37 @@
 ### Milestone 2: Code Quality, Refactoring & Boss-Files Breakdown (Priority: P1)
 *Goal: Break down monolithic files (>400 lines), eliminate dead trees, 0 linter warnings, 100% godoc.*
 
-- [ ] **[#18: Break Down Transpiler Boss Files into Modular Subgenerators](https://github.com/el-j/ts2go/issues/18)**
-  - **Target Files**: `codegen_expressions.go` (927 lines), `codegen_statements.go` (830 lines), `codegen_classes.go` (558 lines)
-  - **DoD**: Decompose into files <350 lines with clean single-responsibility boundaries.
+- [x] **[#18: Break Down Transpiler Boss Files into Modular Subgenerators](https://github.com/el-j/ts2go/issues/18)**
+  - **Status**: 🟢 Resolved & Verified
+  - **Target Files**: `codegen_expressions.go` (split into literals, calls, operators, expressions), `codegen_statements.go` (split into declarations, loops, control, statements), `codegen_classes.go` (split into constructors, methods, classes)
+  - **DoD**:
+    - [x] Decompose all files to <300 lines (target was <350 lines).
+    - [x] 100% transpiler and E2E tests pass.
 
-- [ ] **[#19: Decommission Stale Duplicate Directories & Dead Code](https://github.com/el-j/ts2go/issues/19)**
-  - **Target Files**: Delete `desktop/ui/`, delete `desktop/tauri/`, prune obsolete `go/cli/*.go`.
-  - **DoD**: Repository tree is completely deduplicated; only `packages/ui-shared` and `desktop/tauri-backend` exist.
+- [x] **[#19: Decommission Stale Duplicate Directories & Dead Code](https://github.com/el-j/ts2go/issues/19)**
+  - **Status**: 🟢 Resolved & Verified
+  - **Target Files**: `desktop/ui/` (deleted), `desktop/tauri/` (deleted), `go/cli/` (deleted), port `UICommand` into hexagonal adapter.
+  - **DoD**:
+    - [x] Single canonical frontend (`packages/ui-shared`) and backend (`desktop/tauri-backend`).
+    - [x] Dead legacy CLI directory removed; CLI fully uses hexagonal architecture.
 
-- [ ] **[#20: Resolve All 75 golangci-lint Issues & Deprecated Packages](https://github.com/el-j/ts2go/issues/20)**
-  - **Target Files**: Entire `go/` codebase
-  - **DoD**: Replace `io/ioutil`, handle 50 error returns, fix all staticcheck issues. `golangci-lint` passes with 0 warnings.
+- [x] **[#20: Resolve All 75 golangci-lint Issues & Deprecated Packages](https://github.com/el-j/ts2go/issues/20)**
+  - **Status**: 🟢 Resolved & Verified
+  - **Target Files**: Entire `go/` codebase, `.golangci.yml`
+  - **DoD**:
+    - [x] Upgraded `.golangci.yml` to v2 format.
+    - [x] Replaced deprecated `io/ioutil` with `io` and `os`.
+    - [x] Handled or explicitly acknowledged all error returns (`errcheck`).
+    - [x] Resolved all staticcheck warnings (`QF1012`, redundant nil checks).
+    - [x] `golangci-lint run ./go/...` passes with 0 errors and 0 warnings.
 
-- [ ] **[#21: 100% In-Code Documentation & Godoc Standards](https://github.com/el-j/ts2go/issues/21)**
-  - **Target Files**: All Go packages, `cmd/ts2go/main.go`
-  - **DoD**: Package doc comments on every package, godoc comments on all exported symbols, CLI version matches `VERSION` (2.0.1).
+- [x] **[#21: 100% In-Code Documentation & Godoc Standards](https://github.com/el-j/ts2go/issues/21)**
+  - **Status**: 🟢 Resolved & Verified
+  - **Target Files**: All Go packages in `go/`, `cmd/ts2go/main.go`, `Makefile`
+  - **DoD**:
+    - [x] Added `doc.go` to all packages across domain, ports, services, adapters, internal, and runtime.
+    - [x] Dynamic version reading from `VERSION` or build-time injection via `-ldflags`.
+    - [x] CLI `printUsage()` updated with `state` and `settings` documentation.
 
 ---
 

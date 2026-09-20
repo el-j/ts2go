@@ -221,29 +221,29 @@ func (a *ImportAnalysis) GetDependencies() []string {
 func (a *ImportAnalysis) Summary() string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Total imports: %d\n", len(a.Imports)))
-	sb.WriteString(fmt.Sprintf("  - npm packages: %d\n", len(a.NpmPackages)))
-	sb.WriteString(fmt.Sprintf("  - built-in modules: %d\n", len(a.BuiltinModules)))
-	sb.WriteString(fmt.Sprintf("  - local files: %d\n", len(a.LocalFiles)))
+	fmt.Fprintf(&sb, "Total imports: %d\n", len(a.Imports))
+	fmt.Fprintf(&sb, "  - npm packages: %d\n", len(a.NpmPackages))
+	fmt.Fprintf(&sb, "  - built-in modules: %d\n", len(a.BuiltinModules))
+	fmt.Fprintf(&sb, "  - local files: %d\n", len(a.LocalFiles))
 
 	if len(a.NpmPackages) > 0 {
 		sb.WriteString("\nNPM Packages:\n")
 		for _, pkg := range a.NpmPackages {
-			sb.WriteString(fmt.Sprintf("  - %s\n", pkg))
+			fmt.Fprintf(&sb, "  - %s\n", pkg)
 		}
 	}
 
 	if len(a.BuiltinModules) > 0 {
 		sb.WriteString("\nBuilt-in Modules:\n")
 		for _, mod := range a.BuiltinModules {
-			sb.WriteString(fmt.Sprintf("  - %s\n", mod))
+			fmt.Fprintf(&sb, "  - %s\n", mod)
 		}
 	}
 
 	if len(a.LocalFiles) > 0 {
 		sb.WriteString("\nLocal Files:\n")
 		for _, file := range a.LocalFiles {
-			sb.WriteString(fmt.Sprintf("  - %s\n", file))
+			fmt.Fprintf(&sb, "  - %s\n", file)
 		}
 	}
 
