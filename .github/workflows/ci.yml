@@ -37,7 +37,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: |
             go/internal/transpiler/parser/package-lock.json
@@ -65,7 +65,7 @@ jobs:
           if [ -d "saas" ]; then (cd saas && go vet ./...); fi
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
           version: v2.11.4
           args: --timeout=5m ./go/...
