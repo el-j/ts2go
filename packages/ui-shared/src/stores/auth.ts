@@ -1,92 +1,92 @@
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { authService } from '../services/auth'
-import { usePlatform } from '../composables/usePlatform'
-import type { LoginRequest, RegisterRequest } from '../types'
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import { authService } from '../services/auth';
+import { usePlatform } from '../composables/usePlatform';
+import type { LoginRequest, RegisterRequest } from '../types';
 
 export const useAuthStore = defineStore('auth', () => {
-  const { isWeb } = usePlatform()
-  const token = ref<string | null>(null)
-  const user = ref<any>(null)
-  const isLoading = ref(false)
-  const error = ref<string | null>(null)
+  const { isWeb } = usePlatform();
+  const token = ref<string | null>(null);
+  const user = ref<any>(null);
+  const isLoading = ref(false);
+  const error = ref<string | null>(null);
 
   const isAuthenticated = computed(() => {
     // For web, check if token exists
     if (isWeb) {
-      return !!token.value
+      return !!token.value;
     }
     // For Tauri, always authenticated (no login required)
-    return true
-  })
+    return true;
+  });
 
   async function login(credentials: LoginRequest) {
     if (!isWeb) {
       // Tauri doesn't need authentication
-      return
+      return;
     }
 
-    isLoading.value = true
-    error.value = null
+    isLoading.value = true;
+    error.value = null;
     try {
-      const response = await authService.login(credentials)
-      token.value = response.token
-      user.value = response.user
+      const response = await authService.login(credentials);
+      token.value = response.token;
+      user.value = response.user;
     } catch (e: any) {
-      error.value = e.message || 'Login failed'
-      throw e
+      error.value = e.message || 'Login failed';
+      throw e;
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
 
   async function register(data: RegisterRequest) {
     if (!isWeb) {
       // Tauri doesn't need authentication
-      return
+      return;
     }
 
-    isLoading.value = true
-    error.value = null
+    isLoading.value = true;
+    error.value = null;
     try {
-      const response = await authService.register(data)
-      token.value = response.token
-      user.value = response.user
+      const response = await authService.register(data);
+      token.value = response.token;
+      user.value = response.user;
     } catch (e: any) {
-      error.value = e.message || 'Registration failed'
-      throw e
+      error.value = e.message || 'Registration failed';
+      throw e;
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
 
   async function logout() {
     if (!isWeb) {
       // Tauri doesn't need authentication
-      return
+      return;
     }
 
-    await authService.logout()
-    token.value = null
-    user.value = null
+    await authService.logout();
+    token.value = null;
+    user.value = null;
   }
 
   async function loadUser() {
     if (!isWeb) {
       // Tauri doesn't need authentication
-      return
+      return;
     }
 
-    const savedToken = authService.getToken()
-    if (!savedToken) return
+    const savedToken = authService.getToken();
+    if (!savedToken) return;
 
-    token.value = savedToken
+    token.value = savedToken;
     try {
-      user.value = await authService.getCurrentUser()
+      user.value = await authService.getCurrentUser();
     } catch (e) {
       // Token invalid, clear it
-      token.value = null
-      authService.logout()
+      token.value = null;
+      authService.logout();
     }
   }
 
@@ -100,5 +100,5 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     logout,
     loadUser,
-  }
-})
+  };
+});

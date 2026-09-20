@@ -354,3 +354,127 @@ func TestBinaryExpression_NullishCoalesce(t *testing.T) {
 		t.Errorf("Expected '%s', got '%s'", expected, result)
 	}
 }
+
+func TestElementAccessExpression(t *testing.T) {
+	node := &ASTNode{
+		Kind:               ElementAccessExpression,
+		Expression:         &ASTNode{Kind: Identifier, Text: "items"},
+		ArgumentExpression: &ASTNode{Kind: NumericLiteral, Text: "0"},
+	}
+	g := NewCodeGenerator()
+	result, err := g.generateExpression(node)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	expected := "items[0]"
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSpreadElement(t *testing.T) {
+	node := &ASTNode{
+		Kind:       SpreadElement,
+		Expression: &ASTNode{Kind: Identifier, Text: "args"},
+	}
+	g := NewCodeGenerator()
+	result, err := g.generateExpression(node)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	expected := "args..."
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestParenthesizedExpression(t *testing.T) {
+	node := &ASTNode{
+		Kind: "ParenthesizedExpression",
+		Expression: &ASTNode{
+			Kind:     BinaryExpression,
+			Operator: "PlusToken",
+			Children: []ASTNode{
+				{Kind: Identifier, Text: "a"},
+				{Kind: Identifier, Text: "b"},
+			},
+		},
+	}
+	g := NewCodeGenerator()
+	result, err := g.generateExpression(node)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	expected := "(a + b)"
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestNonNullExpression(t *testing.T) {
+	node := &ASTNode{
+		Kind:       "NonNullExpression",
+		Expression: &ASTNode{Kind: Identifier, Text: "user"},
+	}
+	g := NewCodeGenerator()
+	result, err := g.generateExpression(node)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result != "user" {
+		t.Errorf("Expected 'user', got '%s'", result)
+	}
+}
+
+func TestAsExpression(t *testing.T) {
+	node := &ASTNode{
+		Kind:       "AsExpression",
+		Expression: &ASTNode{Kind: Identifier, Text: "val"},
+		Type:       &ASTNode{Kind: "StringKeyword"},
+	}
+	g := NewCodeGenerator()
+	result, err := g.generateExpression(node)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	expected := "string(val)"
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestUndefinedKeyword(t *testing.T) {
+	node := &ASTNode{Kind: "UndefinedKeyword"}
+	g := NewCodeGenerator()
+	result, err := g.generateExpression(node)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result != "nil" {
+		t.Errorf("Expected 'nil', got '%s'", result)
+	}
+}
+
+func TestUnsupportedExpressionError(t *testing.T) {
+	node := &ASTNode{Kind: "UnknownWeirdExpression"}
+	g := NewCodeGenerator()
+	_, err := g.generateExpression(node)
+	if err == nil {
+		t.Fatal("Expected error for unsupported expression, got nil")
+	}
+	if _, ok := err.(*TranspilationError); !ok {
+		t.Errorf("Expected *TranspilationError, got %T", err)
+	}
+}
+
+func TestUnsupportedStatementError(t *testing.T) {
+	node := &ASTNode{Kind: "WithStatement"}
+	g := NewCodeGenerator()
+	err := g.generateStatement(node)
+	if err == nil {
+		t.Fatal("Expected error for unsupported statement, got nil")
+	}
+	if _, ok := err.(*TranspilationError); !ok {
+		t.Errorf("Expected *TranspilationError, got %T", err)
+	}
+}

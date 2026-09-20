@@ -74,6 +74,17 @@ func (g *CodeGenerator) Generate(node *ASTNode) (string, error) {
 		g.writeLine("")
 	}
 
+	// Track declared functions and classes for casing consistency
+	if node.Statements != nil {
+		for _, stmt := range node.Statements {
+			if stmt.Kind == FunctionDeclaration && stmt.Name != "" {
+				g.declaredFunctions[stmt.Name] = toPascalCase(stmt.Name)
+			} else if stmt.Kind == ClassDeclaration && stmt.Name != "" {
+				g.declaredFunctions[stmt.Name] = toPascalCase(stmt.Name)
+			}
+		}
+	}
+
 	// Separate type declarations from executable statements
 	typeDecls := []ASTNode{}
 	execStmts := []ASTNode{}
@@ -81,6 +92,9 @@ func (g *CodeGenerator) Generate(node *ASTNode) (string, error) {
 	if node.Statements != nil {
 		for _, stmt := range node.Statements {
 			if stmt.Kind == InterfaceDeclaration || stmt.Kind == TypeAliasDeclaration || stmt.Kind == EnumDeclaration || stmt.Kind == ClassDeclaration || stmt.Kind == FunctionDeclaration {
+				typeDecls = append(typeDecls, stmt)
+			} else if (stmt.Kind == VariableStatement || stmt.Kind == FirstStatement) && isTopLevelConstant(&stmt) {
+				// Pure constants at top-level can be emitted at package level
 				typeDecls = append(typeDecls, stmt)
 			} else {
 				execStmts = append(execStmts, stmt)
@@ -197,6 +211,32 @@ func (g *CodeGenerator) findImports(node *ASTNode, imports map[string]bool) {
 	}
 	if node.Initializer != nil {
 		g.findImports(node.Initializer, imports)
+	}
+}
+
+// isTopLevelConstant checks if a variable statement consists exclusively of constants with literal initializers
+func isTopLevelConstant(stmt *ASTNode) bool {
+	if !stmt.IsConst || len(stmt.Declarations) == 0 {
+		return false
+	}
+	for _, decl := range stmt.Declarations {
+		if decl.Initializer == nil || !isConstantLiteral(decl.Initializer) {
+			return false
+		}
+	}
+	return true
+}
+
+// isConstantLiteral checks if an AST node is a compile-time constant literal
+func isConstantLiteral(node *ASTNode) bool {
+	if node == nil {
+		return false
+	}
+	switch node.Kind {
+	case NumericLiteral, StringLiteral, "FirstLiteralToken", "TrueKeyword", "FalseKeyword", "NoSubstitutionTemplateLiteral":
+		return true
+	default:
+		return false
 	}
 }
 

@@ -1,7 +1,7 @@
 <template>
   <div class="app-layout flex h-screen">
     <!-- Sidebar Navigation -->
-    <aside :class="['sidebar', { 'collapsed': isCollapsed }]">
+    <aside :class="['sidebar', { collapsed: isCollapsed }]">
       <div class="sidebar-header">
         <div v-if="!isCollapsed">
           <h1 class="text-2xl font-bold">TS2Go</h1>
@@ -9,84 +9,84 @@
         </div>
         <h1 v-else class="text-2xl font-bold">TS</h1>
       </div>
-      
+
       <!-- Toggle Button -->
       <button @click="toggleSidebar" class="toggle-btn">
         <i :class="isCollapsed ? 'pi pi-angle-right' : 'pi pi-angle-left'"></i>
       </button>
-      
+
       <nav class="flex-1 px-3 overflow-y-auto">
-        <router-link 
-          to="/" 
+        <router-link
+          to="/"
           class="nav-item"
-          :class="{ 'active': $route.path === '/' }"
+          :class="{ active: $route.path === '/' }"
           v-tooltip.right="isCollapsed ? 'Home' : ''"
         >
           <i class="pi pi-home"></i>
           <span v-if="!isCollapsed">Home</span>
         </router-link>
-        
-        <router-link 
-          to="/project" 
+
+        <router-link
+          to="/project"
           class="nav-item"
-          :class="{ 'active': $route.path === '/project' }"
+          :class="{ active: $route.path === '/project' }"
           v-tooltip.right="isCollapsed ? 'Projects' : ''"
         >
           <i class="pi pi-folder"></i>
           <span v-if="!isCollapsed">Projects</span>
         </router-link>
-        
-        <router-link 
-          to="/editor" 
+
+        <router-link
+          to="/editor"
           class="nav-item"
-          :class="{ 'active': $route.path === '/editor' }"
+          :class="{ active: $route.path === '/editor' }"
           v-tooltip.right="isCollapsed ? 'Editor' : ''"
         >
           <i class="pi pi-code"></i>
           <span v-if="!isCollapsed">Editor</span>
         </router-link>
-        
-        <router-link 
-          to="/examples" 
+
+        <router-link
+          to="/examples"
           class="nav-item"
-          :class="{ 'active': $route.path === '/examples' }"
+          :class="{ active: $route.path === '/examples' }"
           v-tooltip.right="isCollapsed ? 'Examples' : ''"
         >
           <i class="pi pi-book"></i>
           <span v-if="!isCollapsed">Examples</span>
         </router-link>
-        
-        <router-link 
-          to="/history" 
+
+        <router-link
+          to="/history"
           class="nav-item"
-          :class="{ 'active': $route.path === '/history' }"
+          :class="{ active: $route.path === '/history' }"
           v-tooltip.right="isCollapsed ? 'History' : ''"
         >
           <i class="pi pi-history"></i>
           <span v-if="!isCollapsed">History</span>
         </router-link>
-        
-        <router-link 
-          to="/analyze" 
+
+        <router-link
+          to="/analyze"
           class="nav-item"
-          :class="{ 'active': $route.path === '/analyze' }"
+          :class="{ active: $route.path === '/analyze' }"
           v-tooltip.right="isCollapsed ? 'Analyze' : ''"
         >
           <i class="pi pi-search"></i>
           <span v-if="!isCollapsed">Analyze</span>
         </router-link>
-        
-        <router-link 
-          to="/settings" 
+
+        <router-link
+          to="/settings"
           class="nav-item"
-          :class="{ 'active': $route.path === '/settings' }"
+          :class="{ active: $route.path === '/settings' }"
           v-tooltip.right="isCollapsed ? 'Settings' : ''"
         >
           <i class="pi pi-cog"></i>
           <span v-if="!isCollapsed">Settings</span>
         </router-link>
       </nav>
-      
+
       <div class="sidebar-footer">
         <span v-if="!isCollapsed">v0.7.0-beta</span>
         <span v-else>v0.7</span>
@@ -101,13 +101,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { ref } from 'vue';
+import { RouterLink } from 'vue-router';
 
-const isCollapsed = ref(false)
+const isCollapsed = ref(false);
 
 function toggleSidebar() {
-  isCollapsed.value = !isCollapsed.value
+  isCollapsed.value = !isCollapsed.value;
 }
 </script>
 

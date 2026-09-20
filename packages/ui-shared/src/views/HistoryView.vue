@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useHistoryStore } from '@/stores/history'
-import AppLayout from '../components/AppLayout.vue'
+import { computed } from 'vue';
+import { useHistoryStore } from '@/stores/history';
+import AppLayout from '../components/AppLayout.vue';
 
-const historyStore = useHistoryStore()
+const historyStore = useHistoryStore();
 
 const chartData = computed(() => {
-  const last10 = historyStore.builds.slice(0, 10).reverse()
+  const last10 = historyStore.builds.slice(0, 10).reverse();
   return {
     labels: last10.map((_b, i) => `Build ${i + 1}`),
     datasets: [
@@ -15,44 +15,48 @@ const chartData = computed(() => {
         data: last10.map(b => b.duration),
         backgroundColor: 'rgba(102, 126, 234, 0.2)',
         borderColor: 'rgb(102, 126, 234)',
-        borderWidth: 2
-      }
-    ]
-  }
-})
+        borderWidth: 2,
+      },
+    ],
+  };
+});
 
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
     legend: {
-      display: false
-    }
+      display: false,
+    },
   },
   scales: {
     y: {
       beginAtZero: true,
       title: {
         display: true,
-        text: 'Duration (ms)'
-      }
-    }
-  }
-}
+        text: 'Duration (ms)',
+      },
+    },
+  },
+};
 
 function getStatusSeverity(status: string) {
   switch (status) {
-    case 'success': return 'success'
-    case 'failed': return 'danger'
-    case 'partial': return 'warn'
-    default: return 'info'
+    case 'success':
+      return 'success';
+    case 'failed':
+      return 'danger';
+    case 'partial':
+      return 'warn';
+    default:
+      return 'info';
   }
 }
 
 function formatDuration(ms: number) {
-  if (ms < 1000) return `${ms}ms`
-  const seconds = (ms / 1000).toFixed(1)
-  return `${seconds}s`
+  if (ms < 1000) return `${ms}ms`;
+  const seconds = (ms / 1000).toFixed(1);
+  return `${seconds}s`;
 }
 
 function formatTimestamp(date: Date) {
@@ -61,13 +65,13 @@ function formatTimestamp(date: Date) {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit'
-  }).format(date)
+    second: '2-digit',
+  }).format(date);
 }
 
 function confirmClearHistory() {
   if (confirm('Are you sure you want to clear all build history? This cannot be undone.')) {
-    historyStore.clearHistory()
+    historyStore.clearHistory();
   }
 }
 </script>
@@ -76,7 +80,9 @@ function confirmClearHistory() {
   <AppLayout>
     <div class="h-full flex flex-col">
       <!-- Header -->
-      <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+      <div
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4"
+      >
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Build History</h2>
@@ -84,10 +90,10 @@ function confirmClearHistory() {
               Track your transpilation history and performance
             </p>
           </div>
-          <Button 
-            label="Clear History" 
-            icon="pi pi-trash" 
-            severity="danger" 
+          <Button
+            label="Clear History"
+            icon="pi pi-trash"
+            severity="danger"
             size="small"
             outlined
             @click="confirmClearHistory"
@@ -170,10 +176,10 @@ function confirmClearHistory() {
               </div>
             </template>
             <template #content>
-              <DataTable 
-                :value="historyStore.builds" 
+              <DataTable
+                :value="historyStore.builds"
                 stripedRows
-                paginator 
+                paginator
                 :rows="10"
                 :rowsPerPageOptions="[10, 20, 50]"
                 :emptyMessage="'No build history yet. Start transpiling to see history.'"
@@ -206,8 +212,8 @@ function confirmClearHistory() {
 
                 <Column field="status" header="Status" sortable>
                   <template #body="slotProps">
-                    <Tag 
-                      :value="slotProps.data.status" 
+                    <Tag
+                      :value="slotProps.data.status"
                       :severity="getStatusSeverity(slotProps.data.status)"
                     />
                   </template>
@@ -224,7 +230,10 @@ function confirmClearHistory() {
 
                 <Column field="warnings" header="Warnings" sortable>
                   <template #body="slotProps">
-                    <span v-if="slotProps.data.warnings > 0" class="text-yellow-600 dark:text-yellow-400">
+                    <span
+                      v-if="slotProps.data.warnings > 0"
+                      class="text-yellow-600 dark:text-yellow-400"
+                    >
                       {{ slotProps.data.warnings }}
                     </span>
                     <span v-else class="text-gray-400">0</span>
@@ -233,9 +242,9 @@ function confirmClearHistory() {
 
                 <Column header="Actions">
                   <template #body="slotProps">
-                    <Button 
-                      icon="pi pi-trash" 
-                      severity="danger" 
+                    <Button
+                      icon="pi pi-trash"
+                      severity="danger"
                       text
                       size="small"
                       @click="historyStore.removeBuild(slotProps.data.id)"

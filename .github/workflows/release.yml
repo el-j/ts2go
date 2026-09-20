@@ -122,7 +122,7 @@ jobs:
 
       - name: Install npm dependencies
         run: |
-          cd internal/transpiler/parser
+          cd go/internal/transpiler/parser
           npm ci
 
       - name: Build binary
@@ -241,7 +241,7 @@ jobs:
 
       - name: Install parser dependencies
         run: |
-          cd internal/transpiler/parser
+          cd go/internal/transpiler/parser
           npm ci
 
       - name: Build Desktop App using Makefile

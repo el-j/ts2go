@@ -19,6 +19,7 @@ type Project struct {
 	Dependencies map[string]*mapper.Classification
 	EntryPoints  []string
 	OutputDir    string
+	ModulePrefix string
 }
 
 // SourceFile represents a single TypeScript source file

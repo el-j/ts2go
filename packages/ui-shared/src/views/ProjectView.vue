@@ -10,7 +10,7 @@
               {{ projectPath ? projectPath : 'See and edit your TypeScript project files' }}
             </p>
           </div>
-          
+
           <!-- Inline Project Info (visible on larger screens) -->
           <div v-if="projectPath" class="project-info-inline hidden lg:flex">
             <div class="info-badge">
@@ -23,10 +23,10 @@
               <span class="detail">{{ formatDate(new Date()) }}</span>
             </div>
           </div>
-          
+
           <!-- Info Icon with Popover (visible on smaller screens) -->
-          <button 
-            v-if="projectPath" 
+          <button
+            v-if="projectPath"
             @click="toggleProjectInfo"
             class="info-icon-btn lg:hidden"
             type="button"
@@ -53,63 +53,65 @@
             </div>
           </Popover>
         </div>
-        
+
         <!-- Action Buttons -->
         <div v-if="projectPath" class="action-buttons">
-          <button 
-            @click="handleTranspile" 
+          <button
+            @click="handleTranspile"
             class="btn-action btn-primary"
             :disabled="transpileStore.isTranspiling"
             v-tooltip.bottom="'Transpile all TypeScript files to Go (Ctrl+Shift+T)'"
           >
             {{ transpileStore.isTranspiling ? '⏳ Transpiling...' : '🚀 Transpile All' }}
           </button>
-          <button 
-            @click="handleTranspileFile" 
+          <button
+            @click="handleTranspileFile"
             class="btn-action btn-secondary"
             :disabled="!activeFile || transpileStore.isTranspiling"
             v-tooltip.bottom="'Transpile current file only (Ctrl+T)'"
           >
             📄 Transpile File
           </button>
-          <button 
+          <button
             v-if="transpileStore.currentResult?.output_dir"
-            @click="openOutputFolder" 
+            @click="openOutputFolder"
             class="btn-action btn-secondary"
             v-tooltip.bottom="'Open output folder in file explorer'"
           >
             👁️ Preview
           </button>
-          <button 
+          <button
             v-if="transpileStore.currentResult?.output_dir && !isRunningProject"
-            @click="handleRunProject" 
+            @click="handleRunProject"
             class="btn-action btn-success"
             v-tooltip.bottom="'Run the complete Go project'"
           >
             ▶️ Run Project
           </button>
-          <span v-if="isRunningProject" class="running-project-indicator">⏳ Running Project...</span>
-          <button 
+          <span v-if="isRunningProject" class="running-project-indicator"
+            >⏳ Running Project...</span
+          >
+          <button
             v-if="transpileStore.currentResult?.output_dir && !buildStore.isBuilding"
-            @click="handleBuildProject" 
+            @click="handleBuildProject"
             class="btn-action btn-build"
             v-tooltip.bottom="'Build project into executable binary'"
           >
             🔨 Build Project
           </button>
           <span v-if="buildStore.isBuilding" class="building-indicator">⏳ Building...</span>
-          <button 
+          <button
             v-if="transpileStore.currentResult?.output_dir && !testStore.isTesting"
-            @click="handleTestProject" 
+            @click="handleTestProject"
             class="btn-action btn-test"
             v-tooltip.bottom="'Run tests on the Go project'"
           >
             🧪 Test Project
           </button>
           <span v-if="testStore.isTesting" class="testing-indicator">⏳ Testing...</span>
-          
+
           <!-- Help Button -->
-          <button 
+          <button
             @click="showShortcutsDialog = true"
             class="btn-action btn-help"
             v-tooltip.bottom="'View keyboard shortcuts (?)'"
@@ -119,13 +121,13 @@
         </div>
       </div>
     </div>
-    
+
     <div class="project-view">
       <!-- Show ProjectLoader only if no project is loaded -->
       <div v-if="!projectPath" class="loader-wrapper">
         <ProjectLoader />
       </div>
-      
+
       <!-- Show project workspace when project is loaded -->
       <div v-else class="workspace-container">
         <Splitter class="workspace-splitter">
@@ -133,13 +135,13 @@
           <SplitterPanel :size="15" :min-size="10" class="file-tree-panel">
             <FileTree />
           </SplitterPanel>
-          
+
           <!-- Editor Column with Tabs -->
           <SplitterPanel :size="55" :min-size="30" class="editor-panel">
             <div class="editor-column">
               <!-- File Tabs -->
               <FileTabs />
-              
+
               <!-- Editor Area -->
               <div class="editor-area">
                 <div v-if="activeFile" class="editor-container">
@@ -159,17 +161,22 @@
               </div>
             </div>
           </SplitterPanel>
-          
+
           <!-- Output Panel -->
           <SplitterPanel :size="30" :min-size="20" class="output-panel-wrapper">
             <div class="output-panel">
               <div class="panel-header">
                 <div class="header-left">
                   <h4>Output</h4>
-                  <span v-if="transpileStore.isTranspiling && workspace.transpilationProgress.currentFile" class="progress-badge">
+                  <span
+                    v-if="
+                      transpileStore.isTranspiling && workspace.transpilationProgress.currentFile
+                    "
+                    class="progress-badge"
+                  >
                     {{ getProgressText() }}
                   </span>
-                  <button 
+                  <button
                     v-if="transpileStore.currentResult?.goCode && !isRunning"
                     @click="handleRunGoCode"
                     class="run-btn"
@@ -179,8 +186,8 @@
                   </button>
                   <span v-if="isRunning" class="running-indicator">⏳ Running...</span>
                 </div>
-                <button 
-                  v-if="transpileStore.currentResult" 
+                <button
+                  v-if="transpileStore.currentResult"
                   @click="transpileStore.clearResult()"
                   class="clear-btn"
                 >
@@ -189,8 +196,12 @@
               </div>
               <div class="panel-content">
                 <!-- State Restoration Banner -->
-                <div 
-                  v-if="hasValidTranspilationState && !transpileStore.isTranspiling && !transpileStore.currentResult?.goCode" 
+                <div
+                  v-if="
+                    hasValidTranspilationState &&
+                    !transpileStore.isTranspiling &&
+                    !transpileStore.currentResult?.goCode
+                  "
                   class="state-restoration-banner"
                 >
                   <div class="banner-content">
@@ -204,7 +215,7 @@
                         Build, Test, and Run commands are available. Transpile again to update.
                       </p>
                     </div>
-                    <button 
+                    <button
                       @click="clearTranspilationState"
                       class="banner-clear-btn"
                       title="Clear saved state"
@@ -225,7 +236,7 @@
                   <div class="spinner"></div>
                   <p>Transpiling project...</p>
                 </div>
-                
+
                 <!-- Success State with Go Code (Single File) -->
                 <div v-else-if="transpileStore.currentResult?.goCode" class="go-code-output">
                   <MonacoEditor
@@ -235,18 +246,22 @@
                     theme="vs-dark"
                   />
                 </div>
-                
+
                 <!-- Log Output (when no file selected and we have logs) -->
                 <div v-else-if="workspace.transpilationProgress.logs.length > 0" class="log-output">
                   <div class="log-header">
                     <h4>Transpilation Log</h4>
-                    <button @click="workspace.transpilationProgress.logs = []" class="clear-log-btn" title="Clear logs">
+                    <button
+                      @click="workspace.transpilationProgress.logs = []"
+                      class="clear-log-btn"
+                      title="Clear logs"
+                    >
                       Clear
                     </button>
                   </div>
                   <div class="log-entries">
-                    <div 
-                      v-for="(log, index) in workspace.transpilationProgress.logs" 
+                    <div
+                      v-for="(log, index) in workspace.transpilationProgress.logs"
                       :key="index"
                       :class="['log-entry', `log-${log.level}`]"
                     >
@@ -256,7 +271,7 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <!-- Error State -->
                 <div v-else-if="transpileStore.hasError" class="output-error">
                   <div class="error-header">
@@ -265,7 +280,7 @@
                   </div>
                   <pre class="error-message">{{ transpileStore.currentResult?.error }}</pre>
                 </div>
-                
+
                 <!-- Empty State -->
                 <p v-else class="placeholder">Transpilation output will appear here</p>
               </div>
@@ -274,313 +289,322 @@
         </Splitter>
       </div>
     </div>
-    
+
     <!-- Unsaved Changes Dialog -->
-    <UnsavedChangesDialog 
+    <UnsavedChangesDialog
       v-model="showUnsavedDialog"
       @save="handleSaveAll"
       @discard="handleDiscardChanges"
       @cancel="handleCancelClose"
     />
-    
+
     <!-- Keyboard Shortcuts Dialog -->
     <KeyboardShortcuts v-model="showShortcutsDialog" />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { useToast } from 'primevue/usetoast'
-import ProjectLoader from '../components/ProjectLoader.vue'
-import AppLayout from '../components/AppLayout.vue'
-import FileTree from '../components/FileTree.vue'
-import FileTabs from '../components/FileTabs.vue'
-import MonacoEditor from '../components/MonacoEditor.vue'
-import Popover from 'primevue/popover'
-import Splitter from 'primevue/splitter'
-import SplitterPanel from 'primevue/splitterpanel'
-import UnsavedChangesDialog from '@/components/UnsavedChangesDialog.vue'
-import KeyboardShortcuts from '@/components/KeyboardShortcuts.vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { invoke } from '@tauri-apps/api/core';
+import { useToast } from 'primevue/usetoast';
+import ProjectLoader from '../components/ProjectLoader.vue';
+import AppLayout from '../components/AppLayout.vue';
+import FileTree from '../components/FileTree.vue';
+import FileTabs from '../components/FileTabs.vue';
+import MonacoEditor from '../components/MonacoEditor.vue';
+import Popover from 'primevue/popover';
+import Splitter from 'primevue/splitter';
+import SplitterPanel from 'primevue/splitterpanel';
+import UnsavedChangesDialog from '@/components/UnsavedChangesDialog.vue';
+import KeyboardShortcuts from '@/components/KeyboardShortcuts.vue';
 
-import { useWorkspaceStore } from '../stores/workspace'
-import { useTranspileStore } from '../stores/transpile'
-import { useBuildStore } from '../stores/build'
-import { useTestStore } from '../stores/test'
-import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
-import { useAutoSave } from '@/composables/useAutoSave'
-import { useSaveFile } from '@/composables/useSaveFile'
+import { useWorkspaceStore } from '../stores/workspace';
+import { useTranspileStore } from '../stores/transpile';
+import { useBuildStore } from '../stores/build';
+import { useTestStore } from '../stores/test';
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
+import { useAutoSave } from '@/composables/useAutoSave';
+import { useSaveFile } from '@/composables/useSaveFile';
 
-const workspace = useWorkspaceStore()
-const transpileStore = useTranspileStore()
-const buildStore = useBuildStore()
-const testStore = useTestStore()
-const toast = useToast()
+const workspace = useWorkspaceStore();
+const transpileStore = useTranspileStore();
+const buildStore = useBuildStore();
+const testStore = useTestStore();
+const toast = useToast();
 
 // Initialize keyboard shortcuts and auto-save
-useKeyboardShortcuts([])  // Fixed: passing empty array
-const { scheduleSave } = useAutoSave()
-const { saveAll } = useSaveFile()
+useKeyboardShortcuts([]); // Fixed: passing empty array
+const { scheduleSave } = useAutoSave();
+const { saveAll } = useSaveFile();
 
 // Dialog states
-const showUnsavedDialog = ref(false)
-const showShortcutsDialog = ref(false)
+const showUnsavedDialog = ref(false);
+const showShortcutsDialog = ref(false);
 
-const projectInfoPopover = ref()
-const isRunning = ref(false)
-const isRunningProject = ref(false)
+const projectInfoPopover = ref();
+const isRunning = ref(false);
+const isRunningProject = ref(false);
 
 // State restoration
-const hasValidTranspilationState = ref(false)
-const lastTranspilationTime = ref<string | null>(null)
-const lastTranspilationFiles = ref(0)
-const restoringState = ref(false)
+const hasValidTranspilationState = ref(false);
+const lastTranspilationTime = ref<string | null>(null);
+const lastTranspilationFiles = ref(0);
+const restoringState = ref(false);
 
 // Handler functions for dialogs
 async function handleSaveAll() {
-  await saveAll()
-  showUnsavedDialog.value = false
+  await saveAll();
+  showUnsavedDialog.value = false;
 }
 
 function handleDiscardChanges() {
-  showUnsavedDialog.value = false
+  showUnsavedDialog.value = false;
   // Continue with close operation
 }
 
 function handleCancelClose() {
-  showUnsavedDialog.value = false
+  showUnsavedDialog.value = false;
   // Cancel close operation
 }
 
 // Before unload handler to prevent data loss
 function handleBeforeUnload(e: BeforeUnloadEvent) {
   if (workspace.hasUnsavedChanges) {
-    e.preventDefault()
-    e.returnValue = ''
-    showUnsavedDialog.value = true
+    e.preventDefault();
+    e.returnValue = '';
+    showUnsavedDialog.value = true;
   }
 }
 
 // Add beforeunload listener on mount
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', handleBeforeUnload)
+  window.addEventListener('beforeunload', handleBeforeUnload);
 }
 
 onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', handleBeforeUnload)
-})
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+});
 
 function toggleProjectInfo(event: Event) {
-  projectInfoPopover.value.toggle(event)
+  projectInfoPopover.value.toggle(event);
 }
 
 function getProgressText(): string {
-  const progress = workspace.transpilationProgress
-  const fileName = progress.currentFile?.split('/').pop() || 'file'
-  return `Transpiling: ${fileName} (${progress.completedFiles}/${progress.totalFiles})`
+  const progress = workspace.transpilationProgress;
+  const fileName = progress.currentFile?.split('/').pop() || 'file';
+  return `Transpiling: ${fileName} (${progress.completedFiles}/${progress.totalFiles})`;
 }
 
 function getLogIcon(level: string): string {
   switch (level) {
-    case 'success': return '✓'
-    case 'error': return '✗'
-    case 'warning': return '⚠'
-    default: return 'ℹ'
+    case 'success':
+      return '✓';
+    case 'error':
+      return '✗';
+    case 'warning':
+      return '⚠';
+    default:
+      return 'ℹ';
   }
 }
 
 function formatLogTime(timestamp: number): string {
-  const date = new Date(timestamp)
-  return date.toLocaleTimeString('en-US', { 
-    hour: '2-digit', 
-    minute: '2-digit', 
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
     second: '2-digit',
-    hour12: false
-  })
+    hour12: false,
+  });
 }
 
 // Watch for active file changes and auto-load transpiled output
-watch(() => workspace.activeFilePath, async (newPath) => {
-  if (!newPath) return
-  
-  // Check if this file has been transpiled
-  const transpilation = workspace.getTranspilation(newPath)
-  if (transpilation && transpilation.success && transpilation.goCode) {
-    // Auto-load the Go code into output panel
-    transpileStore.currentResult = {
-      success: true,
-      message: `Showing transpiled output for ${activeFile.value?.name}`,
-      files_transpiled: 1,
-      goCode: transpilation.goCode
+watch(
+  () => workspace.activeFilePath,
+  async newPath => {
+    if (!newPath) return;
+
+    // Check if this file has been transpiled
+    const transpilation = workspace.getTranspilation(newPath);
+    if (transpilation && transpilation.success && transpilation.goCode) {
+      // Auto-load the Go code into output panel
+      transpileStore.currentResult = {
+        success: true,
+        message: `Showing transpiled output for ${activeFile.value?.name}`,
+        files_transpiled: 1,
+        goCode: transpilation.goCode,
+      };
     }
   }
-})
+);
 
-const activeFile = computed(() => workspace.activeFile)
-const projectPath = computed(() => workspace.projectPath)
+const activeFile = computed(() => workspace.activeFile);
+const projectPath = computed(() => workspace.projectPath);
 
 const projectName = computed(() => {
-  const path = workspace.projectPath
-  return path.split('/').filter(Boolean).pop() || 'Project'
-})
+  const path = workspace.projectPath;
+  return path.split('/').filter(Boolean).pop() || 'Project';
+});
 
 const fileCount = computed(() => {
   const countFiles = (nodes: any[]): number => {
     return nodes.reduce((count, node) => {
       if (node.type === 'file') {
-        return count + 1
+        return count + 1;
       }
       if (node.children) {
-        return count + countFiles(node.children)
+        return count + countFiles(node.children);
       }
-      return count
-    }, 0)
-  }
-  return countFiles(workspace.fileTree)
-})
+      return count;
+    }, 0);
+  };
+  return countFiles(workspace.fileTree);
+});
 
 function formatDate(date: Date): string {
   return date.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
-  })
+    minute: '2-digit',
+  });
 }
 
 function getEditorLanguage(filename: string): string {
-  const ext = filename.split('.').pop()?.toLowerCase()
+  const ext = filename.split('.').pop()?.toLowerCase();
   switch (ext) {
     case 'ts':
     case 'tsx':
-      return 'typescript'
+      return 'typescript';
     case 'js':
     case 'jsx':
-      return 'javascript'
+      return 'javascript';
     case 'json':
-      return 'json'
+      return 'json';
     case 'md':
-      return 'markdown'
+      return 'markdown';
     case 'go':
-      return 'go'
+      return 'go';
     case 'vue':
-      return 'vue'
+      return 'vue';
     default:
-      return 'plaintext'
+      return 'plaintext';
   }
 }
 
 function handleMonacoChange(content: string) {
   if (activeFile.value) {
-    workspace.updateFileContent(activeFile.value.path, content)
-    
+    workspace.updateFileContent(activeFile.value.path, content);
+
     // Schedule auto-save after content change
-    scheduleSave(activeFile.value)
+    scheduleSave(activeFile.value);
   }
 }
 
 async function handleTranspile() {
-  if (!projectPath.value) return
-  
+  if (!projectPath.value) return;
+
   try {
     // Count TypeScript files in the project
-    const tsFiles = countTypeScriptFiles(workspace.fileTree)
-    
+    const tsFiles = countTypeScriptFiles(workspace.fileTree);
+
     // Initialize transpilation progress
-    workspace.startTranspilation(tsFiles)
-    
+    workspace.startTranspilation(tsFiles);
+
     // Mark all TS files as pending
-    markAllTsFilesStatus('pending')
-    
+    markAllTsFilesStatus('pending');
+
     // Start actual transpilation
-    await transpileStore.transpileProject(projectPath.value)
-    
+    await transpileStore.transpileProject(projectPath.value);
+
     // After successful transpilation, load all Go files into transpilation map
     if (transpileStore.currentResult?.success && transpileStore.currentResult?.output_dir) {
-      await loadTranspiledGoFiles(transpileStore.currentResult.output_dir)
+      await loadTranspiledGoFiles(transpileStore.currentResult.output_dir);
     }
-    
+
     // Mark all files as success (we don't have per-file info from backend yet)
     // In a future update, the backend should provide per-file results
-    markAllTsFilesStatus('success')
-    workspace.finishTranspilation()
-    
+    markAllTsFilesStatus('success');
+    workspace.finishTranspilation();
+
     // Show success toast with format info
-    let detail = `Transpiled ${transpileStore.currentResult?.files_transpiled} files successfully`
+    let detail = `Transpiled ${transpileStore.currentResult?.files_transpiled} files successfully`;
     if (transpileStore.currentResult?.files_formatted !== undefined) {
-      detail += ` (${transpileStore.currentResult.files_formatted} formatted)`
+      detail += ` (${transpileStore.currentResult.files_formatted} formatted)`;
     }
     toast.add({
       severity: 'success',
       summary: 'Transpilation Complete!',
       detail: detail,
-      life: 4000
-    })
-    
+      life: 4000,
+    });
+
     // Show format warnings if any
-    if (transpileStore.currentResult?.format_warnings && 
-        transpileStore.currentResult.format_warnings.length > 0) {
+    if (
+      transpileStore.currentResult?.format_warnings &&
+      transpileStore.currentResult.format_warnings.length > 0
+    ) {
       toast.add({
         severity: 'warn',
         summary: 'Formatting Warnings',
         detail: transpileStore.currentResult.format_warnings.join(', '),
-        life: 5000
-      })
+        life: 5000,
+      });
     }
   } catch (error) {
-    console.error('Transpilation failed:', error)
-    
+    console.error('Transpilation failed:', error);
+
     // Mark files as error
-    markAllTsFilesStatus('error', String(error))
-    workspace.addTranspilationLog(`Transpilation failed: ${error}`, 'error')
-    
+    markAllTsFilesStatus('error', String(error));
+    workspace.addTranspilationLog(`Transpilation failed: ${error}`, 'error');
+
     // Show error toast
     toast.add({
       severity: 'error',
       summary: 'Transpilation Failed',
       detail: String(error),
-      life: 5000
-    })
+      life: 5000,
+    });
   }
 }
 
 async function loadTranspiledGoFiles(outputDir: string) {
   try {
     // Get list of all Go files in output directory
-    const goFiles = await invoke<string[]>('get_go_files', { path: outputDir })
-    
-    workspace.addTranspilationLog(`Loading ${goFiles.length} transpiled Go files...`, 'info')
-    
+    const goFiles = await invoke<string[]>('get_go_files', { path: outputDir });
+
+    workspace.addTranspilationLog(`Loading ${goFiles.length} transpiled Go files...`, 'info');
+
     // For each Go file, find corresponding TS file and populate map
     for (const goFilePath of goFiles) {
       try {
         // Read the Go file content
-        const goCode = await invoke<string>('read_file', { path: goFilePath })
-        
+        const goCode = await invoke<string>('read_file', { path: goFilePath });
+
         // Determine corresponding TypeScript file path
         // Extract relative path from output dir
-        const relativePath = goFilePath.replace(outputDir, '').replace(/^\//, '')
+        const relativePath = goFilePath.replace(outputDir, '').replace(/^\//, '');
         // Replace .go with .ts/.tsx and construct original path
-        const tsFileName = relativePath.replace(/\.go$/, '.ts')
-        const tsxFileName = relativePath.replace(/\.go$/, '.tsx')
-        
+        const tsFileName = relativePath.replace(/\.go$/, '.ts');
+        const tsxFileName = relativePath.replace(/\.go$/, '.tsx');
+
         // Find the actual TS file in the file tree
-        const tsFilePath = findTsFileInTree(tsFileName, tsxFileName)
-        
+        const tsFilePath = findTsFileInTree(tsFileName, tsxFileName);
+
         if (tsFilePath) {
           // Store in transpilation map
-          workspace.setTranspilation(tsFilePath, goFilePath, goCode, true)
-          workspace.addTranspilationLog(`✓ Loaded ${relativePath}`, 'success')
+          workspace.setTranspilation(tsFilePath, goFilePath, goCode, true);
+          workspace.addTranspilationLog(`✓ Loaded ${relativePath}`, 'success');
         }
       } catch (error) {
-        console.warn(`Failed to load Go file ${goFilePath}:`, error)
+        console.warn(`Failed to load Go file ${goFilePath}:`, error);
       }
     }
-    
-    workspace.addTranspilationLog(`Successfully loaded all transpiled files`, 'success')
+
+    workspace.addTranspilationLog(`Successfully loaded all transpiled files`, 'success');
   } catch (error) {
-    console.error('Failed to load transpiled Go files:', error)
-    workspace.addTranspilationLog(`Warning: Could not load Go files: ${error}`, 'warning')
+    console.error('Failed to load transpiled Go files:', error);
+    workspace.addTranspilationLog(`Warning: Could not load Go files: ${error}`, 'warning');
   }
 }
 
@@ -588,190 +612,194 @@ function findTsFileInTree(tsFileName: string, tsxFileName: string): string | nul
   const searchInNodes = (nodes: any[], targetName: string): string | null => {
     for (const node of nodes) {
       if (node.type === 'file' && node.name === targetName) {
-        return node.path
+        return node.path;
       }
       if (node.children) {
-        const found = searchInNodes(node.children, targetName)
-        if (found) return found
+        const found = searchInNodes(node.children, targetName);
+        if (found) return found;
       }
     }
-    return null
-  }
-  
+    return null;
+  };
+
   // Try both .ts and .tsx extensions
-  const tsName = tsFileName.split('/').pop() || ''
-  const tsxName = tsxFileName.split('/').pop() || ''
-  
-  return searchInNodes(workspace.fileTree, tsName) || searchInNodes(workspace.fileTree, tsxName)
+  const tsName = tsFileName.split('/').pop() || '';
+  const tsxName = tsxFileName.split('/').pop() || '';
+
+  return searchInNodes(workspace.fileTree, tsName) || searchInNodes(workspace.fileTree, tsxName);
 }
 
 function countTypeScriptFiles(nodes: any[]): number {
-  let count = 0
+  let count = 0;
   for (const node of nodes) {
     if (node.type === 'file' && /\.tsx?$/.test(node.name)) {
-      count++
+      count++;
     }
     if (node.children) {
-      count += countTypeScriptFiles(node.children)
+      count += countTypeScriptFiles(node.children);
     }
   }
-  return count
+  return count;
 }
 
 function markAllTsFilesStatus(status: any, errorMessage?: string) {
   const markNodes = (nodes: any[]) => {
     for (const node of nodes) {
       if (node.type === 'file' && /\.tsx?$/.test(node.name)) {
-        workspace.updateTranspilationStatus(node.path, status, errorMessage)
+        workspace.updateTranspilationStatus(node.path, status, errorMessage);
       }
       if (node.children) {
-        markNodes(node.children)
+        markNodes(node.children);
       }
     }
-  }
-  markNodes(workspace.fileTree)
+  };
+  markNodes(workspace.fileTree);
 }
 
 async function handleTranspileFile() {
-  if (!activeFile.value || !projectPath.value) return
-  
+  if (!activeFile.value || !projectPath.value) return;
+
   try {
-    transpileStore.isTranspiling = true
-    transpileStore.currentResult = null
-    
+    transpileStore.isTranspiling = true;
+    transpileStore.currentResult = null;
+
     // Start single file transpilation
-    workspace.startTranspilation(1)
-    workspace.setCurrentTranspilingFile(activeFile.value.path)
-    workspace.updateTranspilationStatus(activeFile.value.path, 'transpiling')
-    
+    workspace.startTranspilation(1);
+    workspace.setCurrentTranspilingFile(activeFile.value.path);
+    workspace.updateTranspilationStatus(activeFile.value.path, 'transpiling');
+
     // Transpile the current file
     const goCode = await invoke<string>('transpile_code', {
       code: activeFile.value.content,
-      filename: activeFile.value.name
-    })
-    
+      filename: activeFile.value.name,
+    });
+
     // Determine Go file path
-    const goFilePath = activeFile.value.path.replace(/\.tsx?$/, '.go')
-    
+    const goFilePath = activeFile.value.path.replace(/\.tsx?$/, '.go');
+
     // Store transpilation info in workspace
-    workspace.setTranspilation(activeFile.value.path, goFilePath, goCode, true)
-    workspace.completeFileTranspilation(activeFile.value.path, true)
-    workspace.finishTranspilation()
-    
+    workspace.setTranspilation(activeFile.value.path, goFilePath, goCode, true);
+    workspace.completeFileTranspilation(activeFile.value.path, true);
+    workspace.finishTranspilation();
+
     // Store result in transpile store for display
     transpileStore.currentResult = {
       success: true,
       message: `Successfully transpiled ${activeFile.value.name}`,
       files_transpiled: 1,
-      goCode: goCode // Add the Go code to result
-    }
-    
+      goCode: goCode, // Add the Go code to result
+    };
+
     // Show success toast
     toast.add({
       severity: 'success',
       summary: 'File Transpiled!',
       detail: `Successfully transpiled ${activeFile.value.name}`,
-      life: 3000
-    })
+      life: 3000,
+    });
   } catch (error) {
-    console.error('File transpilation failed:', error)
-    
+    console.error('File transpilation failed:', error);
+
     // Mark as error in workspace
-    workspace.updateTranspilationStatus(activeFile.value.path, 'error', String(error))
-    workspace.completeFileTranspilation(activeFile.value.path, false, String(error))
-    workspace.finishTranspilation()
-    
+    workspace.updateTranspilationStatus(activeFile.value.path, 'error', String(error));
+    workspace.completeFileTranspilation(activeFile.value.path, false, String(error));
+    workspace.finishTranspilation();
+
     transpileStore.currentResult = {
       success: false,
-      error: `Failed to transpile file: ${error}`
-    }
-    
+      error: `Failed to transpile file: ${error}`,
+    };
+
     // Show error toast
     toast.add({
       severity: 'error',
       summary: 'Transpilation Failed',
       detail: String(error),
-      life: 5000
-    })
+      life: 5000,
+    });
   } finally {
-    transpileStore.isTranspiling = false
+    transpileStore.isTranspiling = false;
   }
 }
 
 async function openOutputFolder() {
-  if (!transpileStore.currentResult?.output_dir) return
-  
+  if (!transpileStore.currentResult?.output_dir) return;
+
   try {
     await invoke('open_in_explorer', {
-      path: transpileStore.currentResult.output_dir
-    })
+      path: transpileStore.currentResult.output_dir,
+    });
   } catch (error) {
-    console.error('Failed to open output folder:', error)
+    console.error('Failed to open output folder:', error);
   }
 }
 
 async function handleRunGoCode() {
-  if (!transpileStore.currentResult?.goCode) return
-  
-  isRunning.value = true
-  
+  if (!transpileStore.currentResult?.goCode) return;
+
+  isRunning.value = true;
+
   try {
     // Execute Go code via Tauri backend
     const result = await invoke<{
-      success: boolean
-      stdout: string
-      stderr: string
-      exit_code: number
-      duration_ms: number
+      success: boolean;
+      stdout: string;
+      stderr: string;
+      exit_code: number;
+      duration_ms: number;
     }>('run_go_code', {
-      code: transpileStore.currentResult.goCode
-    })
-    
+      code: transpileStore.currentResult.goCode,
+    });
+
     // Display results in output panel by switching to log view
-    workspace.transpilationProgress.logs = []
-    workspace.addTranspilationLog('=== Go Code Execution ===', 'info')
-    workspace.addTranspilationLog(`Exit code: ${result.exit_code}`, result.success ? 'success' : 'error')
-    workspace.addTranspilationLog(`Duration: ${result.duration_ms}ms`, 'info')
-    
+    workspace.transpilationProgress.logs = [];
+    workspace.addTranspilationLog('=== Go Code Execution ===', 'info');
+    workspace.addTranspilationLog(
+      `Exit code: ${result.exit_code}`,
+      result.success ? 'success' : 'error'
+    );
+    workspace.addTranspilationLog(`Duration: ${result.duration_ms}ms`, 'info');
+
     if (result.stdout) {
-      workspace.addTranspilationLog('--- Standard Output ---', 'info')
+      workspace.addTranspilationLog('--- Standard Output ---', 'info');
       result.stdout.split('\n').forEach(line => {
         if (line.trim()) {
-          workspace.addTranspilationLog(line, 'success')
+          workspace.addTranspilationLog(line, 'success');
         }
-      })
+      });
     }
-    
+
     if (result.stderr) {
-      workspace.addTranspilationLog('--- Standard Error ---', 'warning')
+      workspace.addTranspilationLog('--- Standard Error ---', 'warning');
       result.stderr.split('\n').forEach(line => {
         if (line.trim()) {
-          workspace.addTranspilationLog(line, 'error')
+          workspace.addTranspilationLog(line, 'error');
         }
-      })
+      });
     }
-    
+
     // Clear current result to show logs
-    transpileStore.currentResult = null
-    
+    transpileStore.currentResult = null;
+
     // Show toast notification
     toast.add({
       severity: result.success ? 'success' : 'error',
       summary: result.success ? 'Execution Complete' : 'Execution Failed',
       detail: `Finished in ${result.duration_ms}ms with exit code ${result.exit_code}`,
-      life: 4000
-    })
+      life: 4000,
+    });
   } catch (error) {
-    workspace.addTranspilationLog(`Execution error: ${error}`, 'error')
-    transpileStore.currentResult = null
-    
+    workspace.addTranspilationLog(`Execution error: ${error}`, 'error');
+    transpileStore.currentResult = null;
+
     // Check if error is Go-related
-    const errorStr = String(error).toLowerCase()
-    const isGoError = errorStr.includes('go not found') || 
-                      errorStr.includes('go binary') || 
-                      errorStr.includes('install go') ||
-                      errorStr.includes('configure in settings')
-    
+    const errorStr = String(error).toLowerCase();
+    const isGoError =
+      errorStr.includes('go not found') ||
+      errorStr.includes('go binary') ||
+      errorStr.includes('install go') ||
+      errorStr.includes('configure in settings');
+
     if (isGoError) {
       toast.add({
         severity: 'error',
@@ -779,84 +807,88 @@ async function handleRunGoCode() {
         detail: 'Configure Go in Settings to use Build, Test, and Run features',
         life: 8000,
         group: 'go-error',
-        closable: true
-      })
+        closable: true,
+      });
     } else {
       toast.add({
         severity: 'error',
         summary: 'Execution Failed',
         detail: String(error),
-        life: 5000
-      })
+        life: 5000,
+      });
     }
   } finally {
-    isRunning.value = false
+    isRunning.value = false;
   }
 }
 
 async function handleRunProject() {
-  if (!transpileStore.currentResult?.output_dir) return
-  
-  isRunningProject.value = true
-  
+  if (!transpileStore.currentResult?.output_dir) return;
+
+  isRunningProject.value = true;
+
   try {
     // Execute complete Go project via Tauri backend
     const result = await invoke<{
-      success: boolean
-      stdout: string
-      stderr: string
-      exit_code: number
-      duration_ms: number
+      success: boolean;
+      stdout: string;
+      stderr: string;
+      exit_code: number;
+      duration_ms: number;
     }>('run_go_project', {
-      outputDir: transpileStore.currentResult.output_dir
-    })
-    
+      outputDir: transpileStore.currentResult.output_dir,
+    });
+
     // Display results in output panel
-    workspace.transpilationProgress.logs = []
-    workspace.addTranspilationLog('=== Go Project Execution ===', 'info')
-    workspace.addTranspilationLog(`Project: ${transpileStore.currentResult.output_dir}`, 'info')
-    workspace.addTranspilationLog(`Exit code: ${result.exit_code}`, result.success ? 'success' : 'error')
-    workspace.addTranspilationLog(`Duration: ${result.duration_ms}ms`, 'info')
-    
+    workspace.transpilationProgress.logs = [];
+    workspace.addTranspilationLog('=== Go Project Execution ===', 'info');
+    workspace.addTranspilationLog(`Project: ${transpileStore.currentResult.output_dir}`, 'info');
+    workspace.addTranspilationLog(
+      `Exit code: ${result.exit_code}`,
+      result.success ? 'success' : 'error'
+    );
+    workspace.addTranspilationLog(`Duration: ${result.duration_ms}ms`, 'info');
+
     if (result.stdout) {
-      workspace.addTranspilationLog('--- Standard Output ---', 'info')
+      workspace.addTranspilationLog('--- Standard Output ---', 'info');
       result.stdout.split('\n').forEach(line => {
         if (line.trim()) {
-          workspace.addTranspilationLog(line, 'success')
+          workspace.addTranspilationLog(line, 'success');
         }
-      })
+      });
     }
-    
+
     if (result.stderr) {
-      workspace.addTranspilationLog('--- Standard Error ---', 'warning')
+      workspace.addTranspilationLog('--- Standard Error ---', 'warning');
       result.stderr.split('\n').forEach(line => {
         if (line.trim()) {
-          workspace.addTranspilationLog(line, 'error')
+          workspace.addTranspilationLog(line, 'error');
         }
-      })
+      });
     }
-    
+
     // Clear current result to show logs
-    transpileStore.currentResult = null
-    
+    transpileStore.currentResult = null;
+
     // Show toast notification
     toast.add({
       severity: result.success ? 'success' : 'error',
       summary: result.success ? 'Project Execution Complete' : 'Project Execution Failed',
       detail: `Finished in ${result.duration_ms}ms with exit code ${result.exit_code}`,
-      life: 4000
-    })
+      life: 4000,
+    });
   } catch (error) {
-    workspace.addTranspilationLog(`Project execution error: ${error}`, 'error')
-    transpileStore.currentResult = null
-    
+    workspace.addTranspilationLog(`Project execution error: ${error}`, 'error');
+    transpileStore.currentResult = null;
+
     // Check if error is Go-related
-    const errorStr = String(error).toLowerCase()
-    const isGoError = errorStr.includes('go not found') || 
-                      errorStr.includes('go binary') || 
-                      errorStr.includes('install go') ||
-                      errorStr.includes('configure in settings')
-    
+    const errorStr = String(error).toLowerCase();
+    const isGoError =
+      errorStr.includes('go not found') ||
+      errorStr.includes('go binary') ||
+      errorStr.includes('install go') ||
+      errorStr.includes('configure in settings');
+
     if (isGoError) {
       toast.add({
         severity: 'error',
@@ -864,82 +896,92 @@ async function handleRunProject() {
         detail: 'Configure Go in Settings to use Build, Test, and Run features',
         life: 8000,
         group: 'go-error',
-        closable: true
-      })
+        closable: true,
+      });
     } else {
       toast.add({
         severity: 'error',
         summary: 'Project Execution Failed',
         detail: String(error),
-        life: 5000
-      })
+        life: 5000,
+      });
     }
   } finally {
-    isRunningProject.value = false
+    isRunningProject.value = false;
   }
 }
 
 async function handleBuildProject() {
-  if (!transpileStore.currentResult?.output_dir) return
-  
+  if (!transpileStore.currentResult?.output_dir) return;
+
   try {
-    const outputDir = transpileStore.currentResult.output_dir
-    const projectName = workspace.projectPath.split('/').pop() || 'app'
-    const binaryPath = `${outputDir}/${projectName}`
-    
+    const outputDir = transpileStore.currentResult.output_dir;
+    const projectName = workspace.projectPath.split('/').pop() || 'app';
+    const binaryPath = `${outputDir}/${projectName}`;
+
     // Build the project
-    const result = await buildStore.buildProject(outputDir, binaryPath)
-    
+    const result = await buildStore.buildProject(outputDir, binaryPath);
+
     // Display results in output panel
-    workspace.transpilationProgress.logs = []
-    workspace.addTranspilationLog('=== Go Project Build ===', 'info')
-    workspace.addTranspilationLog(`Source: ${outputDir}`, 'info')
-    workspace.addTranspilationLog(`Binary: ${result.binary_path}`, 'info')
-    workspace.addTranspilationLog(`Size: ${(result.binary_size / (1024 * 1024)).toFixed(2)} MB`, 'info')
-    workspace.addTranspilationLog(`Duration: ${result.duration_ms}ms`, 'info')
-    workspace.addTranspilationLog(`Exit code: ${result.exit_code}`, result.success ? 'success' : 'error')
-    
+    workspace.transpilationProgress.logs = [];
+    workspace.addTranspilationLog('=== Go Project Build ===', 'info');
+    workspace.addTranspilationLog(`Source: ${outputDir}`, 'info');
+    workspace.addTranspilationLog(`Binary: ${result.binary_path}`, 'info');
+    workspace.addTranspilationLog(
+      `Size: ${(result.binary_size / (1024 * 1024)).toFixed(2)} MB`,
+      'info'
+    );
+    workspace.addTranspilationLog(`Duration: ${result.duration_ms}ms`, 'info');
+    workspace.addTranspilationLog(
+      `Exit code: ${result.exit_code}`,
+      result.success ? 'success' : 'error'
+    );
+
     if (result.errors.length > 0) {
-      workspace.addTranspilationLog('--- Build Errors ---', 'error')
+      workspace.addTranspilationLog('--- Build Errors ---', 'error');
       result.errors.forEach(err => {
-        workspace.addTranspilationLog(err, 'error')
-      })
+        workspace.addTranspilationLog(err, 'error');
+      });
     }
-    
+
     if (result.warnings.length > 0) {
-      workspace.addTranspilationLog('--- Build Warnings ---', 'warning')
+      workspace.addTranspilationLog('--- Build Warnings ---', 'warning');
       result.warnings.forEach(warn => {
-        workspace.addTranspilationLog(warn, 'warning')
-      })
+        workspace.addTranspilationLog(warn, 'warning');
+      });
     }
-    
+
     if (result.success) {
-      workspace.addTranspilationLog(`✅ Build successful! Binary created at: ${result.binary_path}`, 'success')
+      workspace.addTranspilationLog(
+        `✅ Build successful! Binary created at: ${result.binary_path}`,
+        'success'
+      );
     }
-    
+
     // Clear current result to show logs
-    transpileStore.currentResult = null
-    
+    transpileStore.currentResult = null;
+
     // Show toast notification
     toast.add({
       severity: result.success ? 'success' : 'error',
       summary: result.success ? 'Build Complete' : 'Build Failed',
-      detail: result.success 
+      detail: result.success
         ? `Binary created in ${result.duration_ms}ms (${(result.binary_size / (1024 * 1024)).toFixed(2)} MB)`
         : `Build failed with ${result.errors.length} error(s)`,
-      life: result.success ? 4000 : 8000
-    })
+      life: result.success ? 4000 : 8000,
+    });
   } catch (error) {
-    workspace.addTranspilationLog(`Build error: ${error}`, 'error')
-    transpileStore.currentResult = null
-    
+    workspace.addTranspilationLog(`Build error: ${error}`, 'error');
+    transpileStore.currentResult = null;
+
     // Check if error is Go-related
-    const errorStr = String(error).toLowerCase()
-    const isGoError = errorStr.includes('go not found') || 
-                      errorStr.includes('go binary') || 
-                      errorStr.includes('install go') ||
-                      errorStr.includes('configure in settings')
-    
+    const errorStr = String(error).toLowerCase();
+    const isGoError =
+      errorStr.includes('go not found') ||
+      errorStr.includes('go binary') ||
+      errorStr.includes('install go') ||
+      errorStr.includes('configure in settings');
+
     if (isGoError) {
       toast.add({
         severity: 'error',
@@ -947,74 +989,78 @@ async function handleBuildProject() {
         detail: 'Configure Go in Settings to use Build, Test, and Run features',
         life: 8000,
         group: 'go-error',
-        closable: true
-      })
+        closable: true,
+      });
     } else {
       toast.add({
         severity: 'error',
         summary: 'Build Failed',
         detail: String(error),
-        life: 5000
-      })
+        life: 5000,
+      });
     }
   }
 }
 
 async function handleTestProject() {
-  if (!transpileStore.currentResult?.output_dir) return
-  
+  if (!transpileStore.currentResult?.output_dir) return;
+
   try {
-    const outputDir = transpileStore.currentResult.output_dir
-    
+    const outputDir = transpileStore.currentResult.output_dir;
+
     // Run tests
-    const result = await testStore.testProject(outputDir)
-    
+    const result = await testStore.testProject(outputDir);
+
     // Display results in output panel
-    workspace.transpilationProgress.logs = []
-    workspace.addTranspilationLog('=== Go Project Tests ===', 'info')
-    workspace.addTranspilationLog(`Source: ${outputDir}`, 'info')
-    workspace.addTranspilationLog(`Duration: ${result.duration_ms}ms`, 'info')
-    workspace.addTranspilationLog(`Exit code: ${result.exit_code}`, result.success ? 'success' : 'error')
-    workspace.addTranspilationLog('', 'info')
-    
+    workspace.transpilationProgress.logs = [];
+    workspace.addTranspilationLog('=== Go Project Tests ===', 'info');
+    workspace.addTranspilationLog(`Source: ${outputDir}`, 'info');
+    workspace.addTranspilationLog(`Duration: ${result.duration_ms}ms`, 'info');
+    workspace.addTranspilationLog(
+      `Exit code: ${result.exit_code}`,
+      result.success ? 'success' : 'error'
+    );
+    workspace.addTranspilationLog('', 'info');
+
     // Display test summary
-    const testResults = result.test_results
-    workspace.addTranspilationLog(`📊 Test Summary:`, 'info')
-    workspace.addTranspilationLog(`   Total: ${testResults.total}`, 'info')
-    workspace.addTranspilationLog(`   ✅ Passed: ${testResults.passed}`, 'success')
-    workspace.addTranspilationLog(`   ❌ Failed: ${testResults.failed}`, testResults.failed > 0 ? 'error' : 'info')
-    workspace.addTranspilationLog(`   ⏭️  Skipped: ${testResults.skipped}`, 'warning')
-    workspace.addTranspilationLog('', 'info')
-    
+    const testResults = result.test_results;
+    workspace.addTranspilationLog(`📊 Test Summary:`, 'info');
+    workspace.addTranspilationLog(`   Total: ${testResults.total}`, 'info');
+    workspace.addTranspilationLog(`   ✅ Passed: ${testResults.passed}`, 'success');
+    workspace.addTranspilationLog(
+      `   ❌ Failed: ${testResults.failed}`,
+      testResults.failed > 0 ? 'error' : 'info'
+    );
+    workspace.addTranspilationLog(`   ⏭️  Skipped: ${testResults.skipped}`, 'warning');
+    workspace.addTranspilationLog('', 'info');
+
     // Display individual test results
     if (testResults.tests && testResults.tests.length > 0) {
-      workspace.addTranspilationLog('📝 Test Results:', 'info')
+      workspace.addTranspilationLog('📝 Test Results:', 'info');
       for (const test of testResults.tests) {
-        const icon = test.Action === 'pass' ? '✅' : test.Action === 'fail' ? '❌' : '⏭️'
-        const level = test.Action === 'pass' ? 'success' : test.Action === 'fail' ? 'error' : 'warning'
-        workspace.addTranspilationLog(
-          `${icon} ${test.Test} (${test.Elapsed.toFixed(3)}s)`,
-          level
-        )
+        const icon = test.Action === 'pass' ? '✅' : test.Action === 'fail' ? '❌' : '⏭️';
+        const level =
+          test.Action === 'pass' ? 'success' : test.Action === 'fail' ? 'error' : 'warning';
+        workspace.addTranspilationLog(`${icon} ${test.Test} (${test.Elapsed.toFixed(3)}s)`, level);
         if (test.Output && test.Action === 'fail') {
-          workspace.addTranspilationLog(`   ${test.Output}`, 'error')
+          workspace.addTranspilationLog(`   ${test.Output}`, 'error');
         }
       }
     }
-    
+
     if (result.stderr && result.stderr.trim()) {
-      workspace.addTranspilationLog('', 'info')
-      workspace.addTranspilationLog('--- Additional Output ---', 'warning')
+      workspace.addTranspilationLog('', 'info');
+      workspace.addTranspilationLog('--- Additional Output ---', 'warning');
       result.stderr.split('\n').forEach(line => {
         if (line.trim()) {
-          workspace.addTranspilationLog(line, 'warning')
+          workspace.addTranspilationLog(line, 'warning');
         }
-      })
+      });
     }
-    
+
     // Clear current result to show logs
-    transpileStore.currentResult = null
-    
+    transpileStore.currentResult = null;
+
     // Show toast notification
     toast.add({
       severity: result.success ? 'success' : 'error',
@@ -1022,19 +1068,20 @@ async function handleTestProject() {
       detail: result.success
         ? `All ${testResults.passed} tests passed in ${result.duration_ms}ms`
         : `${testResults.failed} test(s) failed out of ${testResults.total}`,
-      life: result.success ? 4000 : 8000
-    })
+      life: result.success ? 4000 : 8000,
+    });
   } catch (error) {
-    workspace.addTranspilationLog(`Test error: ${error}`, 'error')
-    transpileStore.currentResult = null
-    
+    workspace.addTranspilationLog(`Test error: ${error}`, 'error');
+    transpileStore.currentResult = null;
+
     // Check if error is Go-related
-    const errorStr = String(error).toLowerCase()
-    const isGoError = errorStr.includes('go not found') || 
-                      errorStr.includes('go binary') || 
-                      errorStr.includes('install go') ||
-                      errorStr.includes('configure in settings')
-    
+    const errorStr = String(error).toLowerCase();
+    const isGoError =
+      errorStr.includes('go not found') ||
+      errorStr.includes('go binary') ||
+      errorStr.includes('install go') ||
+      errorStr.includes('configure in settings');
+
     if (isGoError) {
       toast.add({
         severity: 'error',
@@ -1042,101 +1089,111 @@ async function handleTestProject() {
         detail: 'Configure Go in Settings to use Build, Test, and Run features',
         life: 8000,
         group: 'go-error',
-        closable: true
-      })
+        closable: true,
+      });
     } else {
       toast.add({
         severity: 'error',
         summary: 'Tests Failed',
         detail: String(error),
-        life: 5000
-      })
+        life: 5000,
+      });
     }
   }
 }
 
 // State restoration
 async function restoreTranspilationState() {
-  if (!projectPath.value) return
-  
-  restoringState.value = true
-  hasValidTranspilationState.value = false
-  
+  if (!projectPath.value) return;
+
+  restoringState.value = true;
+  hasValidTranspilationState.value = false;
+
   try {
     // Check if there's a saved transpilation state for this project
-    const state = transpileStore.getTranspilationState(projectPath.value)
-    
+    const state = transpileStore.getTranspilationState(projectPath.value);
+
     if (!state) {
-      restoringState.value = false
-      return
+      restoringState.value = false;
+      return;
     }
-    
+
     // Verify the output directory still exists
-    const isValid = await transpileStore.verifyTranspilationState(projectPath.value)
-    
+    const isValid = await transpileStore.verifyTranspilationState(projectPath.value);
+
     if (!isValid) {
       // State is stale, clear it
-      workspace.addTranspilationLog('Previous transpilation output not found, state cleared', 'warning')
-      transpileStore.clearTranspilationState(projectPath.value)
-      restoringState.value = false
-      return
+      workspace.addTranspilationLog(
+        'Previous transpilation output not found, state cleared',
+        'warning'
+      );
+      transpileStore.clearTranspilationState(projectPath.value);
+      restoringState.value = false;
+      return;
     }
-    
+
     // Restore state
-    hasValidTranspilationState.value = true
-    lastTranspilationTime.value = new Date(state.timestamp).toLocaleString()
-    lastTranspilationFiles.value = state.filesTranspiled
-    
+    hasValidTranspilationState.value = true;
+    lastTranspilationTime.value = new Date(state.timestamp).toLocaleString();
+    lastTranspilationFiles.value = state.filesTranspiled;
+
     // Restore the currentResult so Build/Test/Run buttons are enabled
     transpileStore.currentResult = {
       success: true,
       output_dir: state.outputDir,
       files_transpiled: state.filesTranspiled,
-      message: 'Previous transpilation state restored'
-    }
-    
-    workspace.addTranspilationLog(`Restored previous transpilation from ${lastTranspilationTime.value}`, 'success')
-    workspace.addTranspilationLog(`Output directory: ${state.outputDir}`, 'info')
+      message: 'Previous transpilation state restored',
+    };
+
+    workspace.addTranspilationLog(
+      `Restored previous transpilation from ${lastTranspilationTime.value}`,
+      'success'
+    );
+    workspace.addTranspilationLog(`Output directory: ${state.outputDir}`, 'info');
   } catch (error) {
-    console.error('Failed to restore transpilation state:', error)
-    workspace.addTranspilationLog(`Failed to restore state: ${error}`, 'error')
+    console.error('Failed to restore transpilation state:', error);
+    workspace.addTranspilationLog(`Failed to restore state: ${error}`, 'error');
   } finally {
-    restoringState.value = false
+    restoringState.value = false;
   }
 }
 
 function clearTranspilationState() {
-  if (!projectPath.value) return
-  
-  transpileStore.clearTranspilationState(projectPath.value)
-  hasValidTranspilationState.value = false
-  lastTranspilationTime.value = null
-  lastTranspilationFiles.value = 0
-  transpileStore.currentResult = null
-  
-  workspace.addTranspilationLog('Transpilation state cleared', 'info')
-  
+  if (!projectPath.value) return;
+
+  transpileStore.clearTranspilationState(projectPath.value);
+  hasValidTranspilationState.value = false;
+  lastTranspilationTime.value = null;
+  lastTranspilationFiles.value = 0;
+  transpileStore.currentResult = null;
+
+  workspace.addTranspilationLog('Transpilation state cleared', 'info');
+
   toast.add({
     severity: 'info',
     summary: 'State Cleared',
     detail: 'Previous transpilation state has been cleared',
-    life: 3000
-  })
+    life: 3000,
+  });
 }
 
 // Auto-restore state when project is loaded
-watch(projectPath, async (newPath) => {
-  if (newPath) {
-    await restoreTranspilationState()
-  }
-}, { immediate: true })
+watch(
+  projectPath,
+  async newPath => {
+    if (newPath) {
+      await restoreTranspilationState();
+    }
+  },
+  { immediate: true }
+);
 
 onMounted(async () => {
   // Restore state on mount if project is already loaded
   if (projectPath.value) {
-    await restoreTranspilationState()
+    await restoreTranspilationState();
   }
-})
+});
 </script>
 
 <style scoped>
@@ -1682,7 +1739,9 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .output-loading p {
@@ -1922,7 +1981,7 @@ onMounted(async () => {
   .project-content {
     grid-template-columns: 250px 1fr 350px;
   }
-  
+
   .project-info-inline {
     display: none;
   }
@@ -1932,11 +1991,11 @@ onMounted(async () => {
   .project-content {
     grid-template-columns: 200px 1fr;
   }
-  
+
   .output-panel {
     display: none;
   }
-  
+
   .action-buttons .btn-secondary {
     display: none;
   }
@@ -1946,7 +2005,7 @@ onMounted(async () => {
   .project-content {
     grid-template-columns: 1fr;
   }
-  
+
   .file-tree-sidebar {
     display: none;
   }

@@ -2,32 +2,35 @@ package transpiler
 
 // ASTNode represents a simplified TypeScript AST node
 type ASTNode struct {
-	Kind            string    `json:"kind"`
-	KindNumber      int       `json:"kindNumber"`
-	Pos             int       `json:"pos"`
-	End             int       `json:"end"`
-	Text            string    `json:"text,omitempty"`
-	Name            string    `json:"name,omitempty"`
-	NameNode        *ASTNode  `json:"nameNode,omitempty"` // For binding patterns (destructuring)
-	Type            *ASTNode  `json:"type,omitempty"`
-	Types           []ASTNode `json:"types,omitempty"`
-	Elements        []ASTNode `json:"elements,omitempty"`
-	Parameters      []ASTNode `json:"parameters,omitempty"`
-	Members         []ASTNode `json:"members,omitempty"`
-	HeritageClauses []ASTNode `json:"heritageClauses,omitempty"`
-	Properties      []ASTNode `json:"properties,omitempty"`
-	Statements      []ASTNode `json:"statements,omitempty"`
-	Body            *ASTNode  `json:"body,omitempty"`
-	Initializer     *ASTNode  `json:"initializer,omitempty"`
-	Declarations    []ASTNode `json:"declarations,omitempty"`
-	Children        []ASTNode `json:"children,omitempty"`
-	Modifiers       []ASTNode `json:"modifiers,omitempty"` // For async, static, etc.
-	Operator        string    `json:"operator,omitempty"`
-	OperatorNumber  int       `json:"operatorNumber,omitempty"`
-	QuestionDot     bool      `json:"questionDot,omitempty"`
-	Expression      *ASTNode  `json:"expression,omitempty"` // For template spans
-	Literal         *ASTNode  `json:"literal,omitempty"`    // For template spans
-	Head            *ASTNode  `json:"head,omitempty"`       // For template expressions
+	Kind               string    `json:"kind"`
+	KindNumber         int       `json:"kindNumber"`
+	Pos                int       `json:"pos"`
+	End                int       `json:"end"`
+	Text               string    `json:"text,omitempty"`
+	Name               string    `json:"name,omitempty"`
+	NameNode           *ASTNode  `json:"nameNode,omitempty"` // For binding patterns (destructuring)
+	Type               *ASTNode  `json:"type,omitempty"`
+	Types              []ASTNode `json:"types,omitempty"`
+	Elements           []ASTNode `json:"elements,omitempty"`
+	Parameters         []ASTNode `json:"parameters,omitempty"`
+	Members            []ASTNode `json:"members,omitempty"`
+	HeritageClauses    []ASTNode `json:"heritageClauses,omitempty"`
+	Properties         []ASTNode `json:"properties,omitempty"`
+	Statements         []ASTNode `json:"statements,omitempty"`
+	Body               *ASTNode  `json:"body,omitempty"`
+	Initializer        *ASTNode  `json:"initializer,omitempty"`
+	Declarations       []ASTNode `json:"declarations,omitempty"`
+	Children           []ASTNode `json:"children,omitempty"`
+	Modifiers          []ASTNode `json:"modifiers,omitempty"` // For async, static, etc.
+	Operator           string    `json:"operator,omitempty"`
+	OperatorNumber     int       `json:"operatorNumber,omitempty"`
+	QuestionDot        bool      `json:"questionDot,omitempty"`
+	Expression         *ASTNode  `json:"expression,omitempty"`         // For template spans
+	ArgumentExpression *ASTNode  `json:"argumentExpression,omitempty"` // For element access: arr[index]
+	Literal            *ASTNode  `json:"literal,omitempty"`            // For template spans
+	Head               *ASTNode  `json:"head,omitempty"`               // For template expressions
+	IsConst            bool      `json:"isConst,omitempty"`
+	IsLet              bool      `json:"isLet,omitempty"`
 }
 
 // TypeScriptKind maps to TypeScript SyntaxKind enum

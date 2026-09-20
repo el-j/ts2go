@@ -13,6 +13,7 @@ import (
 	"github.com/el-j/ts2go/core/domain"
 	"github.com/el-j/ts2go/core/ports"
 	"github.com/el-j/ts2go/core/services"
+	"github.com/el-j/ts2go/internal/mapper"
 )
 
 // Server is the web API driving adapter for the hexagonal architecture
@@ -56,13 +57,22 @@ func NewServer(addr string) (*Server, error) {
 		return nil, fmt.Errorf("failed to initialize settings repository: %w", err)
 	}
 
-	// Create placeholder services for analyzer, mapper, codegen
+	// Create services for analyzer, mapper, codegen
 	analyzer := &placeholderAnalyzer{}
-	mapper := &placeholderMapper{}
+	var mapperSvc services.MapperService
+	mapperDb, err := mapper.LoadDefaultMappings()
+	if err != nil {
+		mapperSvc = &adapterMapper{}
+	} else {
+		mapperSvc = &adapterMapper{
+			db:          mapperDb,
+			transformer: mapper.NewCallTransformer(mapperDb),
+		}
+	}
 	codegen := &placeholderCodeGen{}
 
 	// Create core services (same as CLI and Desktop UI)
-	transpilationService := services.NewTranspilationService(fs, compiler, analyzer, mapper, codegen)
+	transpilationService := services.NewTranspilationService(fs, compiler, analyzer, mapperSvc, codegen)
 	runtimeService := services.NewGoRuntimeService(compiler, fs)
 	stateService := services.NewStateService(stateRepo, settingsRepo)
 
@@ -482,13 +492,33 @@ func (p *placeholderAnalyzer) AnalyzeImports(ast interface{}) (*services.ImportA
 	}, nil
 }
 
-type placeholderMapper struct{}
-
-func (p *placeholderMapper) FindGoPackage(npmPackage string) (string, error) {
-	return "", nil
+type adapterMapper struct {
+	db          *mapper.MappingDatabase
+	transformer *mapper.CallTransformer
 }
 
-func (p *placeholderMapper) TransformAPICall(code string) (string, error) {
+func (m *adapterMapper) FindGoPackage(npmPackage string) (string, error) {
+	if m.db == nil {
+		return "", fmt.Errorf("mapping database not initialized")
+	}
+	mapping, err := m.db.GetMapping(npmPackage)
+	if err != nil {
+		return "", err
+	}
+	return mapping.Go, nil
+}
+
+func (m *adapterMapper) TransformAPICall(code string) (string, error) {
+	if m.transformer == nil {
+		return code, nil
+	}
+	res := m.transformer.TransformCall(code)
+	if res.Error != nil {
+		return code, res.Error
+	}
+	if res.Transformed != "" {
+		return res.Transformed, nil
+	}
 	return code, nil
 }
 

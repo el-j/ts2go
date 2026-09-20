@@ -7,6 +7,8 @@ import (
 
 	"github.com/el-j/ts2go/core/domain"
 	"github.com/el-j/ts2go/core/ports"
+	"github.com/el-j/ts2go/internal/orchestrator"
+	"github.com/el-j/ts2go/internal/project"
 )
 
 // TranspilationServiceImpl implements the TranspilationService port
@@ -45,7 +47,27 @@ func (s *TranspilationServiceImpl) TranspileProject(projectPath string, options 
 
 	result := domain.NewTranspilationResult(projectPath, options.OutputPath)
 
-	// Scan directory for TypeScript files
+	// Attempt multi-file project analysis and orchestration if on local filesystem
+	scanner := project.NewScanner()
+	proj, err := scanner.ScanProject(projectPath)
+	if err == nil && proj != nil && len(proj.Files) > 1 {
+		moduleName := "github.com/el-j/" + proj.Name
+		multiTranspiler := orchestrator.NewMultiPackageTranspiler(proj, moduleName)
+		if err := multiTranspiler.TranspileProject(options.OutputPath); err != nil {
+			return nil, fmt.Errorf("multi-package project transpilation failed: %w", err)
+		}
+
+		for _, file := range proj.Files {
+			result.AddFileResult(domain.FileTranspilationResult{
+				SourcePath: file.Path,
+				Success:    true,
+			})
+		}
+		result.Complete()
+		return result, nil
+	}
+
+	// Fallback to directory scan and single-file transpilation loop
 	files, err := s.fs.ScanDirectory(projectPath, options.IncludePatterns, options.ExcludePatterns)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan directory: %w", err)

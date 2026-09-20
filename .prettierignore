@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dist-tauri/
+dist-web/
+bin/
+*.out
+*.log
+.git/
+desktop/tauri-backend/target/
+desktop/tauri/target/
+go.work.sum
+packages/ui-shared/dist-tauri/
+packages/ui-shared/dist-web/

@@ -12,8 +12,9 @@ import (
 
 // ModuleGenerator handles go.mod generation
 type ModuleGenerator struct {
-	project    *Project
-	classifier *mapper.Classifier
+	project      *Project
+	classifier   *mapper.Classifier
+	modulePrefix string
 }
 
 // NewModuleGenerator creates a new module generator
@@ -22,6 +23,11 @@ func NewModuleGenerator(project *Project, classifier *mapper.Classifier) *Module
 		project:    project,
 		classifier: classifier,
 	}
+}
+
+// SetModulePrefix sets a custom module prefix
+func (mg *ModuleGenerator) SetModulePrefix(prefix string) {
+	mg.modulePrefix = prefix
 }
 
 // GenerateGoModule generates a go.mod file for the project
@@ -53,17 +59,29 @@ func (mg *ModuleGenerator) GenerateGoModule(outputDir string) error {
 
 // determineModuleName determines the Go module name
 func (mg *ModuleGenerator) determineModuleName() string {
+	prefix := mg.modulePrefix
+	if prefix == "" {
+		if mg.project != nil && mg.project.ModulePrefix != "" {
+			prefix = mg.project.ModulePrefix
+		} else {
+			prefix = "github.com/el-j/"
+		}
+	}
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+
 	// Use package.json name if available
 	if mg.project.PackageJSON != nil && mg.project.PackageJSON.Name != "" {
 		name := mg.project.PackageJSON.Name
 		// Convert scoped packages
 		name = strings.ReplaceAll(name, "@", "")
 		name = strings.ReplaceAll(name, "/", "-")
-		return "github.com/yourusername/" + name
+		return prefix + name
 	}
 
 	// Use project name
-	return "github.com/yourusername/" + mg.project.Name
+	return prefix + mg.project.Name
 }
 
 // determineGoVersion determines the Go version to use

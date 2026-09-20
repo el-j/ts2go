@@ -1,53 +1,53 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { open } from '@tauri-apps/plugin-dialog'
-import AppLayout from '../components/AppLayout.vue'
+import { ref } from 'vue';
+import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
+import AppLayout from '../components/AppLayout.vue';
 
-import { useLogsStore } from '@/stores/logs'
+import { useLogsStore } from '@/stores/logs';
 
-const logsStore = useLogsStore()
+const logsStore = useLogsStore();
 
-const projectPath = ref('')
-const isAnalyzing = ref(false)
-const analysisResult = ref<string>('')
-const parsedAnalysis = ref<any>(null)
-const errorMessage = ref('')
+const projectPath = ref('');
+const isAnalyzing = ref(false);
+const analysisResult = ref<string>('');
+const parsedAnalysis = ref<any>(null);
+const errorMessage = ref('');
 
 async function analyzeProject() {
   if (!projectPath.value.trim()) {
-    errorMessage.value = 'Please enter a project path'
-    return
+    errorMessage.value = 'Please enter a project path';
+    return;
   }
 
-  isAnalyzing.value = true
-  errorMessage.value = ''
-  analysisResult.value = ''
-  parsedAnalysis.value = null
+  isAnalyzing.value = true;
+  errorMessage.value = '';
+  analysisResult.value = '';
+  parsedAnalysis.value = null;
 
   try {
-    logsStore.addLog('info', `Analyzing project: ${projectPath.value}`)
-    
+    logsStore.addLog('info', `Analyzing project: ${projectPath.value}`);
+
     const result = await invoke<string>('analyze_project', {
-      path: projectPath.value
-    })
-    
-    analysisResult.value = result
-    
+      path: projectPath.value,
+    });
+
+    analysisResult.value = result;
+
     // Try to parse the result as JSON if possible
     try {
-      parsedAnalysis.value = JSON.parse(result)
+      parsedAnalysis.value = JSON.parse(result);
     } catch {
       // If not JSON, treat as plain text
-      parsedAnalysis.value = { rawOutput: result }
+      parsedAnalysis.value = { rawOutput: result };
     }
-    
-    logsStore.addLog('success', 'Project analysis completed')
+
+    logsStore.addLog('success', 'Project analysis completed');
   } catch (error: any) {
-    errorMessage.value = error
-    logsStore.addLog('error', `Analysis failed: ${error}`)
+    errorMessage.value = error;
+    logsStore.addLog('error', `Analysis failed: ${error}`);
   } finally {
-    isAnalyzing.value = false
+    isAnalyzing.value = false;
   }
 }
 
@@ -56,30 +56,30 @@ async function selectDirectory() {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: 'Select TypeScript Project Folder'
-    })
-    
+      title: 'Select TypeScript Project Folder',
+    });
+
     if (selected) {
-      projectPath.value = selected as string
-      errorMessage.value = ''
+      projectPath.value = selected as string;
+      errorMessage.value = '';
     }
   } catch (error: any) {
-    errorMessage.value = `Failed to select directory: ${error}`
+    errorMessage.value = `Failed to select directory: ${error}`;
   }
 }
 
 function getImportCount(imports: any): number {
-  if (!imports) return 0
-  if (Array.isArray(imports)) return imports.length
-  if (typeof imports === 'object') return Object.keys(imports).length
-  return 0
+  if (!imports) return 0;
+  if (Array.isArray(imports)) return imports.length;
+  if (typeof imports === 'object') return Object.keys(imports).length;
+  return 0;
 }
 
 function getExportCount(exports: any): number {
-  if (!exports) return 0
-  if (Array.isArray(exports)) return exports.length
-  if (typeof exports === 'object') return Object.keys(exports).length
-  return 0
+  if (!exports) return 0;
+  if (Array.isArray(exports)) return exports.length;
+  if (typeof exports === 'object') return Object.keys(exports).length;
+  return 0;
 }
 </script>
 
@@ -87,7 +87,9 @@ function getExportCount(exports: any): number {
   <AppLayout>
     <div class="h-full flex flex-col">
       <!-- Header -->
-      <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+      <div
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4"
+      >
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
@@ -118,9 +120,7 @@ function getExportCount(exports: any): number {
                       v-model="projectPath"
                       type="text"
                       placeholder="Enter project path (e.g., /path/to/project)"
-                      class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                             bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
-                             focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                       @keyup.enter="analyzeProject"
                     />
                   </div>
@@ -203,13 +203,8 @@ function getExportCount(exports: any): number {
                         <Tag :value="`${parsedAnalysis.files.length}`" severity="info" />
                       </div>
                     </template>
-                    
-                    <DataTable 
-                      :value="parsedAnalysis.files" 
-                      stripedRows 
-                      paginator 
-                      :rows="10"
-                    >
+
+                    <DataTable :value="parsedAnalysis.files" stripedRows paginator :rows="10">
                       <Column field="path" header="File Path" sortable></Column>
                       <Column field="size" header="Size" sortable></Column>
                     </DataTable>
@@ -221,11 +216,16 @@ function getExportCount(exports: any): number {
                       <div class="flex items-center gap-2">
                         <i class="pi pi-download"></i>
                         <span class="font-medium">Imports</span>
-                        <Tag :value="`${getImportCount(parsedAnalysis.imports)}`" severity="success" />
+                        <Tag
+                          :value="`${getImportCount(parsedAnalysis.imports)}`"
+                          severity="success"
+                        />
                       </div>
                     </template>
-                    
-                    <pre class="bg-gray-900 text-gray-100 p-4 rounded overflow-auto text-sm">{{ JSON.stringify(parsedAnalysis.imports, null, 2) }}</pre>
+
+                    <pre class="bg-gray-900 text-gray-100 p-4 rounded overflow-auto text-sm">{{
+                      JSON.stringify(parsedAnalysis.imports, null, 2)
+                    }}</pre>
                   </AccordionTab>
 
                   <!-- Exports -->
@@ -237,8 +237,10 @@ function getExportCount(exports: any): number {
                         <Tag :value="`${getExportCount(parsedAnalysis.exports)}`" severity="warn" />
                       </div>
                     </template>
-                    
-                    <pre class="bg-gray-900 text-gray-100 p-4 rounded overflow-auto text-sm">{{ JSON.stringify(parsedAnalysis.exports, null, 2) }}</pre>
+
+                    <pre class="bg-gray-900 text-gray-100 p-4 rounded overflow-auto text-sm">{{
+                      JSON.stringify(parsedAnalysis.exports, null, 2)
+                    }}</pre>
                   </AccordionTab>
 
                   <!-- Warnings -->
@@ -250,10 +252,10 @@ function getExportCount(exports: any): number {
                         <Tag :value="`${parsedAnalysis.warnings.length}`" severity="danger" />
                       </div>
                     </template>
-                    
+
                     <div class="space-y-2">
-                      <Message 
-                        v-for="(warning, index) in parsedAnalysis.warnings" 
+                      <Message
+                        v-for="(warning, index) in parsedAnalysis.warnings"
                         :key="index"
                         severity="warn"
                         :closable="false"
@@ -271,8 +273,10 @@ function getExportCount(exports: any): number {
                         <span class="font-medium">Raw Output</span>
                       </div>
                     </template>
-                    
-                    <pre class="bg-gray-900 text-gray-100 p-4 rounded overflow-auto text-sm">{{ parsedAnalysis.rawOutput }}</pre>
+
+                    <pre class="bg-gray-900 text-gray-100 p-4 rounded overflow-auto text-sm">{{
+                      parsedAnalysis.rawOutput
+                    }}</pre>
                   </AccordionTab>
                 </Accordion>
               </template>

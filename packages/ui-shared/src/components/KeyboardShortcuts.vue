@@ -1,10 +1,5 @@
 <template>
-  <Dialog 
-    v-model:visible="visible" 
-    modal 
-    header="Keyboard Shortcuts"
-    :style="{ width: '650px' }"
-  >
+  <Dialog v-model:visible="visible" modal header="Keyboard Shortcuts" :style="{ width: '650px' }">
     <div class="shortcuts-panel">
       <div v-for="category in shortcuts" :key="category.name" class="shortcut-category">
         <h4 class="category-title">{{ category.name }}</h4>
@@ -16,7 +11,7 @@
         </div>
       </div>
     </div>
-    
+
     <template #footer>
       <div class="dialog-footer">
         <p class="footer-note">
@@ -30,24 +25,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import Dialog from 'primevue/dialog'
-import Button from 'primevue/button'
+import { computed } from 'vue';
+import Dialog from 'primevue/dialog';
+import Button from 'primevue/button';
 
 interface Props {
-  modelValue: boolean
+  modelValue: boolean;
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-}>()
+  'update:modelValue': [value: boolean];
+}>();
 
 const visible = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-})
+  set: value => emit('update:modelValue', value),
+});
 
 const shortcuts = [
   {
@@ -56,8 +51,8 @@ const shortcuts = [
       { action: 'Save File', key: 'Ctrl+S / ⌘S' },
       { action: 'Save All Files', key: 'Ctrl+Shift+S / ⌘⇧S' },
       { action: 'Open File', key: 'Ctrl+O / ⌘O' },
-      { action: 'Close File', key: 'Ctrl+W / ⌘W' }
-    ]
+      { action: 'Close File', key: 'Ctrl+W / ⌘W' },
+    ],
   },
   {
     name: 'Editor',
@@ -66,16 +61,16 @@ const shortcuts = [
       { action: 'Replace', key: 'Ctrl+H / ⌘H' },
       { action: 'Go to Definition', key: 'F12' },
       { action: 'Format Document', key: 'Shift+Alt+F / ⇧⌥F' },
-      { action: 'Toggle Comment', key: 'Ctrl+/ / ⌘/' }
-    ]
+      { action: 'Toggle Comment', key: 'Ctrl+/ / ⌘/' },
+    ],
   },
   {
     name: 'Transpilation',
     items: [
       { action: 'Transpile Current File', key: 'Ctrl+T / ⌘T' },
       { action: 'Transpile All Files', key: 'Ctrl+Shift+T / ⌘⇧T' },
-      { action: 'Run Code', key: 'Ctrl+Enter / ⌘↵' }
-    ]
+      { action: 'Run Code', key: 'Ctrl+Enter / ⌘↵' },
+    ],
   },
   {
     name: 'Navigation',
@@ -83,18 +78,18 @@ const shortcuts = [
       { action: 'Quick Open', key: 'Ctrl+P / ⌘P' },
       { action: 'Go to Line', key: 'Ctrl+G / ⌘G' },
       { action: 'Focus File Tree', key: 'Ctrl+B / ⌘B' },
-      { action: 'Focus Editor', key: 'Ctrl+1 / ⌘1' }
-    ]
+      { action: 'Focus Editor', key: 'Ctrl+1 / ⌘1' },
+    ],
   },
   {
     name: 'General',
     items: [
       { action: 'Show Shortcuts', key: 'Ctrl+K Ctrl+S / ⌘K ⌘S' },
       { action: 'Open Settings', key: 'Ctrl+, / ⌘,' },
-      { action: 'Toggle Sidebar', key: 'Ctrl+Shift+B / ⌘⇧B' }
-    ]
-  }
-]
+      { action: 'Toggle Sidebar', key: 'Ctrl+Shift+B / ⌘⇧B' },
+    ],
+  },
+];
 </script>
 
 <style scoped>

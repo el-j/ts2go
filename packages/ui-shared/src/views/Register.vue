@@ -1,58 +1,58 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import Button from 'primevue/button'
-import Message from 'primevue/message'
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
+import Button from 'primevue/button';
+import Message from 'primevue/message';
 
-const router = useRouter()
-const authStore = useAuthStore()
+const router = useRouter();
+const authStore = useAuthStore();
 
-const email = ref('')
-const password = ref('')
-const confirmPassword = ref('')
-const name = ref('')
-const error = ref<string | null>(null)
-const isLoading = ref(false)
+const email = ref('');
+const password = ref('');
+const confirmPassword = ref('');
+const name = ref('');
+const error = ref<string | null>(null);
+const isLoading = ref(false);
 
 onMounted(() => {
   // Redirect if already authenticated
   if (authStore.isAuthenticated) {
-    router.push('/')
+    router.push('/');
   }
-})
+});
 
 async function handleRegister() {
-  error.value = null
-  
+  error.value = null;
+
   if (password.value !== confirmPassword.value) {
-    error.value = 'Passwords do not match'
-    return
+    error.value = 'Passwords do not match';
+    return;
   }
 
   if (password.value.length < 8) {
-    error.value = 'Password must be at least 8 characters'
-    return
+    error.value = 'Password must be at least 8 characters';
+    return;
   }
 
-  isLoading.value = true
-  
+  isLoading.value = true;
+
   try {
     await authStore.register({
       email: email.value,
       password: password.value,
       name: name.value || undefined,
-    })
-    router.push('/')
+    });
+    router.push('/');
   } catch (e: any) {
-    error.value = e.message || 'Registration failed. Please try again.'
+    error.value = e.message || 'Registration failed. Please try again.';
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
 function goToLogin() {
-  router.push('/login')
+  router.push('/login');
 }
 </script>
 
@@ -103,7 +103,9 @@ function goToLogin() {
         </div>
 
         <div>
-          <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+          <label for="confirmPassword" class="block text-sm font-medium text-gray-700"
+            >Confirm Password</label
+          >
           <input
             id="confirmPassword"
             v-model="confirmPassword"
@@ -127,10 +129,7 @@ function goToLogin() {
       <div class="text-center">
         <p class="text-sm text-gray-600">
           Already have an account?
-          <button
-            @click="goToLogin"
-            class="font-medium text-blue-600 hover:text-blue-500"
-          >
+          <button @click="goToLogin" class="font-medium text-blue-600 hover:text-blue-500">
             Sign in
           </button>
         </p>

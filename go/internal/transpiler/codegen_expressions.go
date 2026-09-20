@@ -57,8 +57,20 @@ func (g *CodeGenerator) generateExpression(node *ASTNode) (string, error) {
 		return g.generateDeleteExpression(node)
 	case AwaitExpression:
 		return g.generateAwaitExpression(node)
+	case ElementAccessExpression:
+		return g.generateElementAccess(node)
+	case SpreadElement, "SpreadAssignment":
+		return g.generateSpreadElement(node)
+	case "ParenthesizedExpression":
+		return g.generateParenthesizedExpression(node)
+	case "NonNullExpression":
+		return g.generateNonNullExpression(node)
+	case "AsExpression", "TypeAssertionExpression":
+		return g.generateAsExpression(node)
+	case "UndefinedKeyword", "VoidExpression":
+		return "nil", nil
 	default:
-		return "/* unsupported expression */", nil
+		return "", UnsupportedFeatureError("", 0, 0, fmt.Sprintf("unsupported expression: %s", node.Kind))
 	}
 }
 
@@ -303,6 +315,38 @@ func (g *CodeGenerator) generateObjectLiteral(node *ASTNode) (string, error) {
 		return g.generateObjectMerge(parts), nil
 	}
 
+	targetType := g.expectedType
+	if targetType == "" && g.currentFunctionReturnType != "" {
+		targetType = g.currentFunctionReturnType
+	}
+
+	if isStructTypeName(targetType) {
+		isPtr := strings.HasPrefix(targetType, "*")
+		structName := strings.TrimPrefix(targetType, "*")
+
+		fields := []string{}
+		for _, prop := range node.Properties {
+			if prop.Kind == "PropertyAssignment" {
+				propName := toPascalCase(prop.Name)
+				var value string
+				var err error
+				if prop.Initializer != nil {
+					value, err = g.generateExpression(prop.Initializer)
+					if err != nil {
+						return "", err
+					}
+				}
+				fields = append(fields, fmt.Sprintf("%s: %s", propName, value))
+			}
+		}
+
+		prefix := ""
+		if isPtr {
+			prefix = "&"
+		}
+		return fmt.Sprintf("%s%s{%s}", prefix, structName, strings.Join(fields, ", ")), nil
+	}
+
 	// No spread elements - generate simple object literal
 	fields := []string{}
 	for _, prop := range node.Properties {
@@ -376,7 +420,7 @@ func (g *CodeGenerator) generateArrayLiteral(node *ASTNode) (string, error) {
 
 	// If there are spread elements, we need to use array.Concat or append
 	// Track import for array runtime
-	g.trackImport("github.com/ts2go/runtime/array")
+	g.trackImport("github.com/el-j/ts2go/runtime/array")
 
 	// Build list of slices to concatenate
 	slices := []string{}
@@ -531,7 +575,7 @@ func (g *CodeGenerator) generateCallExpression(node *ASTNode) (string, error) {
 
 			if arrayMethods[prop] {
 				// Track import for array runtime
-				g.trackImport("github.com/ts2go/runtime/array")
+				g.trackImport("github.com/el-j/ts2go/runtime/array")
 
 				// Generate object expression
 				objExpr, err := g.generateExpression(objNode)
@@ -574,9 +618,10 @@ func (g *CodeGenerator) generateCallExpression(node *ASTNode) (string, error) {
 		return "", err
 	}
 
-	// Convert function names to PascalCase only if they start with uppercase
-	// (i.e., they're exported functions, not local variables)
-	if funcNode.Kind == Identifier && len(funcExpr) > 0 {
+	// Map declared function names to their PascalCase equivalents
+	if mappedName, ok := g.declaredFunctions[funcExpr]; ok {
+		funcExpr = mappedName
+	} else if funcNode.Kind == Identifier && len(funcExpr) > 0 {
 		// Only PascalCase if the original starts with uppercase (exported function)
 		firstChar := funcExpr[0]
 		if firstChar >= 'A' && firstChar <= 'Z' {
@@ -731,21 +776,67 @@ func (g *CodeGenerator) generatePrefixUnaryExpression(node *ASTNode) (string, er
 		return "", fmt.Errorf("invalid prefix unary expression")
 	}
 
-	operand, err := g.generateExpression(&node.Children[0])
+	var opNode *ASTNode
+	var operandNode *ASTNode
+
+	if len(node.Children) >= 2 && isUnaryOperatorToken(node.Children[0].Kind) {
+		opNode = &node.Children[0]
+		operandNode = &node.Children[1]
+	} else {
+		operandNode = &node.Children[0]
+	}
+
+	operand, err := g.generateExpression(operandNode)
 	if err != nil {
 		return "", err
+	}
+
+	op := ""
+	if opNode != nil {
+		switch opNode.Kind {
+		case "ExclamationToken":
+			op = "!"
+		case "PlusPlusToken":
+			op = "++"
+		case "MinusMinusToken":
+			op = "--"
+		case "MinusToken":
+			op = "-"
+		case "PlusToken":
+			op = "+"
+		case "TildeToken":
+			op = "^"
+		}
+	}
+	if op == "" && node.Operator != "" {
+		switch node.Operator {
+		case "ExclamationToken", "!":
+			op = "!"
+		case "PlusPlusToken", "++":
+			op = "++"
+		case "MinusMinusToken", "--":
+			op = "--"
+		case "MinusToken", "-":
+			op = "-"
+		case "PlusToken", "+":
+			op = "+"
+		}
+	}
+
+	if op != "" {
+		return op + operand, nil
 	}
 
 	// Determine the operator based on context
 	// If operand is a number literal or the operator spans 1 char before operand, it's likely - or !
 	// Otherwise it's likely ++ or --
-	operatorLen := node.Children[0].Pos - node.Pos
+	operatorLen := operandNode.Pos - node.Pos
 
 	switch operatorLen {
 	case 1:
 		// Single character operator: -, +, !, ~
 		// Check operand type to guess which one
-		if node.Children[0].Kind == "TrueKeyword" || node.Children[0].Kind == "FalseKeyword" {
+		if operandNode.Kind == "TrueKeyword" || operandNode.Kind == "FalseKeyword" {
 			return "!" + operand, nil
 		}
 		// Assume negation for numbers
@@ -756,6 +847,15 @@ func (g *CodeGenerator) generatePrefixUnaryExpression(node *ASTNode) (string, er
 	default:
 		// Default to negation
 		return "-" + operand, nil
+	}
+}
+
+func isUnaryOperatorToken(kind string) bool {
+	switch kind {
+	case "ExclamationToken", "PlusPlusToken", "MinusMinusToken", "MinusToken", "PlusToken", "TildeToken":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -814,9 +914,15 @@ func (g *CodeGenerator) generateElementAccess(node *ASTNode) (string, error) {
 		return "", fmt.Errorf("generating element access expression: %w", err)
 	}
 
-	// The argument expression is the index/key
-	if len(node.Children) > 0 && node.Children[0].Kind != "undefined" {
-		index, err := g.generateExpression(&node.Children[0])
+	var indexNode *ASTNode
+	if node.ArgumentExpression != nil {
+		indexNode = node.ArgumentExpression
+	} else if len(node.Children) > 0 && node.Children[0].Kind != "undefined" {
+		indexNode = &node.Children[0]
+	}
+
+	if indexNode != nil {
+		index, err := g.generateExpression(indexNode)
 		if err != nil {
 			return "", fmt.Errorf("generating element access index: %w", err)
 		}
@@ -824,6 +930,64 @@ func (g *CodeGenerator) generateElementAccess(node *ASTNode) (string, error) {
 	}
 
 	return "", fmt.Errorf("element access missing index")
+}
+
+// generateParenthesizedExpression generates code for parenthesized expressions
+func (g *CodeGenerator) generateParenthesizedExpression(node *ASTNode) (string, error) {
+	innerNode := node.Expression
+	if innerNode == nil && len(node.Children) > 0 {
+		innerNode = &node.Children[0]
+	}
+	if innerNode == nil {
+		return "()", nil
+	}
+	expr, err := g.generateExpression(innerNode)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("(%s)", expr), nil
+}
+
+// generateNonNullExpression generates code for TypeScript's non-null assertion operator (x!)
+func (g *CodeGenerator) generateNonNullExpression(node *ASTNode) (string, error) {
+	innerNode := node.Expression
+	if innerNode == nil && len(node.Children) > 0 {
+		innerNode = &node.Children[0]
+	}
+	if innerNode == nil {
+		return "", fmt.Errorf("non-null expression missing inner expression")
+	}
+	return g.generateExpression(innerNode)
+}
+
+// generateAsExpression generates code for TypeScript type assertions (expr as Type or <Type>expr)
+func (g *CodeGenerator) generateAsExpression(node *ASTNode) (string, error) {
+	innerNode := node.Expression
+	if innerNode == nil && len(node.Children) > 0 {
+		innerNode = &node.Children[0]
+	}
+	if innerNode == nil {
+		return "", fmt.Errorf("type assertion missing expression")
+	}
+	expr, err := g.generateExpression(innerNode)
+	if err != nil {
+		return "", err
+	}
+	if node.Type == nil {
+		return expr, nil
+	}
+	targetType, err := g.generateType(node.Type)
+	if err != nil || targetType == "" || targetType == "interface{}" || targetType == "any" {
+		return expr, nil
+	}
+	switch targetType {
+	case "int", "int8", "int16", "int32", "int64",
+		"uint", "uint8", "uint16", "uint32", "uint64",
+		"float32", "float64", "string", "bool":
+		return fmt.Sprintf("%s(%s)", targetType, expr), nil
+	default:
+		return fmt.Sprintf("%s.(%s)", expr, targetType), nil
+	}
 }
 
 // generateSpreadElement generates code for spread operator
@@ -923,4 +1087,22 @@ func (g *CodeGenerator) generateAwaitExpression(node *ASTNode) (string, error) {
 	// In Go, await translates to receiving from a channel
 	// The expression should be a function call that returns a channel
 	return fmt.Sprintf("(<-%s)", expr), nil
+}
+
+// isStructTypeName determines if a Go type identifier represents a struct type (not a primitive or map/slice)
+func isStructTypeName(t string) bool {
+	if t == "" || t == "interface{}" || t == "any" || t == "void" || t == "error" {
+		return false
+	}
+	switch t {
+	case "string", "int", "int8", "int16", "int32", "int64",
+		"uint", "uint8", "uint16", "uint32", "uint64",
+		"float32", "float64", "bool", "byte", "rune":
+		return false
+	}
+	if strings.HasPrefix(t, "map[") || strings.HasPrefix(t, "[]") ||
+		strings.HasPrefix(t, "chan ") || strings.HasPrefix(t, "func(") {
+		return false
+	}
+	return true
 }

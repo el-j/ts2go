@@ -9,7 +9,7 @@
         {{ isCollapsed ? '▶' : '▼' }}
       </button>
     </div>
-    
+
     <div v-if="!isCollapsed" class="info-content">
       <div class="info-row">
         <span class="label">Path:</span>
@@ -28,37 +28,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useWorkspaceStore } from '../stores/workspace'
+import { ref, computed } from 'vue';
+import { useWorkspaceStore } from '../stores/workspace';
 
-const workspace = useWorkspaceStore()
-const isCollapsed = ref(false)
+const workspace = useWorkspaceStore();
+const isCollapsed = ref(false);
 
-const projectPath = computed(() => workspace.projectPath)
+const projectPath = computed(() => workspace.projectPath);
 const projectName = computed(() => {
-  const path = workspace.projectPath
-  return path.split('/').filter(Boolean).pop() || 'Project'
-})
+  const path = workspace.projectPath;
+  return path.split('/').filter(Boolean).pop() || 'Project';
+});
 
 const fileCount = computed(() => {
   const countFiles = (nodes: any[]): number => {
     return nodes.reduce((count, node) => {
       if (node.type === 'file') {
-        return count + 1
+        return count + 1;
       }
       if (node.children) {
-        return count + countFiles(node.children)
+        return count + countFiles(node.children);
       }
-      return count
-    }, 0)
-  }
-  return countFiles(workspace.fileTree)
-})
+      return count;
+    }, 0);
+  };
+  return countFiles(workspace.fileTree);
+});
 
-const lastModified = ref(new Date())
+const lastModified = ref(new Date());
 
 function toggleCollapse() {
-  isCollapsed.value = !isCollapsed.value
+  isCollapsed.value = !isCollapsed.value;
 }
 
 function formatDate(date: Date): string {
@@ -66,8 +66,8 @@ function formatDate(date: Date): string {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
-  })
+    minute: '2-digit',
+  });
 }
 </script>
 
