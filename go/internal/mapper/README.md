@@ -57,7 +57,7 @@ go run internal/mapper/cmd/mapping-cli/main.go list -type equivalent
 Use the Go API in your code:
 
 ```go
-import "github.com/yourusername/ts2go/internal/mapper"
+import "github.com/el-j/ts2go/internal/mapper"
 
 // Load mappings from default location
 db, err := mapper.LoadDefaultMappings()
@@ -119,8 +119,8 @@ Each mapping includes:
 ### Node.js Built-ins
 
 ```
-fs     → github.com/yourusername/ts2go/runtime/fs  (runtime)
-path   → github.com/yourusername/ts2go/runtime/path (runtime)
+fs     → github.com/el-j/ts2go/runtime/fs  (runtime)
+path   → github.com/el-j/ts2go/runtime/path (runtime)
 os     → os                                         (stdlib)
 http   → net/http                                   (stdlib)
 crypto → crypto                                     (stdlib)

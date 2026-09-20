@@ -13,6 +13,7 @@ import (
 	"github.com/el-j/ts2go/core/ports"
 	"github.com/el-j/ts2go/core/services"
 	"github.com/el-j/ts2go/internal/analyzer"
+	"github.com/el-j/ts2go/internal/mapper"
 	"github.com/el-j/ts2go/internal/transpiler"
 )
 
@@ -60,7 +61,16 @@ func NewApplication() (*Application, error) {
 	}
 
 	analyzerSvc := &adapterAnalyzer{}
-	mapperSvc := &placeholderMapper{}
+	var mapperSvc services.MapperService
+	mapperDb, err := mapper.LoadDefaultMappings()
+	if err != nil {
+		mapperSvc = &adapterMapper{}
+	} else {
+		mapperSvc = &adapterMapper{
+			db:          mapperDb,
+			transformer: mapper.NewCallTransformer(mapperDb),
+		}
+	}
 	codegenSvc := &adapterCodeGen{}
 
 	// Create core services (business logic)
@@ -469,13 +479,33 @@ func (p *adapterAnalyzer) AnalyzeImports(ast interface{}) (*services.ImportAnaly
 	}, nil
 }
 
-type placeholderMapper struct{}
-
-func (p *placeholderMapper) FindGoPackage(npmPackage string) (string, error) {
-	return "", nil
+type adapterMapper struct {
+	db          *mapper.MappingDatabase
+	transformer *mapper.CallTransformer
 }
 
-func (p *placeholderMapper) TransformAPICall(code string) (string, error) {
+func (m *adapterMapper) FindGoPackage(npmPackage string) (string, error) {
+	if m.db == nil {
+		return "", fmt.Errorf("mapping database not initialized")
+	}
+	mapping, err := m.db.GetMapping(npmPackage)
+	if err != nil {
+		return "", err
+	}
+	return mapping.Go, nil
+}
+
+func (m *adapterMapper) TransformAPICall(code string) (string, error) {
+	if m.transformer == nil {
+		return code, nil
+	}
+	res := m.transformer.TransformCall(code)
+	if res.Error != nil {
+		return code, res.Error
+	}
+	if res.Transformed != "" {
+		return res.Transformed, nil
+	}
 	return code, nil
 }
 

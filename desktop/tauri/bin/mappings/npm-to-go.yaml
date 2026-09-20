@@ -10,21 +10,21 @@ mappings:
   # ===================================
   
   - npm: "fs"
-    go: "github.com/yourusername/ts2go/runtime/fs"
+    go: "github.com/el-j/ts2go/runtime/fs"
     type: "runtime"
     status: "supported"
     complexity: "simple"
     description: "File system operations"
     
   - npm: "path"
-    go: "github.com/yourusername/ts2go/runtime/path"
+    go: "github.com/el-j/ts2go/runtime/path"
     type: "runtime"
     status: "supported"
     complexity: "simple"
     description: "Path manipulation utilities"
     
   - npm: "console"
-    go: "github.com/yourusername/ts2go/runtime/console"
+    go: "github.com/el-j/ts2go/runtime/console"
     type: "runtime"
     status: "supported"
     complexity: "simple"
@@ -37,7 +37,7 @@ mappings:
       "console.debug": "console.Debug"
     
   - npm: "process"
-    go: "github.com/yourusername/ts2go/runtime/process"
+    go: "github.com/el-j/ts2go/runtime/process"
     type: "runtime"
     status: "supported"
     complexity: "simple"
@@ -52,7 +52,7 @@ mappings:
       "process.arch": "process.Arch()"
     
   - npm: "os"
-    go: "github.com/yourusername/ts2go/runtime/os"
+    go: "github.com/el-j/ts2go/runtime/os"
     type: "runtime"
     status: "supported"
     complexity: "simple"
@@ -68,7 +68,7 @@ mappings:
       "os.freemem": "os.Freemem"
     
   - npm: "http"
-    go: "github.com/yourusername/ts2go/runtime/http"
+    go: "github.com/el-j/ts2go/runtime/http"
     type: "runtime"
     status: "supported"
     complexity: "medium"
@@ -81,7 +81,7 @@ mappings:
     notes: "Runtime wrapper provides Node.js-compatible API"
     
   - npm: "https"
-    go: "github.com/yourusername/ts2go/runtime/http"
+    go: "github.com/el-j/ts2go/runtime/http"
     type: "runtime"
     status: "supported"
     complexity: "medium"
@@ -96,7 +96,7 @@ mappings:
     description: "Cryptographic functionality"
     
   - npm: "url"
-    go: "github.com/yourusername/ts2go/runtime/url"
+    go: "github.com/el-j/ts2go/runtime/url"
     type: "runtime"
     status: "supported"
     complexity: "simple"
@@ -107,7 +107,7 @@ mappings:
       "url.resolve": "url.Resolve"
     
   - npm: "querystring"
-    go: "github.com/yourusername/ts2go/runtime/url"
+    go: "github.com/el-j/ts2go/runtime/url"
     type: "runtime"
     status: "supported"
     complexity: "simple"
@@ -119,7 +119,7 @@ mappings:
       "querystring.unescape": "url.Unescape"
     
   - npm: "buffer"
-    go: "github.com/yourusername/ts2go/runtime/buffer"
+    go: "github.com/el-j/ts2go/runtime/buffer"
     type: "runtime"
     status: "supported"
     complexity: "simple"
@@ -139,7 +139,7 @@ mappings:
     notes: "Go's io.Reader/Writer model differs from Node.js streams"
     
   - npm: "events"
-    go: "github.com/yourusername/ts2go/runtime/events"
+    go: "github.com/el-j/ts2go/runtime/events"
     type: "runtime"
     status: "supported"
     complexity: "medium"

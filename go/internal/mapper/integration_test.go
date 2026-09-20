@@ -41,10 +41,10 @@ func TestActualNodeBuiltins(t *testing.T) {
 	}{
 		{"fs", MappingTypeRuntime},
 		{"path", MappingTypeRuntime},
-		{"os", MappingTypeStdlib},
-		{"http", MappingTypeStdlib},
+		{"os", MappingTypeRuntime},
+		{"http", MappingTypeRuntime},
 		{"crypto", MappingTypeStdlib},
-		{"url", MappingTypeStdlib},
+		{"url", MappingTypeRuntime},
 	}
 
 	for _, builtin := range builtins {

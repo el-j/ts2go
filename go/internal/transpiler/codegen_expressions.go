@@ -408,7 +408,7 @@ func (g *CodeGenerator) generateArrayLiteral(node *ASTNode) (string, error) {
 
 	// If there are spread elements, we need to use array.Concat or append
 	// Track import for array runtime
-	g.trackImport("github.com/ts2go/runtime/array")
+	g.trackImport("github.com/el-j/ts2go/runtime/array")
 
 	// Build list of slices to concatenate
 	slices := []string{}
@@ -563,7 +563,7 @@ func (g *CodeGenerator) generateCallExpression(node *ASTNode) (string, error) {
 
 			if arrayMethods[prop] {
 				// Track import for array runtime
-				g.trackImport("github.com/ts2go/runtime/array")
+				g.trackImport("github.com/el-j/ts2go/runtime/array")
 
 				// Generate object expression
 				objExpr, err := g.generateExpression(objNode)
