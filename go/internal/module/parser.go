@@ -28,20 +28,14 @@ func (p *Parser) GetRegistry() *ExportRegistry {
 
 // ParseFile parses a TypeScript file and extracts imports/exports
 func (p *Parser) ParseFile(filePath string) (*Module, error) {
-	// Find parser directory - look for it relative to the workspace
-	// This needs to be configurable or detected from the environment
-	parserDir := filepath.Join(filepath.Dir(filepath.Dir(filepath.Dir(filePath))), "internal", "transpiler", "parser")
+	absFilePath, err := filepath.Abs(filePath)
+	if err == nil {
+		filePath = absFilePath
+	}
 
-	// Check if parser directory exists, if not try alternate location
-	if _, err := os.Stat(parserDir); os.IsNotExist(err) {
-		// Try from current working directory
-		cwd, _ := os.Getwd()
-		parserDir = filepath.Join(cwd, "..", "transpiler", "parser")
-
-		// If still not found, use absolute path (for tests)
-		if _, err := os.Stat(parserDir); os.IsNotExist(err) {
-			parserDir = "/Users/rex-fab-alt/Documents/code/playground/ts2go/internal/transpiler/parser"
-		}
+	parserDir := findParserDir(filePath)
+	if parserDir == "" {
+		return nil, fmt.Errorf("could not find internal/transpiler/parser directory")
 	}
 
 	cmd := exec.Command("node", "-e", fmt.Sprintf(`
@@ -273,4 +267,53 @@ func (p *Parser) ParseProject(files []string) error {
 		}
 	}
 	return nil
+}
+
+// findParserDir searches upwards for the parser directory
+func findParserDir(filePath string) string {
+	// 1. Try from filePath directory upwards
+	if filePath != "" {
+		absFilePath, err := filepath.Abs(filePath)
+		if err == nil {
+			dir := filepath.Dir(absFilePath)
+			for {
+				for _, sub := range []string{
+					filepath.Join("internal", "transpiler", "parser"),
+					filepath.Join("go", "internal", "transpiler", "parser"),
+				} {
+					candidate := filepath.Join(dir, sub)
+					if fi, err := os.Stat(candidate); err == nil && fi.IsDir() {
+						return candidate
+					}
+				}
+				parent := filepath.Dir(dir)
+				if parent == dir {
+					break
+				}
+				dir = parent
+			}
+		}
+	}
+
+	// 2. Try from cwd upwards
+	if cwd, err := os.Getwd(); err == nil {
+		dir := cwd
+		for {
+			for _, sub := range []string{
+				filepath.Join("internal", "transpiler", "parser"),
+				filepath.Join("go", "internal", "transpiler", "parser"),
+			} {
+				candidate := filepath.Join(dir, sub)
+				if fi, err := os.Stat(candidate); err == nil && fi.IsDir() {
+					return candidate
+				}
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+	}
+	return ""
 }

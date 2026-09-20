@@ -1,5 +1,7 @@
 package module
 
+import "path/filepath"
+
 // ExportType represents the type of export
 type ExportType string
 
@@ -95,11 +97,22 @@ func NewExportRegistry() *ExportRegistry {
 // AddModule adds a module to the registry
 func (r *ExportRegistry) AddModule(module *Module) {
 	r.modules[module.Path] = module
+	if abs, err := filepath.Abs(module.Path); err == nil {
+		r.modules[abs] = module
+	}
 }
 
 // GetModule retrieves a module by path
 func (r *ExportRegistry) GetModule(path string) *Module {
-	return r.modules[path]
+	if m, ok := r.modules[path]; ok {
+		return m
+	}
+	if abs, err := filepath.Abs(path); err == nil {
+		if m, ok := r.modules[abs]; ok {
+			return m
+		}
+	}
+	return nil
 }
 
 // GetExports returns all exports from a module

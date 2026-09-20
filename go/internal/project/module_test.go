@@ -21,19 +21,19 @@ func TestDetermineModuleName(t *testing.T) {
 			"with package.json",
 			"my-project",
 			&analyzer.PackageInfo{Name: "my-package"},
-			"github.com/yourusername/my-package",
+			"github.com/el-j/my-package",
 		},
 		{
 			"scoped package",
 			"my-project",
 			&analyzer.PackageInfo{Name: "@scope/package"},
-			"github.com/yourusername/scope-package",
+			"github.com/el-j/scope-package",
 		},
 		{
 			"without package.json",
 			"my-project",
 			nil,
-			"github.com/yourusername/my-project",
+			"github.com/el-j/my-project",
 		},
 	}
 
@@ -202,7 +202,7 @@ func TestGenerateGoModule(t *testing.T) {
 	}
 
 	contentStr := string(content)
-	if !strings.Contains(contentStr, "module github.com/yourusername/my-app") {
+	if !strings.Contains(contentStr, "module github.com/el-j/my-app") {
 		t.Error("go.mod should contain correct module name")
 	}
 

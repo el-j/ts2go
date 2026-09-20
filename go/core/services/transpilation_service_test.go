@@ -1,6 +1,8 @@
 package services_test
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/el-j/ts2go/core/domain"
@@ -178,5 +180,60 @@ func TestAnalyzeProjectSuccess(t *testing.T) {
 
 	if report.ProjectPath != "/project" {
 		t.Errorf("Expected project path '/project', got %s", report.ProjectPath)
+	}
+}
+
+func TestTranspileProjectMultiFile(t *testing.T) {
+	projectPath := filepath.Join("..", "..", "test-projects", "simple-multi-file")
+	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
+		t.Skipf("Test project path does not exist: %s", projectPath)
+	}
+
+	tmpOut, err := os.MkdirTemp("", "transpile-multi-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp output dir: %v", err)
+	}
+	defer os.RemoveAll(tmpOut)
+
+	mockFS := mocks.NewMockFileSystem()
+	mockCompiler := mocks.NewMockGoCompiler()
+
+	service := services.NewTranspilationService(
+		mockFS,
+		mockCompiler,
+		nil,
+		nil,
+		nil,
+	)
+
+	options := ports.TranspileOptions{
+		OutputPath: tmpOut,
+	}
+
+	result, err := service.TranspileProject(projectPath, options)
+	if err != nil {
+		t.Fatalf("TranspileProject failed: %v", err)
+	}
+
+	if result.FilesProcessed < 3 {
+		t.Errorf("Expected at least 3 files processed, got %d", result.FilesProcessed)
+	}
+
+	if result.FilesSuccess < 3 {
+		t.Errorf("Expected at least 3 files succeeded, got %d", result.FilesSuccess)
+	}
+
+	// Verify go.mod was generated
+	goModPath := filepath.Join(tmpOut, "go.mod")
+	if _, err := os.Stat(goModPath); os.IsNotExist(err) {
+		t.Errorf("Expected go.mod to be generated at %s", goModPath)
+	}
+
+	// Verify package files were generated
+	for _, expectedRel := range []string{"src/main.go", "src/models/user.go", "src/services/userService.go"} {
+		expectedPath := filepath.Join(tmpOut, expectedRel)
+		if _, err := os.Stat(expectedPath); os.IsNotExist(err) {
+			t.Errorf("Expected output file %s does not exist", expectedPath)
+		}
 	}
 }
